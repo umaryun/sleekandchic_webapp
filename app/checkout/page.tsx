@@ -31,6 +31,7 @@ export default function CheckoutPage() {
   const [shippingMethod, setShippingMethod] = useState<"standard" | "express">("standard");
   const [payment, setPayment] = useState({ method: "card", cardNumber: "", expiry: "", cvv: "", name: "" });
   const [placed, setPlaced] = useState(false);
+  const [orderNumber, setOrderNumber] = useState("");
 
   const subtotal = CART_ITEMS.reduce((s, i) => s + i.price * i.quantity, 0);
   const shippingCost = shippingMethod === "express" ? 14.99 : subtotal >= 100 ? 0 : 9.99;
@@ -248,7 +249,11 @@ export default function CheckoutPage() {
                 >
                   ← Back
                 </button>
-                <button onClick={() => { setStep("Confirmation"); setPlaced(true); }}
+                <button onClick={() => {
+                  setStep("Confirmation");
+                  setPlaced(true);
+                  setOrderNumber(`#NC-${Math.floor(Math.random() * 90000) + 10000}`);
+                }}
                   style={{ flex: 1, padding: "13px", background: "#f57224", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: 700, fontSize: "15px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", transition: "background 0.2s" }}
                   onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.background = "#e06010")}
                   onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.background = "#f57224")}
@@ -277,7 +282,7 @@ export default function CheckoutPage() {
               <div style={{ background: "#f8f8f8", borderRadius: "6px", padding: "20px 24px", marginBottom: "32px", textAlign: "left", display: "inline-block", minWidth: "360px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px" }}>
                   <span style={{ fontSize: "13px", color: "#888" }}>Order Number</span>
-                  <span style={{ fontSize: "13px", fontWeight: 700, color: "#f57224" }}>#NC-{Math.floor(Math.random() * 90000) + 10000}</span>
+                  <span style={{ fontSize: "13px", fontWeight: 700, color: "#f57224" }}>{orderNumber}</span>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px" }}>
                   <span style={{ fontSize: "13px", color: "#888" }}>Date</span>

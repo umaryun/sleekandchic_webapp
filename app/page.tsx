@@ -58,7 +58,7 @@ export default function HomePage() {
         <FeaturedBanners />
 
         {/* Features bar */}
-        <FeatureBar />
+        {/* <FeatureBar /> */}
 
         {/* Shop by category */}
         <CategorySection />
@@ -73,7 +73,7 @@ export default function HomePage() {
         <PromoSection />
 
         {/* Newsletter signup */}
-        <NewsletterSection />
+        {/* <NewsletterSection /> */}
       </main>
 
       {/* Footer */}

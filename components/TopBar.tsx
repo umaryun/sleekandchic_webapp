@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ChevronDown, Facebook, Twitter, Youtube, Linkedin } from "lucide-react";
+import { ChevronDown, Phone } from "lucide-react";
 
 const currencies = ["USD", "EUR", "VND", "NGN"];
 const languages = [
@@ -84,7 +84,7 @@ export default function TopBar() {
                       cursor: "pointer",
                       textAlign: "left",
                       fontSize: "12px",
-                      color: currency === c ? "#f57224" : "#1a1a1a",
+                      color: currency === c ? "#b88d7a" : "#1a1a1a",
                       fontWeight: currency === c ? 600 : 400,
                     }}
                   >
@@ -143,7 +143,7 @@ export default function TopBar() {
                       cursor: "pointer",
                       textAlign: "left",
                       fontSize: "12px",
-                      color: language === l.label ? "#f57224" : "#1a1a1a",
+                      color: language === l.label ? "#b88d7a" : "#1a1a1a",
                       fontWeight: language === l.label ? 600 : 400,
                     }}
                   >
@@ -158,10 +158,10 @@ export default function TopBar() {
         {/* Right: Social Links */}
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           {[
-            { href: "https://www.facebook.com", Icon: Facebook, label: "Facebook" },
-            { href: "https://x.com", Icon: Twitter, label: "X (Twitter)" },
-            { href: "https://www.youtube.com", Icon: Youtube, label: "YouTube" },
-            { href: "https://www.linkedin.com", Icon: Linkedin, label: "Instagram" },
+            { href: "https://www.facebook.com", Icon: Phone, label: "Facebook" },
+            { href: "https://x.com", Icon: Phone, label: "X (Twitter)" },
+            { href: "https://www.youtube.com", Icon: Phone, label: "YouTube" },
+            { href: "https://www.linkedin.com", Icon: Phone, label: "Instagram" },
           ].map(({ href, Icon, label }) => (
             <Link
               key={label}

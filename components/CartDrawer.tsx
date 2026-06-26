@@ -202,7 +202,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
             display: "block",
             textAlign: "center",
             padding: "13px",
-            background: "#f57224",
+            background: "#1a1a1a",
             color: "#fff",
             textDecoration: "none",
             fontWeight: 600,
@@ -211,10 +211,10 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
             transition: "background 0.2s",
           }}
           onMouseEnter={(e) =>
-            ((e.currentTarget as HTMLAnchorElement).style.background = "#e06010")
+            ((e.currentTarget as HTMLAnchorElement).style.background = "#333")
           }
           onMouseLeave={(e) =>
-            ((e.currentTarget as HTMLAnchorElement).style.background = "#f57224")
+            ((e.currentTarget as HTMLAnchorElement).style.background = "#1a1a1a")
           }
         >
           Checkout Now

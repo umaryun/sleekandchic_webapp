@@ -33,7 +33,7 @@ export default function PageBreadcrumb({ title, crumbs = [] }: PageBreadcrumbPro
         <h1 style={{ fontSize: "20px", fontWeight: 700, color: "#1a1a1a" }}>{title}</h1>
         <nav style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px" }}>
           <Link href="/" style={{ color: "#666", textDecoration: "none" }}
-            onMouseEnter={(e) => ((e.currentTarget as HTMLAnchorElement).style.color = "#f57224")}
+            onMouseEnter={(e) => ((e.currentTarget as HTMLAnchorElement).style.color = "#b88d7a")}
             onMouseLeave={(e) => ((e.currentTarget as HTMLAnchorElement).style.color = "#666")}
           >
             Home
@@ -43,7 +43,7 @@ export default function PageBreadcrumb({ title, crumbs = [] }: PageBreadcrumbPro
               <ChevronRight size={12} color="#ccc" />
               {crumb.href ? (
                 <Link href={crumb.href} style={{ color: "#666", textDecoration: "none" }}
-                  onMouseEnter={(e) => ((e.currentTarget as HTMLAnchorElement).style.color = "#f57224")}
+                  onMouseEnter={(e) => ((e.currentTarget as HTMLAnchorElement).style.color = "#b88d7a")}
                   onMouseLeave={(e) => ((e.currentTarget as HTMLAnchorElement).style.color = "#666")}
                 >
                   {crumb.label}

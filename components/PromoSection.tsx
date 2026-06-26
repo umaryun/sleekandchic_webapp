@@ -15,7 +15,7 @@ export default function PromoSection() {
           position: "relative",
           borderRadius: "4px",
           overflow: "hidden",
-          background: "linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)",
+          background: "#B88D7A",
           padding: "60px 64px",
           display: "flex",
           alignItems: "center",
@@ -30,7 +30,7 @@ export default function PromoSection() {
             width: "300px",
             height: "300px",
             borderRadius: "50%",
-            border: "60px solid rgba(245,114,36,0.08)",
+            border: "60px solid rgba(255,255,255,0.08)",
             right: "-60px",
             top: "-80px",
           }}
@@ -41,7 +41,7 @@ export default function PromoSection() {
             width: "200px",
             height: "200px",
             borderRadius: "50%",
-            border: "40px solid rgba(245,114,36,0.06)",
+            border: "40px solid rgba(255,255,255,0.06)",
             right: "80px",
             bottom: "-60px",
           }}
@@ -52,7 +52,7 @@ export default function PromoSection() {
           <p
             style={{
               fontSize: "12px",
-              color: "#f57224",
+              color: "#fff",
               fontWeight: 600,
               letterSpacing: "3px",
               textTransform: "uppercase",
@@ -65,20 +65,21 @@ export default function PromoSection() {
             style={{
               fontSize: "36px",
               fontWeight: 800,
-              color: "#ffffff",
+              color: "#fff",
               lineHeight: 1.2,
               marginBottom: "12px",
             }}
           >
             Summer Sale — Get{" "}
-            <span style={{ color: "#f57224" }}>30% Off</span>
+            <span style={{ color: "#fff" }}>30% Off</span>
           </h2>
           <p
             style={{
-              color: "#aaa",
+              color: "#fff",
               fontSize: "15px",
               marginBottom: "28px",
               lineHeight: 1.6,
+              opacity: 0.8,
             }}
           >
             Discover our exclusive summer collection and enjoy massive discounts
@@ -91,7 +92,7 @@ export default function PromoSection() {
               alignItems: "center",
               gap: "10px",
               padding: "14px 32px",
-              background: "#f57224",
+              background: "#1a1a1a",
               color: "#fff",
               textDecoration: "none",
               fontWeight: 700,
@@ -101,10 +102,10 @@ export default function PromoSection() {
               transition: "background 0.2s",
             }}
             onMouseEnter={(e) =>
-              ((e.currentTarget as HTMLAnchorElement).style.background = "#e06010")
+              ((e.currentTarget as HTMLAnchorElement).style.background = "#333")
             }
             onMouseLeave={(e) =>
-              ((e.currentTarget as HTMLAnchorElement).style.background = "#f57224")
+              ((e.currentTarget as HTMLAnchorElement).style.background = "#1a1a1a")
             }
           >
             Shop The Sale
@@ -153,7 +154,7 @@ export default function PromoSection() {
               <span
                 style={{
                   fontSize: "11px",
-                  color: "#888",
+                  color: "rgba(255,255,255,0.6)",
                   marginTop: "4px",
                   letterSpacing: "1px",
                   textTransform: "uppercase",

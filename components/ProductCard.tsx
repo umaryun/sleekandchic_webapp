@@ -32,9 +32,9 @@ export default function ProductCard({
   };
 
   const badgeColors: Record<string, { bg: string; color: string }> = {
-    sale: { bg: "#f57224", color: "#fff" },
-    new: { bg: "#28a745", color: "#fff" },
-    hot: { bg: "#dc3545", color: "#fff" },
+    sale: { bg: "#b88d7a", color: "#fff" },
+    new: { bg: "#5a8a6a", color: "#fff" },
+    hot: { bg: "#c45b5b", color: "#fff" },
   };
 
   return (
@@ -92,11 +92,11 @@ export default function ProductCard({
           justifyContent: "center",
           boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
           transition: "all 0.2s",
-          color: isWished ? "#f57224" : "#666",
+          color: isWished ? "#b88d7a" : "#666",
         }}
         aria-label="Add to wishlist"
       >
-        <Heart size={14} fill={isWished ? "#f57224" : "none"} />
+        <Heart size={14} fill={isWished ? "#b88d7a" : "none"} />
       </button>
 
       {/* Product image */}
@@ -215,7 +215,7 @@ export default function ProductCard({
         <p
           style={{
             fontSize: "11px",
-            color: "#f57224",
+            color: "#b88d7a",
             fontWeight: 500,
             marginBottom: "4px",
             textTransform: "uppercase",
@@ -241,7 +241,7 @@ export default function ProductCard({
               transition: "color 0.2s",
             }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.color = "#f57224";
+              (e.currentTarget as HTMLElement).style.color = "#b88d7a";
             }}
             onMouseLeave={(e) => {
               (e.currentTarget as HTMLElement).style.color = "#1a1a1a";

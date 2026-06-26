@@ -43,7 +43,7 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
       >
         <span style={{ fontSize: "18px", fontWeight: 800 }}>
           <span style={{ color: "#1a1a1a" }}>Nin</span>
-          <span style={{ color: "#f57224" }}>ico</span>
+          <span style={{ color: "#b88d7a" }}>ico</span>
         </span>
         <button
           onClick={onClose}
@@ -105,7 +105,7 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
                   borderBottom: "1px solid #f0f0f0",
                 }}
               >
-                <ChevronRight size={12} color="#f57224" />
+                <ChevronRight size={12} color="#b88d7a" />
                 {cat.name}
               </Link>
             ))}
@@ -209,7 +209,7 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
             flex: 1,
             textAlign: "center",
             padding: "10px",
-            background: "#f57224",
+            background: "#b88d7a",
             color: "#fff",
             textDecoration: "none",
             fontSize: "13px",

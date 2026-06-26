@@ -49,7 +49,7 @@ export default function FeaturedProducts({ onAddToCart, onAddToWishlist }: Featu
           <p
             style={{
               fontSize: "12px",
-              color: "#f57224",
+              color: "#b88d7a",
               fontWeight: 600,
               letterSpacing: "2px",
               textTransform: "uppercase",

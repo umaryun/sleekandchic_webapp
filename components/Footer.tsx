@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { MapPin, Phone, Mail, Facebook, Twitter, Instagram, Youtube, Linkedin } from "lucide-react";
+import { MapPin, Phone, Mail, } from "lucide-react";
 
 const footerLinks = {
   Information: [
@@ -29,18 +29,18 @@ const footerLinks = {
 };
 
 const socialLinks = [
-  { href: "#", Icon: Facebook, label: "Facebook" },
-  { href: "#", Icon: Twitter, label: "Twitter" },
-  { href: "#", Icon: Instagram, label: "Instagram" },
-  { href: "#", Icon: Youtube, label: "YouTube" },
-  { href: "#", Icon: Linkedin, label: "LinkedIn" },
+  { href: "#", Icon: Phone, label: "Facebook" },
+  { href: "#", Icon: Phone, label: "Twitter" },
+  { href: "#", Icon: Phone, label: "Instagram" },
+  { href: "#", Icon: Phone, label: "YouTube" },
+  { href: "#", Icon: Phone, label: "LinkedIn" },
 ];
 
 const paymentIcons = ["Visa", "Mastercard", "PayPal", "Stripe", "Apple Pay"];
 
 export default function Footer() {
   return (
-    <footer style={{ background: "#1a1a1a", color: "#ccc" }}>
+    <footer style={{ background: "#F8F8F8", color: "#000" }}>
       <div
         style={{
           maxWidth: "1280px",
@@ -63,8 +63,8 @@ export default function Footer() {
               marginBottom: "16px",
             }}
           >
-            <span style={{ color: "#fff" }}>Nin</span>
-            <span style={{ color: "#f57224" }}>ico</span>
+            <span style={{ color: "#1a1a1a" }}>Nin</span>
+            <span style={{ color: "#b88d7a" }}>ico</span>
           </Link>
           <p
             style={{
@@ -89,8 +89,8 @@ export default function Footer() {
                 key={text}
                 style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}
               >
-                <Icon size={14} color="#f57224" style={{ marginTop: "2px", flexShrink: 0 }} />
-                <span style={{ fontSize: "13px", color: "#888" }}>{text}</span>
+                <Icon size={14} color="#b88d7a" style={{ marginTop: "2px", flexShrink: 0 }} />
+                <span style={{ fontSize: "13px", color: "#555" }}>{text}</span>
               </div>
             ))}
           </div>
@@ -112,24 +112,24 @@ export default function Footer() {
                   width: "34px",
                   height: "34px",
                   borderRadius: "50%",
-                  border: "1px solid #333",
+                  border: "1px solid #ddd",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  color: "#888",
+                  color: "#555",
                   transition: "background 0.2s, border-color 0.2s, color 0.2s",
                 }}
                 onMouseEnter={(e) => {
                   const el = e.currentTarget as HTMLAnchorElement;
-                  el.style.background = "#f57224";
-                  el.style.borderColor = "#f57224";
+                  el.style.background = "#b88d7a";
+                  el.style.borderColor = "#b88d7a";
                   el.style.color = "#fff";
                 }}
                 onMouseLeave={(e) => {
                   const el = e.currentTarget as HTMLAnchorElement;
                   el.style.background = "transparent";
-                  el.style.borderColor = "#333";
-                  el.style.color = "#888";
+                  el.style.borderColor = "#ddd";
+                  el.style.color = "#555";
                 }}
               >
                 <Icon size={14} />
@@ -145,10 +145,10 @@ export default function Footer() {
               style={{
                 fontSize: "14px",
                 fontWeight: 700,
-                color: "#fff",
+                color: "#1a1a1a",
                 marginBottom: "20px",
                 paddingBottom: "10px",
-                borderBottom: "1px solid #2a2a2a",
+                borderBottom: "1px solid #e0e0e0",
               }}
             >
               {title}
@@ -159,7 +159,7 @@ export default function Footer() {
                   <Link
                     href={link.href}
                     style={{
-                      color: "#888",
+                      color: "#000",
                       textDecoration: "none",
                       fontSize: "13px",
                       display: "flex",
@@ -168,10 +168,10 @@ export default function Footer() {
                       transition: "color 0.2s",
                     }}
                     onMouseEnter={(e) =>
-                      ((e.currentTarget as HTMLAnchorElement).style.color = "#f57224")
+                      ((e.currentTarget as HTMLAnchorElement).style.color = "#b88d7a")
                     }
                     onMouseLeave={(e) =>
-                      ((e.currentTarget as HTMLAnchorElement).style.color = "#888")
+                      ((e.currentTarget as HTMLAnchorElement).style.color = "#000")
                     }
                   >
                     <span
@@ -179,7 +179,7 @@ export default function Footer() {
                         width: "4px",
                         height: "4px",
                         borderRadius: "50%",
-                        background: "#f57224",
+                        background: "#b88d7a",
                         flexShrink: 0,
                       }}
                     />
@@ -195,7 +195,7 @@ export default function Footer() {
       {/* App Download */}
       <div
         style={{
-          borderTop: "1px solid #2a2a2a",
+          borderTop: "1px solid #e0e0e0",
           maxWidth: "1280px",
           margin: "0 auto",
           padding: "24px 16px",
@@ -228,19 +228,19 @@ export default function Footer() {
                   alignItems: "center",
                   gap: "8px",
                   padding: "8px 14px",
-                  border: "1px solid #333",
+                  border: "1px solid #ddd",
                   borderRadius: "4px",
-                  color: "#fff",
+                  color: "#1a1a1a",
                   textDecoration: "none",
                   fontSize: "12px",
                   fontWeight: 600,
                   transition: "border-color 0.2s",
                 }}
                 onMouseEnter={(e) =>
-                  ((e.currentTarget as HTMLAnchorElement).style.borderColor = "#f57224")
+                  ((e.currentTarget as HTMLAnchorElement).style.borderColor = "#b88d7a")
                 }
                 onMouseLeave={(e) =>
-                  ((e.currentTarget as HTMLAnchorElement).style.borderColor = "#333")
+                  ((e.currentTarget as HTMLAnchorElement).style.borderColor = "#ddd")
                 }
               >
                 {store === "App Store" ? "🍎" : "🤖"} {store}
@@ -268,10 +268,10 @@ export default function Footer() {
                 key={payment}
                 style={{
                   padding: "4px 10px",
-                  background: "#2a2a2a",
+                  background: "#e8e8e8",
                   borderRadius: "3px",
                   fontSize: "10px",
-                  color: "#aaa",
+                  color: "#666",
                   fontWeight: 600,
                   letterSpacing: "0.3px",
                 }}
@@ -286,7 +286,7 @@ export default function Footer() {
       {/* Copyright */}
       <div
         style={{
-          borderTop: "1px solid #222",
+          borderTop: "1px solid #e0e0e0",
           padding: "16px",
           textAlign: "center",
           fontSize: "12px",
@@ -298,7 +298,7 @@ export default function Footer() {
           href="https://botble.com"
           target="_blank"
           rel="noopener noreferrer"
-          style={{ color: "#f57224", textDecoration: "none" }}
+          style={{ color: "#b88d7a", textDecoration: "none" }}
         >
           Botble Technologies
         </Link>

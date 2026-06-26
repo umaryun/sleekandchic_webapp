@@ -81,8 +81,8 @@ export default function Header({ cartCount, wishlistCount, compareCount }: Heade
                 letterSpacing: "-0.5px",
               }}
             >
-              <span style={{ color: "#1a1a1a" }}>Nin</span>
-              <span style={{ color: "#f57224" }}>ico</span>
+              <span style={{ color: "#1a1a1a" }}>Slickand</span>
+              <span style={{ color: "#b88d7a" }}>chick</span>
             </div>
           </Link>
 
@@ -155,7 +155,7 @@ export default function Header({ cartCount, wishlistCount, compareCount }: Heade
                         cursor: "pointer",
                         textAlign: "left",
                         fontSize: "13px",
-                        color: selectedCategory === cat ? "#f57224" : "#1a1a1a",
+                        color: selectedCategory === cat ? "#b88d7a" : "#1a1a1a",
                         fontWeight: selectedCategory === cat ? 600 : 400,
                         borderBottom: "1px solid #f5f5f5",
                       }}
@@ -233,7 +233,7 @@ export default function Header({ cartCount, wishlistCount, compareCount }: Heade
                       position: "absolute",
                       top: "-6px",
                       right: "-8px",
-                      background: "#f57224",
+                      background: "#b88d7a",
                       color: "#fff",
                       borderRadius: "50%",
                       width: "16px",
@@ -274,7 +274,7 @@ export default function Header({ cartCount, wishlistCount, compareCount }: Heade
                       position: "absolute",
                       top: "-6px",
                       right: "-8px",
-                      background: "#f57224",
+                      background: "#b88d7a",
                       color: "#fff",
                       borderRadius: "50%",
                       width: "16px",
@@ -334,7 +334,7 @@ export default function Header({ cartCount, wishlistCount, compareCount }: Heade
                     position: "absolute",
                     top: "-6px",
                     right: "-8px",
-                    background: "#f57224",
+                    background: "#b88d7a",
                     color: "#fff",
                     borderRadius: "50%",
                     width: "16px",

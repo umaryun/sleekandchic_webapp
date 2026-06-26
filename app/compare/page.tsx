@@ -7,14 +7,21 @@ import ShopLayout from "@/components/ShopLayout";
 import PageBreadcrumb from "@/components/PageBreadcrumb";
 import StarRating from "@/components/StarRating";
 import { products } from "@/data";
+import type { Product } from "@/types";
 
 const compareProducts = products.slice(0, 3);
-const SPECS = [
-  { label: "Price", key: "price", render: (v: number) => `$${v.toFixed(2)}` },
+interface Spec {
+  label: string;
+  key: keyof Product;
+  render?: (val: Product[keyof Product], product: Product) => React.ReactNode;
+}
+
+const SPECS: Spec[] = [
+  { label: "Price", key: "price", render: (v) => `$${(v as number).toFixed(2)}` },
   { label: "Category", key: "category" },
-  { label: "Rating", key: "rating", render: (_: number, p: typeof products[0]) => <StarRating rating={p.rating} reviewCount={p.reviewCount} /> },
+  { label: "Rating", key: "rating", render: (_, p) => <StarRating rating={p.rating} reviewCount={p.reviewCount} /> },
   { label: "Availability", key: "id", render: () => <span style={{ color: "#28a745", fontWeight: 600, display: "flex", alignItems: "center", gap: "4px" }}><Check size={13} /> In Stock</span> },
-  { label: "Badge", key: "badge", render: (v: string) => v ? v.toUpperCase() : "—" },
+  { label: "Badge", key: "badge", render: (v) => v ? (v as string).toUpperCase() : "—" },
 ];
 
 export default function ComparePage() {
@@ -65,8 +72,8 @@ export default function ComparePage() {
                     {items.map(product => (
                       <td key={product.id} style={{ padding: "14px 20px", fontSize: "13px", color: "#1a1a1a", textAlign: "center", verticalAlign: "middle" }}>
                         {render
-                          ? (render as Function)(product[key as keyof typeof product], product)
-                          : String(product[key as keyof typeof product] ?? "—")}
+                          ? render(product[key], product)
+                          : String(product[key] ?? "—")}
                       </td>
                     ))}
                   </tr>

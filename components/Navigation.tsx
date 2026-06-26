@@ -38,8 +38,9 @@ export default function Navigation() {
               alignItems: "center",
               gap: "10px",
               padding: "0 20px",
+              width: "220px",
               height: "48px",
-              background: "#f57224",
+              background: "#b88d7a",
               border: "none",
               cursor: "pointer",
               color: "#fff",
@@ -50,59 +51,11 @@ export default function Navigation() {
             }}
           >
             <Grid3x3 size={16} />
-            All Categories
+            Categories
             <ChevronDown
               size={14}
-              style={{
-                transform: catMenuOpen ? "rotate(180deg)" : "rotate(0)",
-                transition: "transform 0.2s",
-              }}
             />
           </button>
-
-          {catMenuOpen && (
-            <div
-              style={{
-                position: "absolute",
-                top: "100%",
-                left: 0,
-                background: "#fff",
-                border: "1px solid #e5e5e5",
-                boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
-                minWidth: "240px",
-                zIndex: 200,
-              }}
-            >
-              {categories.map((cat) => (
-                <Link
-                  key={cat.id}
-                  href={`/category/${cat.slug}`}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "11px 18px",
-                    color: "#1a1a1a",
-                    textDecoration: "none",
-                    fontSize: "13px",
-                    borderBottom: "1px solid #f5f5f5",
-                    transition: "background 0.15s, color 0.15s",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "#f57224";
-                    e.currentTarget.style.color = "#fff";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "transparent";
-                    e.currentTarget.style.color = "#1a1a1a";
-                  }}
-                >
-                  {cat.name}
-                  {cat.children && <ChevronDown size={12} style={{ transform: "rotate(-90deg)" }} />}
-                </Link>
-              ))}
-            </div>
-          )}
         </div>
 
         {/* Main Nav Items */}
@@ -122,7 +75,7 @@ export default function Navigation() {
                   gap: "5px",
                   padding: "0 16px",
                   height: "48px",
-                  color: activeNav === item.label ? "#f57224" : "#fff",
+                  color: activeNav === item.label ? "#b88d7a" : "#fff",
                   textDecoration: "none",
                   fontSize: "13px",
                   fontWeight: 500,
@@ -163,7 +116,7 @@ export default function Navigation() {
                         transition: "background 0.15s, color 0.15s",
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.color = "#f57224";
+                        e.currentTarget.style.color = "#b88d7a";
                         e.currentTarget.style.paddingLeft = "24px";
                       }}
                       onMouseLeave={(e) => {
@@ -190,7 +143,7 @@ export default function Navigation() {
           }}
         >
           <span style={{ color: "#888", fontSize: "12px" }}>
-            🔥 <span style={{ color: "#f57224", fontWeight: 600 }}>Hot Deal</span>
+            🔥 <span style={{ color: "#b88d7a", fontWeight: 600 }}>Hot Deal</span>
             <span style={{ color: "#ccc" }}> — Free Shipping Over $100</span>
           </span>
         </div>

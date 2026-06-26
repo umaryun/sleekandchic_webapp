@@ -29,7 +29,7 @@ export default function AnnouncementBar() {
   return (
     <div
       style={{
-        backgroundColor: "#1a1a1a",
+        backgroundColor: "#b88d7a",
         color: "#ffffff",
         fontSize: "13px",
         padding: "9px 16px",
@@ -71,7 +71,7 @@ export default function AnnouncementBar() {
           <Link
             href={ann.href}
             style={{
-              color: "#f57224",
+              color: "#fff",
               fontWeight: 600,
               textDecoration: "underline",
               marginLeft: "4px",
@@ -135,7 +135,7 @@ export default function AnnouncementBar() {
               width: i === current ? "16px" : "6px",
               height: "4px",
               borderRadius: "2px",
-              background: i === current ? "#f57224" : "rgba(255,255,255,0.4)",
+              background: i === current ? "#fff" : "rgba(255,255,255,0.4)",
               border: "none",
               cursor: "pointer",
               padding: 0,

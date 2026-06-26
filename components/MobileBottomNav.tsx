@@ -43,7 +43,7 @@ export default function MobileBottomNav() {
               alignItems: "center",
               padding: "10px 0",
               gap: "3px",
-              color: isActive ? "#f57224" : "#888",
+              color: isActive ? "#b88d7a" : "#888",
               textDecoration: "none",
               fontSize: "10px",
               transition: "color 0.2s",

@@ -18,7 +18,7 @@ export default function NewsletterSection() {
   return (
     <section
       style={{
-        background: "#f57224",
+        background: "#b88d7a",
         padding: "56px 16px",
         marginBottom: 0,
       }}

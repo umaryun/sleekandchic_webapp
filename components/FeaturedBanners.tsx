@@ -75,7 +75,7 @@ export default function FeaturedBanners() {
                 fontWeight: 600,
                 letterSpacing: "2px",
                 textTransform: "uppercase",
-                color: "#f57224",
+                color: "#b88d7a",
                 marginBottom: "10px",
               }}
             >
@@ -108,8 +108,8 @@ export default function FeaturedBanners() {
                 transition: "color 0.2s, border-color 0.2s",
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.color = "#f57224";
-                e.currentTarget.style.borderColor = "#f57224";
+                e.currentTarget.style.color = "#b88d7a";
+                e.currentTarget.style.borderColor = "#b88d7a";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.color = banner.textColor;

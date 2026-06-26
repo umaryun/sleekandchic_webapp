@@ -64,7 +64,7 @@ export default function FeatureBar() {
                 flexShrink: 0,
               }}
             >
-              <Icon size={22} color="#f57224" />
+              <Icon size={22} color="#b88d7a" />
             </div>
             <div>
               <h4

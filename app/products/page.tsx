@@ -89,7 +89,7 @@ export default function ProductsPage() {
   const toggleColor = (c: string) => setSelectedColors(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]);
   const toggleSize = (s: string) => setSelectedSizes(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
 
-  const Sidebar = () => (
+  const renderSidebar = () => (
     <aside style={{ width: "260px", flexShrink: 0 }}>
       <div style={{ background: "#fff", border: "1px solid #f0f0f0", borderRadius: "4px", padding: "20px" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
@@ -212,7 +212,7 @@ export default function ProductsPage() {
 
       <div style={{ maxWidth: "1280px", margin: "32px auto", padding: "0 16px", display: "flex", gap: "28px", alignItems: "flex-start" }}>
         {/* Desktop Sidebar */}
-        <div className="desktop-sidebar"><Sidebar /></div>
+        <div className="desktop-sidebar">{renderSidebar()}</div>
 
         {/* Main Content */}
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -354,7 +354,7 @@ export default function ProductsPage() {
               <h3 style={{ fontWeight: 700 }}>Filter Products</h3>
               <button onClick={() => setMobileFilterOpen(false)} style={{ background: "none", border: "none", cursor: "pointer" }}><X size={20} /></button>
             </div>
-            <Sidebar />
+            {renderSidebar()}
           </div>
         </>
       )}
