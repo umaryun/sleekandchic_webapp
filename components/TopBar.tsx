@@ -18,26 +18,10 @@ export default function TopBar() {
   const [langOpen, setLangOpen] = useState(false);
 
   return (
-    <div
-      style={{
-        backgroundColor: "#f5f5f5",
-        borderBottom: "1px solid #e5e5e5",
-        fontSize: "12px",
-        padding: "6px 0",
-      }}
-    >
-      <div
-        style={{
-          maxWidth: "1280px",
-          margin: "0 auto",
-          padding: "0 16px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
+    <div className="hidden md:block bg-[#f5f5f5] border-b border-[#e5e5e5] text-xs py-1.5">
+      <div className="max-w-[1280px] mx-auto px-4 flex items-center justify-between">
         {/* Left: Currency & Language */}
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+        <div className="flex items-center gap-3">
           {/* Currency Dropdown */}
           <div style={{ position: "relative" }}>
             <button
@@ -156,7 +140,7 @@ export default function TopBar() {
         </div>
 
         {/* Right: Social Links */}
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+        <div className="flex items-center gap-2.5">
           {[
             { href: "https://www.facebook.com", Icon: Phone, label: "Facebook" },
             { href: "https://x.com", Icon: Phone, label: "X (Twitter)" },
