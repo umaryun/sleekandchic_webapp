@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Ninico — Premium Handcrafted Goods & Accessories",
+  title: "Sleekandchic — Premium Handcrafted Goods & Accessories",
   description:
     "Discover premium handcrafted products, accessories, home décor, and more. Shop the latest collections with up to 40% off.",
   keywords: "ecommerce, handcrafted, accessories, furniture, cosmetics, gifts",
   openGraph: {
-    title: "Ninico — Premium Handcrafted Goods & Accessories",
+    title: "Sleekandchic — Premium Handcrafted Goods & Accessories",
     description: "Shop the finest handcrafted products from around the world.",
     type: "website",
   },
