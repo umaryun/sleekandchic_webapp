@@ -2,7 +2,6 @@
 
 import { useState, useCallback } from "react";
 import AnnouncementBar from "@/components/AnnouncementBar";
-import TopBar from "@/components/TopBar";
 import Header from "@/components/Header";
 import Navigation from "@/components/Navigation";
 import HeroSlider from "@/components/HeroSlider";
@@ -36,9 +35,6 @@ export default function HomePage() {
       {/* Top announcement bar */}
       <AnnouncementBar />
 
-      {/* Secondary topbar (currency, language, social) */}
-      <TopBar />
-
       {/* Sticky header with logo, search, icons */}
       <Header
         cartCount={cartCount}
@@ -55,7 +51,7 @@ export default function HomePage() {
         <HeroSlider />
 
         {/* Two promotional banners */}
-        <FeaturedBanners />
+        {/* <FeaturedBanners /> */}
 
         {/* Features bar */}
         {/* <FeatureBar /> */}

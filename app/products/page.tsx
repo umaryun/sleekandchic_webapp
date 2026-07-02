@@ -278,7 +278,7 @@ export default function ProductsPage() {
 
           {/* Product Grid */}
           {layout === "grid" ? (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "18px" }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[18px]">
               {paginated.map(product => (
                 <ProductCard key={product.id} product={product} />
               ))}
@@ -365,9 +365,6 @@ export default function ProductsPage() {
         @media (max-width: 1024px) {
           .desktop-sidebar { display: none !important; }
           .mobile-filter-btn { display: flex !important; }
-        }
-        @media (max-width: 640px) {
-          div[style*="grid-template-columns: repeat(3"] { grid-template-columns: repeat(2, 1fr) !important; }
         }
       `}</style>
     </ShopLayout>

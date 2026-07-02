@@ -11,16 +11,12 @@ export default function PromoSection() {
       }}
     >
       <div
+        className="rounded overflow-hidden bg-[#B88D7A] flex flex-col md:flex-row md:items-center justify-between min-h-[220px]"
         style={{
           position: "relative",
-          borderRadius: "4px",
-          overflow: "hidden",
-          background: "#B88D7A",
-          padding: "60px 64px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          minHeight: "220px",
+          padding: "40px 56px",
+          width: "100%",
+          gap: "32px",
         }}
       >
         {/* Decorative circles */}
@@ -33,6 +29,7 @@ export default function PromoSection() {
             border: "60px solid rgba(255,255,255,0.08)",
             right: "-60px",
             top: "-80px",
+            pointerEvents: "none",
           }}
         />
         <div
@@ -44,11 +41,12 @@ export default function PromoSection() {
             border: "40px solid rgba(255,255,255,0.06)",
             right: "80px",
             bottom: "-60px",
+            pointerEvents: "none",
           }}
         />
 
         {/* Left content */}
-        <div style={{ position: "relative", maxWidth: "560px" }}>
+        <div style={{ position: "relative", zIndex: 1, maxWidth: "560px" }}>
           <p
             style={{
               fontSize: "12px",
@@ -115,11 +113,8 @@ export default function PromoSection() {
 
         {/* Right: Countdown */}
         <div
-          style={{
-            position: "relative",
-            display: "flex",
-            gap: "16px",
-          }}
+          className="flex gap-2.5 sm:gap-4 justify-center md:justify-start"
+          style={{ position: "relative", zIndex: 1 }}
         >
           {[
             { value: "02", label: "Days" },
@@ -129,25 +124,10 @@ export default function PromoSection() {
           ].map(({ value, label }) => (
             <div
               key={label}
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                background: "rgba(255,255,255,0.06)",
-                border: "1px solid rgba(255,255,255,0.1)",
-                borderRadius: "4px",
-                padding: "16px 20px",
-                minWidth: "72px",
-              }}
+              className="flex flex-col items-center bg-[rgba(255,255,255,0.06)] border border-[rgba(255,255,255,0.1)] rounded p-2.5 sm:p-5 min-w-[60px] sm:min-w-[72px]"
             >
               <span
-                style={{
-                  fontSize: "36px",
-                  fontWeight: 800,
-                  color: "#fff",
-                  lineHeight: 1,
-                  fontVariantNumeric: "tabular-nums",
-                }}
+                className="text-2xl sm:text-4xl font-extrabold text-white leading-none tabular-nums"
               >
                 {value}
               </span>

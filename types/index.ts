@@ -9,6 +9,15 @@ export interface Product {
   reviewCount: number;
   badge?: "sale" | "new" | "hot";
   discount?: number;
+  // Detail page fields
+  description?: string;
+  sku?: string;
+  brand?: string;
+  colors?: string[];
+  sizes?: string[];
+  tags?: string[];
+  images?: string[];
+  inStock?: boolean;
 }
 
 export interface Category {

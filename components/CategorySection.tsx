@@ -76,13 +76,7 @@ export default function CategorySection() {
       </div>
 
       {/* Category Grid */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(6, 1fr)",
-          gap: "20px",
-        }}
-      >
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-5">
         {featuredCategories.map((cat) => (
           <Link
             key={cat.id}
@@ -105,29 +99,12 @@ export default function CategorySection() {
               e.currentTarget.style.borderColor = "#f0f0f0";
             }}
           >
-            {/* Icon circle with badge */}
             <div style={{ position: "relative" }}>
-              <div
-                style={{
-                  width: "150px",
-                  height: "150px",
-                  borderRadius: "50%",
-                  background: "#f8f8f8",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  overflow: "hidden",
-                }}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
+              <div className="w-[100px] h-[100px] sm:w-[150px] sm:h-[150px] rounded-full bg-[#f8f8f8] flex items-center justify-center overflow-hidden">
                 <img
                   src={cat.image}
                   alt={cat.name}
-                  style={{
-                    width: "60px",
-                    height: "60px",
-                    objectFit: "contain",
-                  }}
+                  className="w-10 h-10 sm:w-[60px] sm:h-[60px] object-contain"
                 />
               </div>
 

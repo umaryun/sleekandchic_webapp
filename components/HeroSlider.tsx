@@ -37,22 +37,13 @@ export default function HeroSlider() {
         margin: "0 auto",
         padding: "0 16px",
         display: "flex",
-        gap: "0",
+        gap: "25px",
+        
+
       }}
     >
       {/* ─── Left: Category Sidebar ─── */}
-      <div
-        style={{
-          width: "220px",
-          minWidth: "220px",
-          background: "#fff",
-          border: "1px solid #e8e8e8",
-          borderTop: "none",
-          flexShrink: 0,
-          overflowY: "auto",
-        }}
-
-      >
+      <div className="hidden lg:block w-[220px] shrink-0 border border-t-0 border-[#e8e8e8] bg-white overflow-y-auto rounded-b-[5px]">
         {categories.map((cat) => (
           <Link
             key={cat.id}
@@ -61,7 +52,7 @@ export default function HeroSlider() {
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
-              padding: "10px 18px",
+              padding: "10px 20px",
               color: hoveredCat === cat.id ? "#b88d7a" : "#333",
               textDecoration: "none",
               fontSize: "13.5px",
@@ -89,147 +80,121 @@ export default function HeroSlider() {
       </div>
 
       {/* ─── Center: Main Slider ─── */}
-      <div
-        style={{
-          flex: 1,
-          position: "relative",
-          overflow: "hidden",
-          background: "#f0ece6",
-          minHeight: "420px",
-        }}
-      >
+      <div className="flex-1 relative overflow-hidden bg-[#f0ece6] min-h-[300px] sm:min-h-[420px] rounded-[5px]">
         {/* Slides */}
         {heroSlides.map((s, i) => (
-          <div
-            key={s.id}
-            style={{
-              position: "absolute",
-              inset: 0,
-              opacity: i === current ? 1 : 0,
-              transition: "opacity 0.6s ease",
-              pointerEvents: i === current ? "auto" : "none",
-            }}
-          >
-            {/* Background Image */}
+          <Link href={"/products"}>
             <div
+              key={s.id}
               style={{
                 position: "absolute",
                 inset: 0,
-                backgroundImage: `url(${s.image})`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-              }}
-            />
-
-            {/* Content Overlay */}
-            <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                display: "flex",
-                alignItems: "center",
-                background:
-                  "linear-gradient(90deg, rgba(240,236,230,0.95) 0%, rgba(240,236,230,0.85) 40%, rgba(240,236,230,0.4) 70%, rgba(240,236,230,0.1) 100%)",
+                opacity: i === current ? 1 : 0,
+                transition: "opacity 0.6s ease",
+                pointerEvents: i === current ? "auto" : "none",
               }}
             >
+              {/* Background Image */}
               <div
                 style={{
-                  padding: "0 50px",
-                  maxWidth: "500px",
+                  position: "absolute",
+                  inset: 0,
+                  backgroundImage: `url(${s.image})`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                }}
+              />
+
+              {/* Content Overlay */}
+              <div
+              className="absolute inset-0 flex items-center pl-[50px]"
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  paddingLeft: "50px"
+                  // background:
+                  //   "linear-gradient(90deg, rgba(240,236,230,0.95) 0%, rgba(240,236,230,0.85) 40%, rgba(240,236,230,0.4) 70%, rgba(240,236,230,0.1) 100%)",
                 }}
               >
-                <div
-                  style={{
-                    opacity: i === current ? 1 : 0,
-                    transform:
-                      i === current ? "translateY(0)" : "translateY(20px)",
-                    transition:
-                      "opacity 0.7s ease 0.2s, transform 0.7s ease 0.2s",
-                  }}
-                >
-                  {/* Category tag */}
+                <div className="px-5 sm:px-22 max-w-[500px]">
                   <div
                     style={{
-                      fontSize: "14px",
-                      color: "#b88d7a",
-                      fontWeight: 500,
-                      marginBottom: "10px",
-                      letterSpacing: "0.5px",
+                      opacity: i === current ? 1 : 0,
+                      transform:
+                        i === current ? "translateY(0)" : "translateY(20px)",
+                      transition:
+                        "opacity 0.7s ease 0.2s, transform 0.7s ease 0.2s",
                     }}
                   >
-                    {s.category}
-                  </div>
-
-                  {/* Headline */}
-                  <h1
-                    style={{
-                      fontSize: "42px",
-                      fontWeight: 400,
-                      lineHeight: 1.15,
-                      color: "#1a1a1a",
-                      marginBottom: "4px",
-                      fontFamily: "'Georgia', 'Times New Roman', serif",
-                    }}
-                  >
-                    {s.title}
-                    <span
+                    {/* Category tag */}
+                    <div
                       style={{
+                        fontSize: "14px",
                         color: "#b88d7a",
-                        fontWeight: 400,
-                        fontStyle: "italic",
+                        fontWeight: 500,
+                        marginBottom: "10px",
+                        letterSpacing: "0.5px",
                       }}
                     >
-                      {s.highlight}
-                    </span>
-                  </h1>
+                      {s.category}
+                    </div>
 
-                  {/* Subtitle */}
-                  <p
-                    style={{
-                      fontSize: "36px",
-                      color: "#1a1a1a",
-                      marginBottom: "28px",
-                      fontWeight: 400,
-                      fontFamily: "'Georgia', 'Times New Roman', serif",
-                      lineHeight: 1.2,
-                    }}
-                  >
-                    {s.subtitle}
-                  </p>
+                    {/* Headline */}
+                    <h1 className="text-2xl sm:text-3xl md:text-[42px] font-normal leading-tight text-[#1a1a1a] mb-1 font-serif">
+                      {s.title}
+                      <span
+                        style={{
+                          color: "#b88d7a",
+                          fontWeight: 400,
+                          fontStyle: "italic",
+                        }}
+                      >
+                        {s.highlight}
+                      </span>
+                    </h1>
 
-                  {/* CTA Button */}
-                  <Link
-                    href={s.href}
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "10px",
-                      padding: "12px 28px",
-                      background: "#1a1a1a",
-                      color: "#fff",
-                      textDecoration: "none",
-                      fontWeight: 500,
-                      fontSize: "13px",
-                      letterSpacing: "0.5px",
-                      border: "2px solid #1a1a1a",
-                      transition: "all 0.25s",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "transparent";
-                      e.currentTarget.style.color = "#1a1a1a";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "#1a1a1a";
-                      e.currentTarget.style.color = "#fff";
-                    }}
-                  >
-                    Shop Now
-                    <ArrowRight size={15} />
-                  </Link>
+                    {/* Subtitle */}
+                    <p className="text-lg sm:text-2xl md:text-3xl font-normal leading-snug text-[#1a1a1a] mb-7 font-serif">
+                      {s.subtitle}
+                    </p>
+
+                    {/* CTA Button */}
+                    {/* <Link
+                      href={s.href}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "10px",
+                        padding: "12px 28px",
+                        background: "#1a1a1a",
+                        color: "#fff",
+                        textDecoration: "none",
+                        fontWeight: 500,
+                        fontSize: "13px",
+                        letterSpacing: "0.5px",
+                        border: "2px solid #1a1a1a",
+                        transition: "all 0.25s",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = "transparent";
+                        e.currentTarget.style.color = "#1a1a1a";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = "#1a1a1a";
+                        e.currentTarget.style.color = "#fff";
+                      }}
+                    >
+                      Shop Now
+                      <ArrowRight size={15} />
+                    </Link> */}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          </Link>
+          
         ))}
 
         {/* Dot Indicators */}
@@ -265,18 +230,10 @@ export default function HeroSlider() {
       </div>
 
       {/* ─── Right: Promo Banners ─── */}
-      <div
-        style={{
-          width: "260px",
-          minWidth: "260px",
-          display: "flex",
-          flexDirection: "column",
-          gap: "0",
-          flexShrink: 0,
-        }}
-      >
+      <div className="hidden lg:flex flex-col gap-5 w-[260px] shrink-0">
         {/* Top Promo Card */}
         <Link
+          className="rounded-[5px]"
           href="/products"
           style={{
             flex: 1,
@@ -289,6 +246,7 @@ export default function HeroSlider() {
           onMouseLeave={() => setHoveredPromo(null)}
         >
           <div
+        
             style={{
               position: "absolute",
               inset: 0,
@@ -331,6 +289,7 @@ export default function HeroSlider() {
 
         {/* Bottom Promo Card */}
         <Link
+          className="rounded-[5px]"
           href="/products"
           style={{
             flex: 1,

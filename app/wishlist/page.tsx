@@ -39,40 +39,35 @@ export default function WishlistPage() {
             </div>
             <div style={{ background: "#fff", border: "1px solid #f0f0f0", borderRadius: "4px", overflow: "hidden" }}>
               {/* Header */}
-              <div style={{ display: "grid", gridTemplateColumns: "2.5fr 1fr 1fr 160px 40px", gap: "12px", padding: "14px 20px", background: "#f8f8f8", borderBottom: "1px solid #f0f0f0", fontSize: "12px", fontWeight: 700, color: "#888", letterSpacing: "0.5px", textTransform: "uppercase" }}>
-                <span>Product</span><span style={{ textAlign: "center" }}>Price</span><span style={{ textAlign: "center" }}>Status</span><span /><span />
+              <div className="hidden md:grid grid-cols-[2.5fr_1fr_1fr_160px_40px] gap-3 px-5 py-3.5 bg-[#f8f8f8] border-b border-[#f0f0f0] text-xs font-bold text-[#888] tracking-wider uppercase">
+                <span>Product</span><span className="text-center">Price</span><span className="text-center">Status</span><span /><span />
               </div>
-              {wishlist.map((product, idx) => (
-                <div key={product.id} style={{ display: "grid", gridTemplateColumns: "2.5fr 1fr 1fr 160px 40px", gap: "12px", padding: "20px", alignItems: "center", borderBottom: idx < wishlist.length - 1 ? "1px solid #f5f5f5" : "none" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                    <Link href={`/products/${product.id}`}>
-                      <img src={product.image} alt={product.name} style={{ width: "70px", height: "70px", objectFit: "cover", borderRadius: "4px", border: "1px solid #f0f0f0" }} />
+              {wishlist.map((product) => (
+                <div key={product.id} className="flex flex-col md:grid md:grid-cols-[2.5fr_1fr_1fr_160px_40px] gap-4 p-5 items-start md:items-center border-b border-[#f5f5f5] last:border-b-0 relative w-full">
+                  <div className="flex items-center gap-3.5 w-full">
+                    <Link href={`/products/${product.id}`} className="shrink-0">
+                      <img src={product.image} alt={product.name} className="w-16 h-16 object-cover rounded border border-[#f0f0f0]" />
                     </Link>
                     <div>
-                      <Link href={`/products/${product.id}`} style={{ fontSize: "14px", fontWeight: 600, color: "#1a1a1a", textDecoration: "none" }}
-                        onMouseEnter={(e) => ((e.currentTarget as HTMLAnchorElement).style.color = "#f57224")}
-                        onMouseLeave={(e) => ((e.currentTarget as HTMLAnchorElement).style.color = "#1a1a1a")}
-                      >{product.name}</Link>
-                      <div style={{ marginTop: "4px" }}><StarRating rating={product.rating} reviewCount={product.reviewCount} size={12} /></div>
+                      <Link href={`/products/${product.id}`} className="text-sm font-semibold text-[#1a1a1a] no-underline hover:text-[#b88d7a] transition-colors">{product.name}</Link>
+                      <div className="mt-1"><StarRating rating={product.rating} reviewCount={product.reviewCount} size={12} /></div>
                     </div>
                   </div>
-                  <div style={{ textAlign: "center" }}>
-                    <span style={{ fontSize: "15px", fontWeight: 700, color: "#1a1a1a" }}>${product.price.toFixed(2)}</span>
-                    {product.originalPrice && <div style={{ fontSize: "12px", color: "#aaa", textDecoration: "line-through" }}>${product.originalPrice.toFixed(2)}</div>}
+                  <div className="flex md:justify-center items-center w-full md:w-auto">
+                    <span className="text-xs font-semibold text-[#888] mr-3 md:hidden">Price:</span>
+                    <span className="text-sm font-bold text-[#1a1a1a]">${product.price.toFixed(2)}</span>
+                    {product.originalPrice && <span className="text-xs text-[#aaa] line-through ml-2">${product.originalPrice.toFixed(2)}</span>}
                   </div>
-                  <div style={{ textAlign: "center" }}>
-                    <span style={{ fontSize: "11px", padding: "3px 10px", background: "#dcf5e7", color: "#28a745", borderRadius: "20px", fontWeight: 700 }}>In Stock</span>
+                  <div className="flex md:justify-center items-center w-full md:w-auto">
+                    <span className="text-xs font-semibold text-[#888] mr-3 md:hidden">Status:</span>
+                    <span className="text-[10px] px-2.5 py-1 bg-[#dcf5e7] text-[#28a745] rounded-full font-bold uppercase tracking-wider">In Stock</span>
                   </div>
-                  <button style={{ padding: "9px 14px", background: "#1a1a1a", color: "#fff", border: "none", borderRadius: "3px", cursor: "pointer", fontSize: "12px", fontWeight: 700, display: "flex", alignItems: "center", gap: "6px", transition: "background 0.2s" }}
-                    onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.background = "#f57224")}
-                    onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.background = "#1a1a1a")}
-                  >
+                  <button className="w-full md:w-auto py-2 px-3.5 bg-[#1a1a1a] hover:bg-[#b88d7a] text-white border-none rounded cursor-pointer text-xs font-bold flex items-center justify-center gap-1.5 transition-colors">
                     <ShoppingCart size={13} /> Add to Cart
                   </button>
-                  <button onClick={() => remove(product.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#ccc", display: "flex", alignItems: "center", justifyContent: "center" }}
-                    onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.color = "#f44336")}
-                    onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.color = "#ccc")}
-                  ><Trash2 size={16} /></button>
+                  <button onClick={() => remove(product.id)} className="absolute top-5 right-5 md:static bg-none border-none cursor-pointer text-[#ccc] hover:text-red-500 transition-colors flex items-center justify-center" aria-label="Remove item">
+                    <Trash2 size={16} />
+                  </button>
                 </div>
               ))}
             </div>

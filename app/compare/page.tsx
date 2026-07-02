@@ -40,7 +40,7 @@ export default function ComparePage() {
             <Link href="/products" style={{ padding: "12px 32px", background: "#f57224", color: "#fff", textDecoration: "none", borderRadius: "3px", fontWeight: 700 }}>Browse Products</Link>
           </div>
         ) : (
-          <div style={{ background: "#fff", border: "1px solid #f0f0f0", borderRadius: "4px", overflow: "hidden" }}>
+          <div className="bg-white border border-[#f0f0f0] rounded overflow-x-auto">
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr>

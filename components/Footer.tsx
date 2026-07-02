@@ -1,5 +1,16 @@
 import Link from "next/link";
-import { MapPin, Phone, Mail, } from "lucide-react";
+import {
+  MapPin,
+  Phone,
+  Mail,
+  Facebook,
+  Twitter,
+  Instagram,
+  Youtube,
+  Linkedin,
+  Apple,
+  Play,
+} from "lucide-react";
 
 const footerLinks = {
   Information: [
@@ -29,108 +40,65 @@ const footerLinks = {
 };
 
 const socialLinks = [
-  { href: "#", Icon: Phone, label: "Facebook" },
-  { href: "#", Icon: Phone, label: "Twitter" },
-  { href: "#", Icon: Phone, label: "Instagram" },
-  { href: "#", Icon: Phone, label: "YouTube" },
-  { href: "#", Icon: Phone, label: "LinkedIn" },
+  { href: "https://facebook.com", Icon: Facebook, label: "Facebook" },
+  { href: "https://twitter.com", Icon: Twitter, label: "Twitter" },
+  { href: "https://instagram.com", Icon: Instagram, label: "Instagram" },
+  { href: "https://youtube.com", Icon: Youtube, label: "YouTube" },
+  { href: "https://linkedin.com", Icon: Linkedin, label: "LinkedIn" },
 ];
 
 const paymentIcons = ["Visa", "Mastercard", "PayPal", "Stripe", "Apple Pay"];
 
 export default function Footer() {
   return (
-    <footer style={{ background: "#F8F8F8", color: "#000" }}>
+    <footer className="bg-[#f8f8f8] text-black border-t border-neutral-200">
+      
+      {/* Top Footer Grid Section */}
       <div
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr] gap-10"
         style={{
           maxWidth: "1280px",
           margin: "0 auto",
-          padding: "56px 16px 40px",
-          display: "grid",
-          gridTemplateColumns: "1.4fr 1fr 1fr 1fr",
-          gap: "40px",
+          padding: "56px 16px",
+          width: "100%",
         }}
       >
+        
         {/* Brand Column */}
         <div>
-          <Link
-            href="/"
-            style={{
-              display: "inline-block",
-              fontSize: "28px",
-              fontWeight: 800,
-              textDecoration: "none",
-              marginBottom: "16px",
-            }}
-          >
-            <span style={{ color: "#1a1a1a" }}>Nin</span>
-            <span style={{ color: "#b88d7a" }}>ico</span>
+          <Link href="/" className="inline-block text-[28px] font-extrabold no-underline mb-4">
+            <span className="text-[#1a1a1a]">Slickand</span>
+            <span className="text-[#b88d7a]">chic</span>
           </Link>
-          <p
-            style={{
-              fontSize: "13px",
-              lineHeight: 1.8,
-              color: "#888",
-              marginBottom: "20px",
-            }}
-          >
+          <p className="text-[13px] leading-relaxed text-neutral-500 mb-5">
             We bring you the finest handcrafted products from around the world.
             Quality, style, and comfort — delivered to your door.
           </p>
 
-          {/* Contact Info */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+          {/* Contact Info list */}
+          <div className="flex flex-col gap-2.5">
             {[
               { Icon: MapPin, text: "123 Commerce St, New York, NY 10001" },
               { Icon: Phone, text: "+1 (800) 123-4567" },
               { Icon: Mail, text: "hello@ninico.com" },
             ].map(({ Icon, text }) => (
-              <div
-                key={text}
-                style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}
-              >
-                <Icon size={14} color="#b88d7a" style={{ marginTop: "2px", flexShrink: 0 }} />
-                <span style={{ fontSize: "13px", color: "#555" }}>{text}</span>
+              <div key={text} className="flex items-start gap-2.5">
+                <Icon size={14} className="text-[#b88d7a] mt-1 flex-shrink-0" />
+                <span className="text-[13px] text-neutral-600">{text}</span>
               </div>
             ))}
           </div>
 
-          {/* Social Icons */}
-          <div
-            style={{
-              display: "flex",
-              gap: "10px",
-              marginTop: "24px",
-            }}
-          >
+          {/* Social Icons list */}
+          <div className="flex items-center gap-2.5 mt-6">
             {socialLinks.map(({ href, Icon, label }) => (
               <Link
                 key={label}
                 href={href}
+                target="_blank"
+                rel="noopener noreferrer"
                 aria-label={label}
-                style={{
-                  width: "34px",
-                  height: "34px",
-                  borderRadius: "50%",
-                  border: "1px solid #ddd",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#555",
-                  transition: "background 0.2s, border-color 0.2s, color 0.2s",
-                }}
-                onMouseEnter={(e) => {
-                  const el = e.currentTarget as HTMLAnchorElement;
-                  el.style.background = "#b88d7a";
-                  el.style.borderColor = "#b88d7a";
-                  el.style.color = "#fff";
-                }}
-                onMouseLeave={(e) => {
-                  const el = e.currentTarget as HTMLAnchorElement;
-                  el.style.background = "transparent";
-                  el.style.borderColor = "#ddd";
-                  el.style.color = "#555";
-                }}
+                className="w-[34px] h-[34px] rounded-full border border-neutral-300 flex items-center justify-center text-neutral-600 hover:bg-[#b88d7a] hover:border-[#b88d7a] hover:text-white transition-all duration-200"
               >
                 <Icon size={14} />
               </Link>
@@ -141,48 +109,17 @@ export default function Footer() {
         {/* Link Columns */}
         {Object.entries(footerLinks).map(([title, links]) => (
           <div key={title}>
-            <h4
-              style={{
-                fontSize: "14px",
-                fontWeight: 700,
-                color: "#1a1a1a",
-                marginBottom: "20px",
-                paddingBottom: "10px",
-                borderBottom: "1px solid #e0e0e0",
-              }}
-            >
+            <h4 className="text-[14px] font-bold text-[#1a1a1a] mb-5 pb-2.5 border-b border-neutral-200">
               {title}
             </h4>
-            <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+            <ul className="list-none p-0 m-0 space-y-2.5">
               {links.map((link) => (
-                <li key={link.label} style={{ marginBottom: "10px" }}>
+                <li key={link.label}>
                   <Link
                     href={link.href}
-                    style={{
-                      color: "#000",
-                      textDecoration: "none",
-                      fontSize: "13px",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                      transition: "color 0.2s",
-                    }}
-                    onMouseEnter={(e) =>
-                      ((e.currentTarget as HTMLAnchorElement).style.color = "#b88d7a")
-                    }
-                    onMouseLeave={(e) =>
-                      ((e.currentTarget as HTMLAnchorElement).style.color = "#000")
-                    }
+                    className="text-black hover:text-[#b88d7a] no-underline text-[13px] flex items-center gap-2 transition-colors duration-200"
                   >
-                    <span
-                      style={{
-                        width: "4px",
-                        height: "4px",
-                        borderRadius: "50%",
-                        background: "#b88d7a",
-                        flexShrink: 0,
-                      }}
-                    />
+                    <span className="w-1 h-1 rounded-full bg-[#b88d7a] flex-shrink-0" />
                     {link.label}
                   </Link>
                 </li>
@@ -192,113 +129,14 @@ export default function Footer() {
         ))}
       </div>
 
-      {/* App Download */}
-      <div
-        style={{
-          borderTop: "1px solid #e0e0e0",
-          maxWidth: "1280px",
-          margin: "0 auto",
-          padding: "24px 16px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: "20px",
-          flexWrap: "wrap",
-        }}
-      >
-        <div>
-          <p
-            style={{
-              fontSize: "12px",
-              color: "#666",
-              marginBottom: "10px",
-              textTransform: "uppercase",
-              letterSpacing: "1px",
-            }}
-          >
-            Download Our App
-          </p>
-          <div style={{ display: "flex", gap: "12px" }}>
-            {["App Store", "Google Play"].map((store) => (
-              <Link
-                key={store}
-                href="#"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  padding: "8px 14px",
-                  border: "1px solid #ddd",
-                  borderRadius: "4px",
-                  color: "#1a1a1a",
-                  textDecoration: "none",
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  transition: "border-color 0.2s",
-                }}
-                onMouseEnter={(e) =>
-                  ((e.currentTarget as HTMLAnchorElement).style.borderColor = "#b88d7a")
-                }
-                onMouseLeave={(e) =>
-                  ((e.currentTarget as HTMLAnchorElement).style.borderColor = "#ddd")
-                }
-              >
-                {store === "App Store" ? "🍎" : "🤖"} {store}
-              </Link>
-            ))}
-          </div>
-        </div>
-
-        {/* Payment methods */}
-        <div>
-          <p
-            style={{
-              fontSize: "12px",
-              color: "#666",
-              marginBottom: "10px",
-              textTransform: "uppercase",
-              letterSpacing: "1px",
-            }}
-          >
-            We Accept
-          </p>
-          <div style={{ display: "flex", gap: "8px" }}>
-            {paymentIcons.map((payment) => (
-              <div
-                key={payment}
-                style={{
-                  padding: "4px 10px",
-                  background: "#e8e8e8",
-                  borderRadius: "3px",
-                  fontSize: "10px",
-                  color: "#666",
-                  fontWeight: 600,
-                  letterSpacing: "0.3px",
-                }}
-              >
-                {payment}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Copyright */}
-      <div
-        style={{
-          borderTop: "1px solid #e0e0e0",
-          padding: "16px",
-          textAlign: "center",
-          fontSize: "12px",
-          color: "#555",
-        }}
-      >
-        © {new Date().getFullYear()} Ninico. All rights reserved. Powered by{" "}
+      {/* Copyright Bar */}
+      <div className="border-t border-neutral-200 py-4 text-center text-xs text-neutral-500">
+        © {new Date().getFullYear()} Slickandchic. All rights reserved. Powered by{" "}
         <Link
           href="https://botble.com"
           target="_blank"
           rel="noopener noreferrer"
-          style={{ color: "#b88d7a", textDecoration: "none" }}
+          className="text-[#b88d7a] hover:underline no-underline"
         >
           Botble Technologies
         </Link>

@@ -46,7 +46,7 @@ export default function CheckoutPage() {
     type = "text",
     half = false
   ) => (
-    <div style={{ gridColumn: half ? "span 1" : "span 2" }}>
+    <div className={half ? "col-span-1" : "col-span-1 sm:col-span-2"}>
       <input
         type={type}
         placeholder={placeholder}
@@ -63,7 +63,7 @@ export default function CheckoutPage() {
     <ShopLayout>
       <PageBreadcrumb title="Checkout" crumbs={[{ label: "Cart", href: "/cart" }]} />
 
-      <div style={{ maxWidth: "1280px", margin: "36px auto", padding: "0 16px", display: "grid", gridTemplateColumns: "1fr 380px", gap: "32px", alignItems: "flex-start" }}>
+      <div className="max-w-[1280px] mx-auto my-9 px-4 grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-8 items-start">
         {/* Left column */}
         <div>
           {/* Step progress */}
@@ -99,7 +99,7 @@ export default function CheckoutPage() {
                 <h2 style={{ fontSize: "18px", fontWeight: 700, color: "#1a1a1a" }}>Shipping Address</h2>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px", marginBottom: "28px" }}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mb-7">
                 {inp("First Name *", "firstName", "text", true)}
                 {inp("Last Name *", "lastName", "text", true)}
                 {inp("Email Address *", "email", "email")}

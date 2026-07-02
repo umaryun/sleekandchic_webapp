@@ -34,16 +34,17 @@ export default function Header({ cartCount, wishlistCount, compareCount }: Heade
     <>
       {/* Desktop Header */}
       <header
+        className=""
         style={{
           background: "#fff",
-          borderBottom: "1px solid #e5e5e5",
+          marginBottom: "5px",
           position: "sticky",
           top: 0,
           zIndex: 50,
-          boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
         }}
       >
         <div
+          className="justify-between"
           style={{
             maxWidth: "1280px",
             margin: "0 auto",
@@ -55,48 +56,59 @@ export default function Header({ cartCount, wishlistCount, compareCount }: Heade
           }}
         >
           {/* Mobile hamburger */}
-          <button
-            onClick={() => setMobileMenuOpen(true)}
-            style={{
-              display: "none",
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              color: "#1a1a1a",
-              padding: "4px",
-            }}
-            className="mobile-hamburger"
-            aria-label="Open menu"
-          >
-            <Menu size={24} />
-          </button>
+        <button
+          onClick={() => setMobileMenuOpen(true)}
+          className="block md:hidden bg-none border-none cursor-pointer text-[#1a1a1a] p-1"
+          aria-label="Open menu"
+        >
+          <Menu size={24} />
+        </button>
 
-          {/* Logo */}
-          <Link href="/" style={{ flexShrink: 0, display: "flex", alignItems: "center" }}>
-            <div
-              style={{
-                fontSize: "24px",
-                fontWeight: 800,
-                color: "#1a1a1a",
-                letterSpacing: "-0.5px",
-              }}
-            >
-              <span style={{ color: "#1a1a1a" }}>Slickand</span>
-              <span style={{ color: "#b88d7a" }}>chick</span>
-            </div>
-          </Link>
-
-          {/* Search Bar */}
+        {/* Logo */}
+        <Link className="" href="/" style={{ flexShrink: 0, display: "flex", alignItems: "center" }}>
           <div
+            className="w-[190px] md:w-[220px]"
             style={{
-              flex: 1,
-              display: "flex",
-              border: "2px solid #1a1a1a",
-              borderRadius: "4px",
-              overflow: "hidden",
-              maxWidth: "680px",
+              fontSize: "24px",
+              fontWeight: 800,
+              color: "#1a1a1a",
+              letterSpacing: "-0.5px",
             }}
           >
+            <span style={{ color: "#1a1a1a" }}>Slickand</span>
+            <span style={{ color: "#b88d7a" }}>chic</span>
+          </div>
+        </Link>
+
+        {/* Mobile action buttons */}
+        <div className="flex md:hidden items-center gap-4 ml-auto">
+          {/* Mobile Search Toggle */}
+          <button
+            onClick={() => setSearchOpen(!searchOpen)}
+            className="bg-none border-none cursor-pointer text-[#1a1a1a] p-1"
+            aria-label="Toggle search"
+          >
+            <Search size={22} />
+          </button>
+          {/* Mobile Cart Toggle */}
+          <button
+            onClick={() => setCartOpen(true)}
+            className="bg-none border-none cursor-pointer text-[#1a1a1a] p-1 relative"
+            aria-label="Open cart"
+          >
+            <ShoppingCart size={22} />
+            <span
+              className="absolute -top-1.5 -right-2 bg-[#b88d7a] text-white rounded-full w-4 h-4 text-[10px] flex items-center justify-center font-bold"
+            >
+              {cartCount}
+            </span>
+          </button>
+        </div>
+
+        {/* Search Bar */}
+        <div
+          className="hidden md:flex flex-1 rounded-[5px] max-w-[780px] overflow-hidden"
+        >
             {/* Category Selector */}
             <div style={{ position: "relative" }}>
               <button
@@ -106,9 +118,9 @@ export default function Header({ cartCount, wishlistCount, compareCount }: Heade
                   alignItems: "center",
                   gap: "8px",
                   padding: "0 14px",
-                  background: "#f5f5f5",
+                  background: "#F3F4F7",
                   border: "none",
-                  borderRight: "2px solid #1a1a1a",
+                  borderRight: "1px solid #e4e4e4",
                   cursor: "pointer",
                   fontSize: "13px",
                   color: "#1a1a1a",
@@ -180,7 +192,7 @@ export default function Header({ cartCount, wishlistCount, compareCount }: Heade
                 outline: "none",
                 fontSize: "13px",
                 color: "#1a1a1a",
-                background: "#fff",
+                background: "#F3F4F7",
               }}
             />
 
@@ -188,10 +200,10 @@ export default function Header({ cartCount, wishlistCount, compareCount }: Heade
             <button
               style={{
                 padding: "0 18px",
-                background: "#1a1a1a",
+                background: "#F3F4F7",
                 border: "none",
                 cursor: "pointer",
-                color: "#fff",
+                color: "#000",
                 display: "flex",
                 alignItems: "center",
               }}
@@ -202,15 +214,7 @@ export default function Header({ cartCount, wishlistCount, compareCount }: Heade
           </div>
 
           {/* Action Icons */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "20px",
-              marginLeft: "auto",
-              flexShrink: 0,
-            }}
-          >
+          <div className="hidden md:flex items-center gap-5 ml-auto shrink-0">
             {/* Compare */}
             <Link
               href="/compare"
@@ -354,12 +358,31 @@ export default function Header({ cartCount, wishlistCount, compareCount }: Heade
           </div>
         </div>
 
-        {/* Mobile Search */}
+        {/* Mobile Search Input Row */}
+        {searchOpen && (
+          <div className="md:hidden border-t border-[#e5e5e5] px-4 py-2.5 bg-white">
+            <div className="flex border border-[#1a1a1a] rounded overflow-hidden">
+              <input
+                type="text"
+                placeholder="What Are You Looking For?"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="flex-1 px-3 py-2 text-sm outline-none bg-white text-[#1a1a1a]"
+              />
+              <button
+                className="bg-[#1a1a1a] text-white px-4 flex items-center justify-center"
+                aria-label="Search"
+              >
+                <Search size={16} />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Mobile Search CSS Cleanups */}
         <style>{`
           @media (max-width: 768px) {
             .mobile-hamburger { display: flex !important; }
-            .desktop-search { display: none !important; }
-            .desktop-icons { display: none !important; }
           }
         `}</style>
       </header>

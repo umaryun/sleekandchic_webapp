@@ -10,20 +10,16 @@ export default function Navigation() {
   const [catMenuOpen, setCatMenuOpen] = useState(false);
 
   return (
-    <nav
-      style={{
-        background: "#1a1a1a",
-        position: "relative",
-        zIndex: 40,
-      }}
-    >
+    <nav className="hidden md:block relative z-40 text-black">
       <div
         style={{
           maxWidth: "1280px",
           margin: "0 auto",
           padding: "0 16px",
           display: "flex",
-          alignItems: "stretch",
+          justifyContent: "space-between",
+          gap: "25px",
+          
         }}
       >
         {/* All Categories Mega Dropdown */}
@@ -39,9 +35,9 @@ export default function Navigation() {
               gap: "10px",
               padding: "0 20px",
               width: "220px",
-              height: "48px",
+              height: "51px",
               background: "#b88d7a",
-              border: "none",
+              borderRadius: "5px 5px 0 0",
               cursor: "pointer",
               color: "#fff",
               fontWeight: 600,
@@ -59,88 +55,84 @@ export default function Navigation() {
         </div>
 
         {/* Main Nav Items */}
-        <div style={{ display: "flex", alignItems: "stretch", flex: 1 }}>
-          {navItems.map((item) => (
-            <div
-              key={item.label}
-              style={{ position: "relative" }}
-              onMouseEnter={() => setActiveNav(item.label)}
-              onMouseLeave={() => setActiveNav(null)}
-            >
-              <Link
-                href={item.href}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "5px",
-                  padding: "0 16px",
-                  height: "48px",
-                  color: activeNav === item.label ? "#b88d7a" : "#fff",
-                  textDecoration: "none",
-                  fontSize: "13px",
-                  fontWeight: 500,
-                  whiteSpace: "nowrap",
-                  transition: "color 0.15s",
-                  letterSpacing: "0.2px",
-                }}
+        <div className="w-[58%]">
+          <div className="flex gap-5 items-center">
+            {navItems.map((item) => (
+              <div
+              className=""
+                key={item.label}
+                style={{ position: "relative" }}
+                onMouseEnter={() => setActiveNav(item.label)}
+                onMouseLeave={() => setActiveNav(null)}
               >
-                {item.label}
-                {item.children && <ChevronDown size={12} />}
-              </Link>
-
-              {item.children && activeNav === item.label && (
-                <div
+                <Link
+                className="flex items-center gap-[10px] pr-[16px]"
+                  href={item.href}
                   style={{
-                    position: "absolute",
-                    top: "100%",
-                    left: 0,
-                    background: "#fff",
-                    border: "1px solid #e5e5e5",
-                    borderRadius: "0 0 4px 4px",
-                    boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-                    minWidth: "200px",
-                    zIndex: 200,
+                    height: "51px",
+                    color: activeNav === item.label ? "#b88d7a" : "#000",
+                    textDecoration: "none",
+                    fontSize: "13px",
+                    fontWeight: 500,
+                    whiteSpace: "nowrap",
+                    transition: "color 0.15s",
+                    letterSpacing: "0.2px",
                   }}
                 >
-                  {item.children.map((child) => (
-                    <Link
-                      key={child.label}
-                      href={child.href}
-                      style={{
-                        display: "block",
-                        padding: "10px 18px",
-                        color: "#1a1a1a",
-                        textDecoration: "none",
-                        fontSize: "13px",
-                        borderBottom: "1px solid #f5f5f5",
-                        transition: "background 0.15s, color 0.15s",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.color = "#b88d7a";
-                        e.currentTarget.style.paddingLeft = "24px";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.color = "#1a1a1a";
-                        e.currentTarget.style.paddingLeft = "18px";
-                      }}
-                    >
-                      {child.label}
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
+                  {item.label}
+                  {item.children && <ChevronDown size={12} />}
+                </Link>
+
+                {item.children && activeNav === item.label && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: "100%",
+                      left: 0,
+                      background: "#fff",
+                      border: "1px solid #e5e5e5",
+                      borderRadius: "0 0 4px 4px",
+                      boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+                      minWidth: "200px",
+                      zIndex: 200,
+                    }}
+                  >
+                    {item.children.map((child) => (
+                      <Link
+                        key={child.label}
+                        href={child.href}
+                        style={{
+                          display: "block",
+                          padding: "10px 18px",
+                          color: "#1a1a1a",
+                          textDecoration: "none",
+                          fontSize: "13px",
+                          borderBottom: "1px solid #f5f5f5",
+                          transition: "background 0.15s, color 0.15s",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.color = "#b88d7a";
+                          e.currentTarget.style.paddingLeft = "24px";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.color = "#1a1a1a";
+                          e.currentTarget.style.paddingLeft = "18px";
+                        }}
+                      >
+                        {child.label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>  
         </div>
+        
 
         {/* Right: Promo text */}
         <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            marginLeft: "auto",
-            paddingLeft: "20px",
-          }}
+        className="flex items-center justify-start w-[260px]"
         >
           <span style={{ color: "#888", fontSize: "12px" }}>
             🔥 <span style={{ color: "#b88d7a", fontWeight: 600 }}>Hot Deal</span>

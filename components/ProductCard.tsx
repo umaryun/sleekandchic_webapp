@@ -136,7 +136,7 @@ export default function ProductCard({
         className="product-actions"
         style={{
           position: "absolute",
-          bottom: "110px",
+          bottom: "140px",
           left: 0,
           right: 0,
           display: "flex",

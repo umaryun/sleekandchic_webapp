@@ -102,13 +102,7 @@ export default function FeaturedProducts({ onAddToCart, onAddToWishlist }: Featu
       </div>
 
       {/* Product Grid */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
-          gap: "20px",
-        }}
-      >
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
         {filtered.slice(0, 8).map((product) => (
           <ProductCard
             key={product.id}
@@ -151,17 +145,6 @@ export default function FeaturedProducts({ onAddToCart, onAddToWishlist }: Featu
         </Link>
       </div>
 
-      <style>{`
-        @media (max-width: 1024px) {
-          .product-grid { grid-template-columns: repeat(3, 1fr) !important; }
-        }
-        @media (max-width: 768px) {
-          .product-grid { grid-template-columns: repeat(2, 1fr) !important; }
-        }
-        @media (max-width: 480px) {
-          .product-grid { grid-template-columns: 1fr !important; }
-        }
-      `}</style>
     </section>
   );
 }

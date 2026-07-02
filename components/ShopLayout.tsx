@@ -2,7 +2,6 @@
 
 import { useState, useCallback, type ReactNode } from "react";
 import AnnouncementBar from "./AnnouncementBar";
-import TopBar from "./TopBar";
 import Header from "./Header";
 import Navigation from "./Navigation";
 import Footer from "./Footer";
@@ -29,7 +28,6 @@ export default function ShopLayout({ children }: ShopLayoutProps) {
   return (
     <>
       <AnnouncementBar />
-      <TopBar />
       <Header cartCount={cartCount} wishlistCount={wishlistCount} compareCount={compareCount} />
       <Navigation />
       <main>{children}</main>

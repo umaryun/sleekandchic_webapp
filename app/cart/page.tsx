@@ -43,43 +43,45 @@ export default function CartPage() {
             </Link>
           </div>
         ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 360px", gap: "28px", alignItems: "flex-start" }}>
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-7 items-start">
             {/* Cart Table */}
             <div>
               <div style={{ background: "#fff", border: "1px solid #f0f0f0", borderRadius: "4px", overflow: "hidden" }}>
                 {/* Header */}
-                <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 40px", gap: "12px", padding: "14px 20px", background: "#f8f8f8", borderBottom: "1px solid #f0f0f0", fontSize: "12px", fontWeight: 700, color: "#888", letterSpacing: "0.5px", textTransform: "uppercase" }}>
-                  <span>Product</span><span style={{ textAlign: "center" }}>Price</span><span style={{ textAlign: "center" }}>Quantity</span><span style={{ textAlign: "center" }}>Total</span><span />
+                <div className="hidden md:grid grid-cols-[2fr_1fr_1fr_1fr_40px] gap-3 px-5 py-3.5 bg-[#f8f8f8] border-b border-[#f0f0f0] text-xs font-bold text-[#888] tracking-wider uppercase">
+                  <span>Product</span><span className="text-center">Price</span><span className="text-center">Quantity</span><span className="text-center">Total</span><span />
                 </div>
-                {cart.map((item, idx) => (
-                  <div key={item.id} style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 40px", gap: "12px", padding: "20px", alignItems: "center", borderBottom: idx < cart.length - 1 ? "1px solid #f5f5f5" : "none" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-                      <img src={item.image} alt={item.name} style={{ width: "64px", height: "64px", objectFit: "cover", borderRadius: "4px", border: "1px solid #f0f0f0" }} />
+                {cart.map((item) => (
+                  <div key={item.id} className="flex flex-col md:grid md:grid-cols-[2fr_1fr_1fr_1fr_40px] gap-4 p-5 items-start md:items-center border-b border-[#f5f5f5] last:border-b-0 relative w-full">
+                    <div className="flex items-center gap-3.5 w-full">
+                      <img src={item.image} alt={item.name} className="w-16 h-16 object-cover rounded border border-[#f0f0f0] shrink-0" />
                       <div>
-                        <Link href={`/products/${item.id}`} style={{ fontSize: "14px", fontWeight: 600, color: "#1a1a1a", textDecoration: "none" }}
-                          onMouseEnter={(e) => ((e.currentTarget as HTMLAnchorElement).style.color = "#f57224")}
-                          onMouseLeave={(e) => ((e.currentTarget as HTMLAnchorElement).style.color = "#1a1a1a")}
-                        >{item.name}</Link>
-                        <p style={{ fontSize: "12px", color: "#888", marginTop: "3px" }}>Color: {item.color} · Size: {item.size}</p>
+                        <Link href={`/products/${item.id}`} className="text-sm font-semibold text-[#1a1a1a] no-underline hover:text-[#b88d7a] transition-colors">{item.name}</Link>
+                        <p className="text-xs text-[#888] mt-1">Color: {item.color} · Size: {item.size}</p>
+                        {/* Mobile price indicator */}
+                        <p className="text-xs text-[#555] font-semibold mt-1 md:hidden">Price: ${item.price.toFixed(2)}</p>
                       </div>
                     </div>
-                    <span style={{ textAlign: "center", fontSize: "14px", fontWeight: 600, color: "#555" }}>${item.price.toFixed(2)}</span>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <div style={{ display: "flex", border: "1px solid #e5e5e5", borderRadius: "3px", overflow: "hidden" }}>
-                        <button onClick={() => updateQty(item.id, -1)} style={{ width: "32px", height: "36px", background: "#f5f5f5", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <span className="hidden md:block text-center text-sm font-semibold text-[#555] w-full">${item.price.toFixed(2)}</span>
+                    <div className="flex items-center md:justify-center w-full md:w-auto">
+                      <span className="text-xs font-semibold text-[#888] mr-3 md:hidden">Qty:</span>
+                      <div className="flex border border-[#e5e5e5] rounded overflow-hidden">
+                        <button onClick={() => updateQty(item.id, -1)} className="w-8 h-9 bg-[#f5f5f5] border-none cursor-pointer flex items-center justify-center">
                           <Minus size={12} />
                         </button>
-                        <span style={{ width: "40px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "14px", fontWeight: 700 }}>{item.quantity}</span>
-                        <button onClick={() => updateQty(item.id, 1)} style={{ width: "32px", height: "36px", background: "#f5f5f5", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <span className="w-10 flex items-center justify-center text-sm font-bold">{item.quantity}</span>
+                        <button onClick={() => updateQty(item.id, 1)} className="w-8 h-9 bg-[#f5f5f5] border-none cursor-pointer flex items-center justify-center">
                           <Plus size={12} />
                         </button>
                       </div>
                     </div>
-                    <span style={{ textAlign: "center", fontSize: "14px", fontWeight: 700, color: "#1a1a1a" }}>${(item.price * item.quantity).toFixed(2)}</span>
-                    <button onClick={() => remove(item.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#ccc", display: "flex", alignItems: "center", justifyContent: "center" }}
-                      onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.color = "#f44336")}
-                      onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.color = "#ccc")}
-                    ><Trash2 size={16} /></button>
+                    <div className="flex md:justify-center items-center w-full border-t border-[#f5f5f5] pt-3 md:pt-0 md:border-t-0 md:w-auto">
+                      <span className="text-xs font-bold text-[#888] mr-3 md:hidden">Subtotal:</span>
+                      <span className="text-sm font-bold text-[#1a1a1a]">${(item.price * item.quantity).toFixed(2)}</span>
+                    </div>
+                    <button onClick={() => remove(item.id)} className="absolute top-5 right-5 md:static bg-none border-none cursor-pointer text-[#ccc] hover:text-red-500 transition-colors flex items-center justify-center" aria-label="Remove item">
+                      <Trash2 size={16} />
+                    </button>
                   </div>
                 ))}
               </div>

@@ -41,7 +41,7 @@ export default function AboutPage() {
 
       {/* Stats */}
       <section style={{ background: "#f57224", padding: "48px 16px" }}>
-        <div style={{ maxWidth: "1280px", margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "24px", textAlign: "center" }}>
+        <div className="max-w-[1280px] mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
           {stats.map(({ n, l }) => (
             <div key={l}>
               <div style={{ fontSize: "40px", fontWeight: 800, color: "#fff", marginBottom: "6px" }}>{n}</div>
@@ -52,7 +52,7 @@ export default function AboutPage() {
       </section>
 
       {/* Mission */}
-      <section style={{ maxWidth: "1280px", margin: "72px auto", padding: "0 16px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "64px", alignItems: "center" }}>
+      <section className="max-w-[1280px] mx-auto my-18 px-4 grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
         <div>
           <p style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "2px", color: "#f57224", textTransform: "uppercase", marginBottom: "12px" }}>Our Mission</p>
           <h2 style={{ fontSize: "34px", fontWeight: 800, color: "#1a1a1a", lineHeight: 1.25, marginBottom: "20px" }}>
@@ -83,7 +83,7 @@ export default function AboutPage() {
             <p style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "2px", color: "#f57224", textTransform: "uppercase", marginBottom: "10px" }}>Why Choose Us</p>
             <h2 style={{ fontSize: "32px", fontWeight: 800, color: "#1a1a1a" }}>Our Core Values</h2>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "28px" }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-7">
             {values.map(({ Icon, title, desc }) => (
               <div key={title} style={{ background: "#fff", padding: "32px 24px", borderRadius: "6px", textAlign: "center", border: "1px solid #f0f0f0", transition: "box-shadow 0.2s" }}
                 onMouseEnter={(e) => ((e.currentTarget as HTMLDivElement).style.boxShadow = "0 8px 32px rgba(0,0,0,0.08)")}
@@ -106,7 +106,7 @@ export default function AboutPage() {
           <p style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "2px", color: "#f57224", textTransform: "uppercase", marginBottom: "10px" }}>The People Behind Ninico</p>
           <h2 style={{ fontSize: "32px", fontWeight: 800, color: "#1a1a1a" }}>Meet Our Team</h2>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "24px" }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {team.map(({ name, role, img }) => (
             <div key={name} style={{ textAlign: "center", borderRadius: "6px", overflow: "hidden", border: "1px solid #f0f0f0", transition: "box-shadow 0.2s" }}
               onMouseEnter={(e) => ((e.currentTarget as HTMLDivElement).style.boxShadow = "0 8px 24px rgba(0,0,0,0.1)")}

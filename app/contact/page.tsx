@@ -23,7 +23,7 @@ export default function ContactPage() {
 
       {/* Info cards */}
       <section style={{ background: "#f8f8f8", padding: "48px 16px", borderBottom: "1px solid #f0f0f0" }}>
-        <div style={{ maxWidth: "1280px", margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "20px" }}>
+        <div className="max-w-[1280px] mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {[
             { Icon: MapPin, title: "Our Address", lines: ["24/26 Strait Bargate,", "Boston, PE21, United Kingdom"] },
             { Icon: Phone, title: "Phone Number", lines: ["+098 (905) 786 897 8", "Mon–Fri 9am–6pm EST"] },
@@ -45,7 +45,7 @@ export default function ContactPage() {
       </section>
 
       {/* Form + Map */}
-      <section style={{ maxWidth: "1280px", margin: "56px auto", padding: "0 16px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "48px", alignItems: "flex-start" }}>
+      <section className="max-w-[1280px] mx-auto my-14 px-4 grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
         {/* Contact form */}
         <div style={{ background: "#fff", border: "1px solid #f0f0f0", borderRadius: "8px", padding: "36px" }}>
           <p style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "2px", color: "#f57224", textTransform: "uppercase", marginBottom: "8px" }}>Get In Touch</p>
@@ -65,7 +65,7 @@ export default function ContactPage() {
             </div>
           ) : (
             <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label style={{ display: "block", fontSize: "12px", fontWeight: 700, color: "#888", letterSpacing: "0.5px", textTransform: "uppercase", marginBottom: "7px" }}>Full Name *</label>
                   <input type="text" required placeholder="John Doe" value={form.name}
@@ -132,7 +132,7 @@ export default function ContactPage() {
               <p style={{ color: "#666", fontSize: "13px" }}>Boston, PE21, United Kingdom</p>
             </div>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             <a href="tel:+0989057868978" style={{ padding: "14px 20px", background: "#1a1a1a", color: "#fff", textDecoration: "none", borderRadius: "4px", fontWeight: 700, fontSize: "14px", textAlign: "center", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", transition: "background 0.2s" }}
               onMouseEnter={(e) => ((e.currentTarget as HTMLAnchorElement).style.background = "#333")}
               onMouseLeave={(e) => ((e.currentTarget as HTMLAnchorElement).style.background = "#1a1a1a")}

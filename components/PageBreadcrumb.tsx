@@ -17,7 +17,7 @@ export default function PageBreadcrumb({ title, crumbs = [] }: PageBreadcrumbPro
       style={{
         background: "#f8f8f8",
         borderBottom: "1px solid #efefef",
-        padding: "14px 0",
+        padding: "30px 0",
       }}
     >
       <div
@@ -30,7 +30,7 @@ export default function PageBreadcrumb({ title, crumbs = [] }: PageBreadcrumbPro
           justifyContent: "space-between",
         }}
       >
-        <h1 style={{ fontSize: "20px", fontWeight: 700, color: "#1a1a1a" }}>{title}</h1>
+        {/* <h1 style={{ fontSize: "20px", fontWeight: 700, color: "#1a1a1a" }}>{title}</h1> */}
         <nav style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px" }}>
           <Link href="/" style={{ color: "#666", textDecoration: "none" }}
             onMouseEnter={(e) => ((e.currentTarget as HTMLAnchorElement).style.color = "#b88d7a")}
