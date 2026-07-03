@@ -63,6 +63,7 @@ export default function Header({ cartCount, wishlistCount, compareCount }: Heade
         >
           <Menu size={24} />
         </button>
+        
 
         {/* Logo */}
         <Link className="" href="/" style={{ flexShrink: 0, display: "flex", alignItems: "center" }}>
