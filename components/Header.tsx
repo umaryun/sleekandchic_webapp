@@ -22,6 +22,7 @@ interface HeaderProps {
   compareCount: number;
 }
 
+
 export default function Header({ cartCount, wishlistCount, compareCount }: HeaderProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryOpen, setCategoryOpen] = useState(false);
