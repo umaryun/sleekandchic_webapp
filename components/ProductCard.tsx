@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Heart, ShoppingCart, Eye, GitCompare } from "lucide-react";
+import { Heart, ShoppingCart, Eye } from "lucide-react";
 import StarRating from "./StarRating";
 import type { Product } from "@/types";
 
@@ -19,6 +19,9 @@ export default function ProductCard({
 }: ProductCardProps) {
   const [isWished, setIsWished] = useState(false);
   const [addedToCart, setAddedToCart] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [btnHovered, setBtnHovered] = useState(false);
+  const [viewBtnHovered, setViewBtnHovered] = useState(false);
 
   const handleAddToCart = () => {
     onAddToCart?.(product);
@@ -37,16 +40,23 @@ export default function ProductCard({
     hot: { bg: "#c45b5b", color: "#fff" },
   };
 
+
+
   return (
     <div
-      className="product-card"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       style={{
         background: "#fff",
-        border: "1px solid #f0f0f0",
-        borderRadius: "4px",
+        borderRadius: "5px",
         overflow: "hidden",
         position: "relative",
-        transition: "box-shadow 0.3s ease",
+        transition: "",
+        boxShadow: isHovered
+          ? "0 1px 4px rgba(0,0,0,0.04)"
+          : "",
+        display: "flex",
+        flexDirection: "column",
       }}
     >
       {/* Badge */}
@@ -61,8 +71,8 @@ export default function ProductCard({
             color: badgeColors[product.badge].color,
             fontSize: "10px",
             fontWeight: 700,
-            padding: "3px 8px",
-            borderRadius: "2px",
+            padding: "3px 10px",
+            borderRadius: "5px",
             letterSpacing: "0.5px",
             textTransform: "uppercase",
           }}
@@ -73,7 +83,7 @@ export default function ProductCard({
         </div>
       )}
 
-      {/* Wishlist button (always visible) */}
+      {/* Wishlist button */}
       <button
         onClick={handleWishlist}
         style={{
@@ -81,22 +91,23 @@ export default function ProductCard({
           top: "12px",
           right: "12px",
           zIndex: 2,
-          width: "32px",
-          height: "32px",
+          width: "34px",
+          height: "34px",
           borderRadius: "50%",
-          background: "#fff",
-          border: "1px solid #e5e5e5",
+          background: isWished ? "rgba(184,141,122,0.1)" : "rgba(255,255,255,0.9)",
+          backdropFilter: "blur(4px)",
+          border: isWished ? "1px solid #b88d7a" : "1px solid #e8e5e2",
           cursor: "pointer",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
-          transition: "all 0.2s",
-          color: isWished ? "#b88d7a" : "#666",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+          transition: "all 0.2s ease",
+          color: isWished ? "#b88d7a" : "#888",
         }}
         aria-label="Add to wishlist"
       >
-        <Heart size={14} fill={isWished ? "#b88d7a" : "none"} />
+        <Heart size={15} fill={isWished ? "#b88d7a" : "none"} />
       </button>
 
       {/* Product image */}
@@ -106,7 +117,7 @@ export default function ProductCard({
             position: "relative",
             paddingTop: "100%",
             overflow: "hidden",
-            background: "#fafafa",
+            background: "#faf9f8",
           }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -119,125 +130,79 @@ export default function ProductCard({
               width: "100%",
               height: "100%",
               objectFit: "cover",
-              transition: "transform 0.4s ease",
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLImageElement).style.transform = "scale(1.05)";
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLImageElement).style.transform = "scale(1)";
             }}
           />
         </div>
       </Link>
 
-      {/* Hover Actions */}
+      {/* Image dots indicator — decorative */}
       <div
-        className="product-actions"
         style={{
-          position: "absolute",
-          bottom: "140px",
-          left: 0,
-          right: 0,
           display: "flex",
           justifyContent: "center",
-          gap: "6px",
-          padding: "0 12px",
-          opacity: 0,
-          transform: "translateY(10px)",
-          transition: "opacity 0.3s ease, transform 0.3s ease",
-          zIndex: 2,
+          gap: "5px",
+          padding: "10px 0 4px",
         }}
       >
-        <button
-          onClick={handleAddToCart}
+        <span
           style={{
-            flex: 1,
-            padding: "8px 0",
-            background: addedToCart ? "#28a745" : "#1a1a1a",
-            color: "#fff",
-            border: "none",
-            borderRadius: "2px",
-            cursor: "pointer",
-            fontSize: "12px",
-            fontWeight: 600,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "6px",
-            transition: "background 0.2s",
+            width: "7px",
+            height: "7px",
+            borderRadius: "50%",
+            background: "#b88d7a",
           }}
-        >
-          <ShoppingCart size={13} />
-          {addedToCart ? "Added!" : "Add to Cart"}
-        </button>
-        <Link
-          href={`/products/${product.id}`}
+        />
+        <span
           style={{
-            width: "36px",
-            height: "36px",
-            background: "#fff",
-            border: "1px solid #e5e5e5",
-            borderRadius: "2px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "#1a1a1a",
-            flexShrink: 0,
+            width: "7px",
+            height: "7px",
+            borderRadius: "50%",
+            background: "#d4d4d4",
           }}
-          title="Quick view"
-        >
-          <Eye size={14} />
-        </Link>
-        <button
+        />
+        <span
           style={{
-            width: "36px",
-            height: "36px",
-            background: "#fff",
-            border: "1px solid #e5e5e5",
-            borderRadius: "2px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "#1a1a1a",
-            cursor: "pointer",
-            flexShrink: 0,
+            width: "7px",
+            height: "7px",
+            borderRadius: "50%",
+            background: "#d4d4d4",
           }}
-          title="Compare"
-        >
-          <GitCompare size={14} />
-        </button>
+        />
+        <span
+          style={{
+            width: "7px",
+            height: "7px",
+            borderRadius: "50%",
+            background: "#d4d4d4",
+          }}
+        />
       </div>
 
       {/* Product Info */}
-      <div style={{ padding: "14px 16px 16px" }}>
-        {/* Category */}
-        <p
-          style={{
-            fontSize: "11px",
-            color: "#b88d7a",
-            fontWeight: 500,
-            marginBottom: "4px",
-            textTransform: "uppercase",
-            letterSpacing: "0.5px",
-          }}
-        >
-          {product.category}
-        </p>
-
-        {/* Name */}
+      <div
+        style={{
+          padding: "10px 16px 6px",
+          display: "flex",
+          flexDirection: "column",
+          flex: 1,
+        }}
+      >
+        {/* Product Name */}
         <Link
           href={`/products/${product.id}`}
           style={{ textDecoration: "none" }}
         >
           <h3
-            className="line-clamp-2"
             style={{
-              fontSize: "14px",
+              fontSize: "15px",
               fontWeight: 600,
               color: "#1a1a1a",
-              marginBottom: "8px",
-              lineHeight: 1.4,
+              marginBottom: "10px",
+              lineHeight: 1.45,
+              display: "-webkit-box",
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
               transition: "color 0.2s",
             }}
             onMouseEnter={(e) => {
@@ -251,46 +216,102 @@ export default function ProductCard({
           </h3>
         </Link>
 
-        {/* Stars */}
-        <div style={{ marginBottom: "10px" }}>
-          <StarRating rating={product.rating} reviewCount={product.reviewCount} />
-        </div>
-
-        {/* Price */}
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <span
-            style={{
-              fontSize: "16px",
-              fontWeight: 700,
-              color: "#1a1a1a",
-            }}
-          >
-            ${product.price.toFixed(2)}
-          </span>
-          {product.originalPrice && (
+        {/* Price + Rating row */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: "2px",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <span
               style={{
-                fontSize: "13px",
-                color: "#aaa",
-                textDecoration: "line-through",
+                fontSize: "17px",
+                fontWeight: 700,
+                color: "#b88d7a",
               }}
             >
-              ${product.originalPrice.toFixed(2)}
+              ${product.price.toFixed(2)}
             </span>
-          )}
+            {product.originalPrice && (
+              <span
+                style={{
+                  fontSize: "12px",
+                  color: "#aaa",
+                  textDecoration: "line-through",
+                }}
+              >
+                ${product.originalPrice.toFixed(2)}
+              </span>
+            )}
+          </div>
+
+          <StarRating rating={product.rating} reviewCount={product.reviewCount} size={13} />
         </div>
       </div>
 
-      {/* Hover style override */}
-      <style>{`
-        .product-card:hover .product-actions {
-          opacity: 1 !important;
-          transform: translateY(0) !important;
-        }
-        .product-card:hover {
-          box-shadow: 0 4px 20px rgba(0,0,0,0.1) !important;
-        }
-      `}</style>
+      {/* Add to Cart Button — always visible */}
+      <div style={{ padding: "8px 14px 14px", display: "flex", gap: "8px" }}>
+        <button
+          onClick={handleAddToCart}
+          onMouseEnter={() => setBtnHovered(true)}
+          onMouseLeave={() => setBtnHovered(false)}
+          style={{
+            flex: 1,
+            padding: "8px 0",
+            background: addedToCart
+              ? "#5a8a6a"
+              : btnHovered
+                ? "#fff"
+                : "#1a1a1a",
+            color: addedToCart
+              ? "#fff"
+              : btnHovered
+                ? "#1a1a1a"
+                : "#fff",
+            border: addedToCart
+              ? "1.5px solid #5a8a6a"
+              : "1.5px solid #1a1a1a",
+            borderRadius: "5px",
+            cursor: "pointer",
+            fontSize: "12px",
+            fontWeight: 600,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "8px",
+            transition: "all 0.25s ease",
+            letterSpacing: "0.2px",
+          }}
+        >
+          <ShoppingCart size={14} />
+          {addedToCart ? "Added!" : "Add to Cart"}
+        </button>
+        <Link
+          href={`/products/${product.id}`}
+          onMouseEnter={() => setViewBtnHovered(true)}
+          onMouseLeave={() => setViewBtnHovered(false)}
+          style={{
+            width: "38px",
+            flexShrink: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            borderRadius: "5px",
+            border: "1.5px solid #1a1a1a",
+            background: viewBtnHovered ? "#1a1a1a" : "#fff",
+            color: viewBtnHovered ? "#fff" : "#1a1a1a",
+            transition: "all 0.25s ease",
+            cursor: "pointer",
+            textDecoration: "none",
+          }}
+          title="View Product"
+        >
+          <Eye size={15} />
+        </Link>
+      </div>
     </div>
   );
 }

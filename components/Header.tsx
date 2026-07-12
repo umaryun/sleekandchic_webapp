@@ -67,18 +67,12 @@ export default function Header({ cartCount, wishlistCount, compareCount }: Heade
 
         {/* Logo */}
         <Link className="" href="/" style={{ flexShrink: 0, display: "flex", alignItems: "center" }}>
-          <div
-            className="w-[190px] md:w-[220px]"
-            style={{
-              fontSize: "24px",
-              fontWeight: 800,
-              color: "#1a1a1a",
-              letterSpacing: "-0.5px",
-            }}
-          >
-            <span style={{ color: "#1a1a1a" }}>Slickand</span>
-            <span style={{ color: "#b88d7a" }}>chic</span>
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo.png"
+            alt="Slickandchic"
+            className="w-[160px] md:w-[190px]"
+          />
         </Link>
 
         {/* Mobile action buttons */}

@@ -66,9 +66,14 @@ export default function Footer() {
         
         {/* Brand Column */}
         <div>
-          <Link href="/" className="inline-block text-[28px] font-extrabold no-underline mb-4">
-            <span className="text-[#1a1a1a]">Slickand</span>
-            <span className="text-[#b88d7a]">chic</span>
+          <Link href="/" className="inline-block no-underline mb-4">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo.png"
+              alt="Slickandchic"
+              className="w-[170px] md:w-[200px]"
+              
+            />
           </Link>
           <p className="text-[13px] leading-relaxed text-neutral-500 mb-5">
             We bring you the finest handcrafted products from around the world.
