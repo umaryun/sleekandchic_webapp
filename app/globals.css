@@ -70,25 +70,7 @@ body {
   animation: fadeIn 0.6s ease forwards;
 }
 
-/* Product card hover effects */
-.product-card {
-  transition: box-shadow 0.3s ease;
-}
-
-.product-card:hover {
-  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-}
-
-.product-card:hover .product-actions {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.product-actions {
-  opacity: 0;
-  transform: translateY(10px);
-  transition: opacity 0.3s ease, transform 0.3s ease;
-}
+/* Product card styles are handled inline in the component */
 
 /* Dropdown menus */
 .dropdown-menu {
