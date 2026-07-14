@@ -38,7 +38,7 @@ export default function HeroSlider() {
         padding: "0 16px",
         display: "flex",
         gap: "25px",
-        
+        marginBottom: "30px",
 
       }}
     >

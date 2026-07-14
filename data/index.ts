@@ -25,29 +25,16 @@ export const announcements: Announcement[] = [
 ];
 
 export const categories: Category[] = [
-  { id: 1, name: "Pro Glasses", slug: "pro-glasses" },
-  {
-    id: 2,
-    name: "Casual Shoes",
-    slug: "casual-shoes",
-    children: [
-      { id: 3, name: "Winter Jacket", slug: "winter-jacket" },
-      { id: 4, name: "New Added", slug: "new-added" },
-      { id: 5, name: "Wooden", slug: "wooden" },
-      { id: 6, name: "Furniture", slug: "furniture" },
-      { id: 7, name: "Clock", slug: "clock" },
-      { id: 8, name: "Gifts", slug: "gifts" },
-      { id: 9, name: "Crafts", slug: "crafts" },
-    ],
-  },
-  { id: 10, name: "Gift Sets", slug: "gift-sets" },
-  { id: 11, name: "Plastic Gifts", slug: "plastic-gifts" },
-  { id: 12, name: "Handy Cream", slug: "handy-cream" },
-  { id: 13, name: "Cosmetics", slug: "cosmetics" },
-  { id: 14, name: "Silk Accessories", slug: "silk-accessories" },
-  { id: 15, name: "Finest Skincare Lotions", slug: "finest-skincare-lotions" },
-  { id: 16, name: "Bags & Purses", slug: "bags-purses" },
-  { id: 17, name: "Sunglasses", slug: "sunglasses" },
+  { id: 1, name: "Abayas", slug: "abayas" },
+  { id: 2, name: "Bubu", slug: "bubu" },
+  { id: 3, name: "Kaftan", slug: "kaftan" },
+  { id: 4, name: "Dresses", slug: "dresses" },
+  { id: 5, name: "Gowns", slug: "gowns" },
+  { id: 6, name: "Two-Piece", slug: "two-piece" },
+  { id: 7, name: "Ready-to-Wear", slug: "ready-to-wear" },
+  { id: 8, name: "Eid & Festive Wears", slug: "eid-festive-wears" },
+  { id: 9, name: "Hijabs & Scarves", slug: "hijabs-scarves" },
+  { id: 10, name: "Inner Dresses", slug: "inner-dresses" },
 ];
 
 export const navItems: NavItem[] = [
