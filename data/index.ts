@@ -73,14 +73,14 @@ export const navItems: NavItem[] = [
       { label: "Coming soon", href: "/coming-soon" },
     ],
   },
-  {
-    label: "Blog",
-    href: "/blog",
-    children: [
-      { label: "Blog", href: "/blog" },
-      { label: "Blog Detail", href: "/blog/article" },
-    ],
-  },
+  // {
+  //   label: "Blog",
+  //   href: "/blog",
+  //   children: [
+  //     { label: "Blog", href: "/blog" },
+  //     { label: "Blog Detail", href: "/blog/article" },
+  //   ],
+  // },
   { label: "Contact", href: "/contact" },
 ];
 

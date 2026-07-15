@@ -33,7 +33,7 @@ export default function HomePage() {
   return (
     <>
       {/* Top announcement bar */}
-      <AnnouncementBar />
+      {/* <AnnouncementBar /> */}
 
       {/* Sticky header with logo, search, icons */}
       <Header

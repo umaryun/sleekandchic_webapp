@@ -38,7 +38,8 @@ export default function Header({ cartCount, wishlistCount, compareCount }: Heade
         className=""
         style={{
           background: "#fff",
-          marginBottom: "5px",
+          marginBottom: "10px",
+          marginTop: "10px",
           position: "sticky",
           top: 0,
           zIndex: 50,

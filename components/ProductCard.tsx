@@ -135,49 +135,6 @@ export default function ProductCard({
         </div>
       </Link>
 
-      {/* Image dots indicator — decorative */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          gap: "5px",
-          padding: "10px 0 4px",
-        }}
-      >
-        <span
-          style={{
-            width: "7px",
-            height: "7px",
-            borderRadius: "50%",
-            background: "#b88d7a",
-          }}
-        />
-        <span
-          style={{
-            width: "7px",
-            height: "7px",
-            borderRadius: "50%",
-            background: "#d4d4d4",
-          }}
-        />
-        <span
-          style={{
-            width: "7px",
-            height: "7px",
-            borderRadius: "50%",
-            background: "#d4d4d4",
-          }}
-        />
-        <span
-          style={{
-            width: "7px",
-            height: "7px",
-            borderRadius: "50%",
-            background: "#d4d4d4",
-          }}
-        />
-      </div>
-
       {/* Product Info */}
       <div
         style={{

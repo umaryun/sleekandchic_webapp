@@ -1,151 +1,201 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
-import {
-  MapPin,
-  Phone,
-  Mail,
-  Facebook,
-  Twitter,
-  Instagram,
-  Youtube,
-  Linkedin,
-  Apple,
-  Play,
-} from "lucide-react";
+import { ChevronDown } from "lucide-react";
 
 const footerLinks = {
-  Information: [
-    { label: "About Us", href: "/about" },
-    { label: "Privacy Policy", href: "/privacy-policy" },
-    { label: "Terms & Conditions", href: "/terms" },
-    { label: "Careers", href: "/careers" },
-    { label: "Affiliate", href: "/affiliate" },
-    { label: "Sitemap", href: "/sitemap" },
-  ],
   "Customer Service": [
-    { label: "Help Center", href: "/help" },
     { label: "Track Your Order", href: "/orders/tracking" },
-    { label: "Returns & Refunds", href: "/returns" },
     { label: "Contact Us", href: "/contact" },
     { label: "FAQs", href: "/faqs" },
     { label: "Store Locator", href: "/store-locator" },
   ],
-  "My Account": [
-    { label: "Sign In", href: "/login" },
-    { label: "Register", href: "/register" },
-    { label: "Cart", href: "/cart" },
-    { label: "Wishlist", href: "/wishlist" },
-    { label: "Compare", href: "/compare" },
-    { label: "Order History", href: "/orders" },
+  Information: [
+    { label: "About Us", href: "/about" },
+    { label: "Privacy Policy", href: "/privacy-policy" },
+    { label: "Terms & Conditions", href: "/terms" },
+  ],
+  Social: [
+    { label: "Instagram", href: "https://instagram.com" },
+    { label: "Facebook", href: "https://facebook.com" },
+    { label: "Twitter", href: "https://twitter.com" },
+    { label: "YouTube", href: "https://youtube.com" },
   ],
 };
 
-const socialLinks = [
-  { href: "https://facebook.com", Icon: Facebook, label: "Facebook" },
-  { href: "https://twitter.com", Icon: Twitter, label: "Twitter" },
-  { href: "https://instagram.com", Icon: Instagram, label: "Instagram" },
-  { href: "https://youtube.com", Icon: Youtube, label: "YouTube" },
-  { href: "https://linkedin.com", Icon: Linkedin, label: "LinkedIn" },
+const contactInfo = [
+  { heading: "EMAIL", value: "hello@slickandchic.com" },
+  { heading: "CALL US", value: "+1 (800) 123-4567" },
+  { heading: "ADDRESS", value: "123 Commerce St, New York" },
 ];
 
-const paymentIcons = ["Visa", "Mastercard", "PayPal", "Stripe", "Apple Pay"];
+function AccordionSection({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="border-b border-neutral-200">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between py-4 px-1 bg-transparent border-none cursor-pointer text-left"
+      >
+        <span className="text-[13px] font-bold uppercase tracking-wider text-[#1a1a1a]">
+          {title}
+        </span>
+        <ChevronDown
+          size={18}
+          className="text-neutral-400 transition-transform duration-300"
+          style={{ transform: open ? "rotate(180deg)" : "rotate(0)" }}
+        />
+      </button>
+      <div
+        className="overflow-hidden transition-all duration-300"
+        style={{
+          maxHeight: open ? "300px" : "0",
+          opacity: open ? 1 : 0,
+          paddingBottom: open ? "16px" : "0",
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
 
 export default function Footer() {
   return (
-    <footer className="bg-[#f8f8f8] text-black border-t border-neutral-200">
-      
-      {/* Top Footer Grid Section */}
-      <div
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr] gap-10"
-        style={{
-          maxWidth: "1280px",
-          margin: "0 auto",
-          padding: "56px 16px",
-          width: "100%",
-        }}
-      >
-        
-        {/* Brand Column */}
-        <div>
-          <Link href="/" className="inline-block no-underline mb-4">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/logo.png"
-              alt="Slickandchic"
-              className="w-[170px] md:w-[200px]"
-              
-            />
-          </Link>
-          <p className="text-[13px] leading-relaxed text-neutral-500 mb-5">
-            We bring you the finest handcrafted products from around the world.
-            Quality, style, and comfort — delivered to your door.
-          </p>
+    <footer className="flex flex-col justify-center items-center bg-[#f5f5f5] text-[#1a1a1a]">
+      {/* === Large Logo Section === */}
+      <div className="max-w-[1280px] mx-auto px-4 sm:px-6 pt-12 pb-8 sm:pt-16 sm:pb-10 text-center">
+        <Link href="/" className="inline-block no-underline">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo.png"
+            alt="Slickandchic"
+            className="w-[240px] sm:w-[320px] lg:w-[450px] h-auto mx-auto"
+          />
+        </Link>
+      </div>
 
-          {/* Contact Info list */}
-          <div className="flex flex-col gap-2.5">
-            {[
-              { Icon: MapPin, text: "123 Commerce St, New York, NY 10001" },
-              { Icon: Phone, text: "+1 (800) 123-4567" },
-              { Icon: Mail, text: "hello@ninico.com" },
-            ].map(({ Icon, text }) => (
-              <div key={text} className="flex items-start gap-2.5">
-                <Icon size={14} className="text-[#b88d7a] mt-1 flex-shrink-0" />
-                <span className="text-[13px] text-neutral-600">{text}</span>
-              </div>
-            ))}
+      {/* === Desktop: Contact + Links Row === */}
+      <div className="pb-5 hidden md:block border-t border-neutral-300">
+        <div className="w-full mx-auto px-4 sm:px-6 py-10">
+          <div className="grid grid-cols-[1fr_auto] gap-10 lg:gap-25 items-start">
+            {/* Contact Info Columns */}
+            <div className="flex gap-10 lg:gap-14">
+              {contactInfo.map((item) => (
+                <div key={item.heading}>
+                  <p className="text-[15px] font-bold uppercase tracking-widest text-[#1a1a1a] mb-2 m-0">
+                    {item.heading}
+                  </p>
+                  <p className="text-[13px] text-neutral-600 m-0 leading-relaxed">
+                    {item.value}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            {/* Link Columns */}
+            <div className="flex gap-12 lg:gap-25">
+              {Object.entries(footerLinks).map(([title, links]) => (
+                <div key={title}>
+                  <p className="text-[15px] font-bold uppercase tracking-widest text-[#1a1a1a] mb-3 m-0">
+                    {title}
+                  </p>
+                  <ul className="list-none p-0 m-0 space-y-2">
+                    {links.map((link) => (
+                      <li key={link.label}>
+                        <Link
+                          href={link.href}
+                          target={link.href.startsWith("http") ? "_blank" : undefined}
+                          rel={link.href.startsWith("http") ? "noopener noreferrer" : undefined}
+                          className="text-[13px] text-neutral-600 no-underline hover:text-[#b88d7a] transition-colors duration-200"
+                        >
+                          {link.label}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
           </div>
 
-          {/* Social Icons list */}
-          <div className="flex items-center gap-2.5 mt-6">
-            {socialLinks.map(({ href, Icon, label }) => (
-              <Link
-                key={label}
-                href={href}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={label}
-                className="w-[34px] h-[34px] rounded-full border border-neutral-300 flex items-center justify-center text-neutral-600 hover:bg-[#b88d7a] hover:border-[#b88d7a] hover:text-white transition-all duration-200"
+          {/* Payment Icons */}
+          {/* <div className="flex items-center justify-center gap-4 mt-10">
+            {["Visa", "Mastercard", "PayPal", "Apple Pay"].map((name) => (
+              <span
+                key={name}
+                className="text-[12px] font-bold text-neutral-500 bg-white border border-neutral-200 rounded px-3 py-1.5 select-none"
               >
-                <Icon size={14} />
-              </Link>
+                {name}
+              </span>
             ))}
-          </div>
+          </div> */}
         </div>
+      </div>
 
-        {/* Link Columns */}
+      {/* === Mobile: Accordion Sections === */}
+      <div className="md:hidden border-t border-neutral-300 px-4 pt-6">
         {Object.entries(footerLinks).map(([title, links]) => (
-          <div key={title}>
-            <h4 className="text-[14px] font-bold text-[#1a1a1a] mb-5 pb-2.5 border-b border-neutral-200">
-              {title}
-            </h4>
-            <ul className="list-none p-0 m-0 space-y-2.5">
+          <AccordionSection key={title} title={title}>
+            <ul className="list-none p-0 m-0 space-y-2.5 px-1">
               {links.map((link) => (
                 <li key={link.label}>
                   <Link
                     href={link.href}
-                    className="text-black hover:text-[#b88d7a] no-underline text-[13px] flex items-center gap-2 transition-colors duration-200"
+                    target={link.href.startsWith("http") ? "_blank" : undefined}
+                    rel={link.href.startsWith("http") ? "noopener noreferrer" : undefined}
+                    className="text-[13px] text-neutral-600 no-underline hover:text-[#b88d7a] transition-colors duration-200"
                   >
-                    <span className="w-1 h-1 rounded-full bg-[#b88d7a] flex-shrink-0" />
                     {link.label}
                   </Link>
                 </li>
               ))}
             </ul>
-          </div>
+          </AccordionSection>
         ))}
+
+        {/* Mobile Contact Info */}
+        <div className="grid grid-cols-2 gap-6 mt-8">
+          {contactInfo.map((item) => (
+            <div key={item.heading}>
+              <p className="text-[11px] font-bold uppercase tracking-widest text-[#1a1a1a] mb-1 m-0">
+                {item.heading}
+              </p>
+              <p className="text-[13px] text-neutral-600 m-0">
+                {item.value}
+              </p>
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* Copyright Bar */}
-      <div className="border-t border-neutral-200 py-4 text-center text-xs text-neutral-500">
-        © {new Date().getFullYear()} Slickandchic. All rights reserved. Powered by{" "}
-        <Link
-          href="https://botble.com"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-[#b88d7a] hover:underline no-underline"
-        >
-          Botble Technologies
-        </Link>
-        .
+      {/* === Bottom Copyright Bar === */}
+      <div className="border-t border-neutral-300 mt-5">
+        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-neutral-500">
+          <div className="flex items-center gap-6 flex-wrap justify-center">
+            <span>Lagos, Nigeria</span>
+            <Link
+              href="/terms"
+              className="text-neutral-500 no-underline hover:text-[#b88d7a] transition-colors duration-200"
+            >
+              Terms of Service
+            </Link>
+            <Link
+              href="/privacy-policy"
+              className="text-neutral-500 no-underline hover:text-[#b88d7a] transition-colors duration-200"
+            >
+              Privacy Policy
+            </Link>
+          </div>
+          <span>© {new Date().getFullYear()} Slickandchic</span>
+        </div>
       </div>
     </footer>
   );
