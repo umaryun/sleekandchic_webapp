@@ -69,9 +69,16 @@ function AccordionSection({
 
 export default function Footer() {
   return (
-    <footer className="flex flex-col justify-center items-center bg-[#f5f5f5] text-[#1a1a1a]">
+    <footer className="bg-[#f5f5f5] text-[#1a1a1a]">
       {/* === Large Logo Section === */}
-      <div className="max-w-[1280px] mx-auto px-4 sm:px-6 pt-12 pb-8 sm:pt-16 sm:pb-10 text-center">
+      <div
+        style={{
+          maxWidth: "1280px",
+          margin: "0 auto",
+          padding: "20px 10px 12px",
+          textAlign: "center",
+        }}
+      >
         <Link href="/" className="inline-block no-underline">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -83,8 +90,14 @@ export default function Footer() {
       </div>
 
       {/* === Desktop: Contact + Links Row === */}
-      <div className="pb-5 hidden md:block border-t border-neutral-300">
-        <div className="w-full mx-auto px-4 sm:px-6 py-10">
+      <div className="hidden md:block border-t border-neutral-300 w-full">
+        <div
+          style={{
+            maxWidth: "1280px",
+            margin: "10px auto",
+            padding: "10px 24px",
+          }}
+        >
           <div className="grid grid-cols-[1fr_auto] gap-10 lg:gap-25 items-start">
             {/* Contact Info Columns */}
             <div className="flex gap-10 lg:gap-14">
@@ -125,18 +138,6 @@ export default function Footer() {
               ))}
             </div>
           </div>
-
-          {/* Payment Icons */}
-          {/* <div className="flex items-center justify-center gap-4 mt-10">
-            {["Visa", "Mastercard", "PayPal", "Apple Pay"].map((name) => (
-              <span
-                key={name}
-                className="text-[12px] font-bold text-neutral-500 bg-white border border-neutral-200 rounded px-3 py-1.5 select-none"
-              >
-                {name}
-              </span>
-            ))}
-          </div> */}
         </div>
       </div>
 
@@ -177,8 +178,21 @@ export default function Footer() {
       </div>
 
       {/* === Bottom Copyright Bar === */}
-      <div className="border-t border-neutral-300 mt-5">
-        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-neutral-500">
+      <div style={{ borderTop: "1px solid #d4d4d4", marginTop: "20px" }}>
+        <div
+          style={{
+            maxWidth: "1280px",
+            margin: "0 auto",
+            padding: "10px 16px",
+            display: "flex",
+            flexWrap: "wrap",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "12px",
+            fontSize: "11px",
+            color: "#737373",
+          }}
+        >
           <div className="flex items-center gap-6 flex-wrap justify-center">
             <span>Lagos, Nigeria</span>
             <Link
