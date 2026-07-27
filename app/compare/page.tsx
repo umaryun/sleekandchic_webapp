@@ -1,15 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { X, GitCompare, ShoppingCart, Check } from "lucide-react";
 import ShopLayout from "@/components/ShopLayout";
 import PageBreadcrumb from "@/components/PageBreadcrumb";
 import StarRating from "@/components/StarRating";
-import { products } from "@/data";
+import { fetchProducts } from "@/lib/api";
 import type { Product } from "@/types";
+import { formatNGN } from "@/lib/utils";
 
-const compareProducts = products.slice(0, 3);
 interface Spec {
   label: string;
   key: keyof Product;
@@ -17,7 +17,7 @@ interface Spec {
 }
 
 const SPECS: Spec[] = [
-  { label: "Price", key: "price", render: (v) => `$${(v as number).toFixed(2)}` },
+  { label: "Price", key: "price", render: (v) => formatNGN(v as number) },
   { label: "Category", key: "category" },
   { label: "Rating", key: "rating", render: (_, p) => <StarRating rating={p.rating} reviewCount={p.reviewCount} /> },
   { label: "Availability", key: "id", render: () => <span style={{ color: "#28a745", fontWeight: 600, display: "flex", alignItems: "center", gap: "4px" }}><Check size={13} /> In Stock</span> },
@@ -25,8 +25,17 @@ const SPECS: Spec[] = [
 ];
 
 export default function ComparePage() {
-  const [items, setItems] = useState(compareProducts);
-  const remove = (id: number) => setItems(prev => prev.filter(p => p.id !== id));
+  const [items, setItems] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchProducts({ limit: 3 })
+      .then((data) => setItems(data.products))
+      .catch((err) => console.error("Compare fetch error:", err))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const remove = (id: string) => setItems(prev => prev.filter(p => p.id !== id));
 
   return (
     <ShopLayout>
@@ -52,8 +61,8 @@ export default function ComparePage() {
                       <button onClick={() => remove(product.id)} style={{ position: "absolute", top: "12px", right: "12px", background: "none", border: "1px solid #e5e5e5", borderRadius: "50%", width: "24px", height: "24px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#aaa" }}>
                         <X size={12} />
                       </button>
-                      <img src={product.image} alt={product.name} style={{ width: "120px", height: "120px", objectFit: "cover", borderRadius: "4px", marginBottom: "10px" }} />
-                      <Link href={`/products/${product.id}`} style={{ display: "block", fontSize: "14px", fontWeight: 600, color: "#1a1a1a", textDecoration: "none", marginBottom: "10px" }}
+                      <img src={product.image || "/placeholder-product.png"} alt={product.name} style={{ width: "120px", height: "120px", objectFit: "cover", borderRadius: "4px", marginBottom: "10px" }} />
+                      <Link href={`/products/${product.slug}`} style={{ display: "block", fontSize: "14px", fontWeight: 600, color: "#1a1a1a", textDecoration: "none", marginBottom: "10px" }}
                         onMouseEnter={(e) => ((e.currentTarget as HTMLAnchorElement).style.color = "#f57224")}
                         onMouseLeave={(e) => ((e.currentTarget as HTMLAnchorElement).style.color = "#1a1a1a")}
                       >{product.name}</Link>

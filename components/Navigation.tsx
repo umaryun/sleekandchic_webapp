@@ -1,13 +1,51 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ChevronDown, Grid3x3 } from "lucide-react";
-import { navItems, categories } from "@/data";
+import { fetchCategories } from "@/lib/api";
+import type { Category } from "@/types";
+
+const navItems = [
+  {
+    label: "Home",
+    href: "/",
+  },
+  {
+    label: "Shop",
+    href: "/products",
+    children: [
+      { label: "Shop Grid", href: "/products" },
+      { label: "Shop List", href: "/products?layout=list" },
+      { label: "Store Location", href: "/store-locator" },
+      { label: "Cart", href: "/cart" },
+      { label: "Wishlist", href: "/wishlist" },
+    ],
+  },
+  {
+    label: "Pages",
+    href: "#",
+    children: [
+      { label: "Order Tracking", href: "/orders/tracking" },
+      { label: "About", href: "/about" },
+      { label: "Sign up", href: "/register" },
+      { label: "Login", href: "/login" },
+      { label: "Coming soon", href: "/coming-soon" },
+    ],
+  },
+  { label: "Contact", href: "/contact" },
+];
 
 export default function Navigation() {
   const [activeNav, setActiveNav] = useState<string | null>(null);
   const [catMenuOpen, setCatMenuOpen] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  useEffect(() => {
+    fetchCategories()
+      .then((data) => setCategories(data))
+      .catch((err) => console.error("Navigation fetch error:", err));
+  }, []);
 
   return (
     <nav className="hidden md:block relative z-40 text-black">
@@ -52,6 +90,49 @@ export default function Navigation() {
               size={14}
             />
           </button>
+
+          {/* Categories dropdown */}
+          {catMenuOpen && categories.length > 0 && (
+            <div
+              style={{
+                position: "absolute",
+                top: "100%",
+                left: 0,
+                background: "#fff",
+                border: "1px solid #e5e5e5",
+                borderRadius: "0 0 4px 4px",
+                boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+                width: "220px",
+                zIndex: 200,
+              }}
+            >
+              {categories.map((cat) => (
+                <Link
+                  key={cat.id}
+                  href={`/products?category=${cat.slug}`}
+                  style={{
+                    display: "block",
+                    padding: "10px 18px",
+                    color: "#1a1a1a",
+                    textDecoration: "none",
+                    fontSize: "13px",
+                    borderBottom: "1px solid #f5f5f5",
+                    transition: "background 0.15s, color 0.15s, padding-left 0.15s",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = "#b88d7a";
+                    e.currentTarget.style.paddingLeft = "24px";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = "#1a1a1a";
+                    e.currentTarget.style.paddingLeft = "18px";
+                  }}
+                >
+                  {cat.name}
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Main Nav Items */}
@@ -136,7 +217,7 @@ export default function Navigation() {
         >
           <span style={{ color: "#888", fontSize: "12px" }}>
             🔥 <span style={{ color: "#b88d7a", fontWeight: 600 }}>Hot Deal</span>
-            <span style={{ color: "#ccc" }}> — Free Shipping Over $100</span>
+            <span style={{ color: "#ccc" }}> — Free Shipping Over ₦100,000</span>
           </span>
         </div>
       </div>

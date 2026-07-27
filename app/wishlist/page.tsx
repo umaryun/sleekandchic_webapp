@@ -1,17 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Trash2, ShoppingCart, Heart } from "lucide-react";
 import ShopLayout from "@/components/ShopLayout";
 import PageBreadcrumb from "@/components/PageBreadcrumb";
 import StarRating from "@/components/StarRating";
-import { products } from "@/data";
+import { fetchProducts } from "@/lib/api";
+import type { Product } from "@/types";
+import { formatNGN } from "@/lib/utils";
 
 export default function WishlistPage() {
-  const [wishlist, setWishlist] = useState(products.slice(0, 6));
+  const [wishlist, setWishlist] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const remove = (id: number) => setWishlist(w => w.filter(p => p.id !== id));
+  useEffect(() => {
+    // Load some demo products for the wishlist
+    fetchProducts({ limit: 6 })
+      .then((data) => setWishlist(data.products))
+      .catch((err) => console.error("Wishlist fetch error:", err))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const remove = (id: string) => setWishlist(w => w.filter(p => p.id !== id));
 
   return (
     <ShopLayout>
@@ -45,18 +56,18 @@ export default function WishlistPage() {
               {wishlist.map((product) => (
                 <div key={product.id} className="flex flex-col md:grid md:grid-cols-[2.5fr_1fr_1fr_160px_40px] gap-4 p-5 items-start md:items-center border-b border-[#f5f5f5] last:border-b-0 relative w-full">
                   <div className="flex items-center gap-3.5 w-full">
-                    <Link href={`/products/${product.id}`} className="shrink-0">
-                      <img src={product.image} alt={product.name} className="w-16 h-16 object-cover rounded border border-[#f0f0f0]" />
+                    <Link href={`/products/${product.slug}`} className="shrink-0">
+                      <img src={product.image || "/placeholder-product.png"} alt={product.name} className="w-16 h-16 object-cover rounded border border-[#f0f0f0]" />
                     </Link>
                     <div>
-                      <Link href={`/products/${product.id}`} className="text-sm font-semibold text-[#1a1a1a] no-underline hover:text-[#b88d7a] transition-colors">{product.name}</Link>
+                      <Link href={`/products/${product.slug}`} className="text-sm font-semibold text-[#1a1a1a] no-underline hover:text-[#b88d7a] transition-colors">{product.name}</Link>
                       <div className="mt-1"><StarRating rating={product.rating} reviewCount={product.reviewCount} size={12} /></div>
                     </div>
                   </div>
                   <div className="flex md:justify-center items-center w-full md:w-auto">
                     <span className="text-xs font-semibold text-[#888] mr-3 md:hidden">Price:</span>
-                    <span className="text-sm font-bold text-[#1a1a1a]">${product.price.toFixed(2)}</span>
-                    {product.originalPrice && <span className="text-xs text-[#aaa] line-through ml-2">${product.originalPrice.toFixed(2)}</span>}
+                    <span className="text-sm font-bold text-[#1a1a1a]">{formatNGN(product.price)}</span>
+                    {product.originalPrice && <span className="text-xs text-[#aaa] line-through ml-2">{formatNGN(product.originalPrice)}</span>}
                   </div>
                   <div className="flex md:justify-center items-center w-full md:w-auto">
                     <span className="text-xs font-semibold text-[#888] mr-3 md:hidden">Status:</span>

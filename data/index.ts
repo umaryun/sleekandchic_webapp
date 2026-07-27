@@ -1,4 +1,4 @@
-import type { Product, Category, NavItem, Announcement, HeroSlide } from "@/types";
+import type { SeedProduct as Product, SeedCategory as Category, NavItem, Announcement, SeedHeroSlide as HeroSlide } from "@/types";
 
 export const announcements: Announcement[] = [
   {
@@ -18,7 +18,7 @@ export const announcements: Announcement[] = [
   {
     id: 3,
     bold: "Welcome to our international shop!",
-    text: " Enjoy free shipping on orders $100 & up",
+    text: " Enjoy free shipping on orders ₦100,000 & up",
     linkText: "Shop now",
     href: "/",
   },

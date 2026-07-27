@@ -1,14 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import { useParams, notFound } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
 import Link from "next/link";
-import { Heart, GitCompare, Share2, ShoppingCart, Zap, Minus, Plus, Star, Facebook, Twitter, Linkedin, Check } from "lucide-react";
+import { Heart, GitCompare, ShoppingCart, Zap, Minus, Plus, Star, Facebook, Twitter, Linkedin, Check } from "lucide-react";
 import ShopLayout from "@/components/ShopLayout";
 import PageBreadcrumb from "@/components/PageBreadcrumb";
 import ProductCard from "@/components/ProductCard";
 import StarRating from "@/components/StarRating";
-import { products } from "@/data";
+import { fetchProduct, fetchProducts } from "@/lib/api";
+import type { Product } from "@/types";
+import { formatNGN } from "@/lib/utils";
 
 const REVIEWS = [
   { id: 1, name: "Alice M.", rating: 5, date: "Jun 12, 2025", comment: "Absolutely love this product! The quality is outstanding and it arrived quickly. Would definitely recommend to anyone looking for a premium item.", avatar: "https://placehold.co/48x48/e0ecf5/666?text=A" },
@@ -21,23 +23,75 @@ export default function ProductDetailPage() {
   const params = useParams();
   const slug = params.slug as string;
 
-  // Find product by ID (the slug is the numeric product ID)
-  const product = products.find((p) => String(p.id) === slug);
-
-  const productColors = product?.colors ?? ["Default"];
-  const productSizes = product?.sizes ?? ["One Size"];
-  const productImages = product?.images?.length ? product.images : (product ? [product.image] : []);
+  const [product, setProduct] = useState<Product | null>(null);
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
 
   const [activeImg, setActiveImg] = useState(0);
-  const [selectedColor, setSelectedColor] = useState(productColors[0]);
-  const [selectedSize, setSelectedSize] = useState(productSizes[0]);
+  const [selectedColor, setSelectedColor] = useState("");
+  const [selectedSize, setSelectedSize] = useState("");
   const [qty, setQty] = useState(1);
   const [activeTab, setActiveTab] = useState("description");
   const [addedToCart, setAddedToCart] = useState(false);
   const [wishlisted, setWishlisted] = useState(false);
   const [reviewForm, setReviewForm] = useState({ name: "", email: "", rating: 5, comment: "" });
 
-  if (!product) {
+  useEffect(() => {
+    setLoading(true);
+    setNotFound(false);
+
+    fetchProduct(slug)
+      .then((data) => {
+        setProduct(data);
+
+        // Extract unique colors/sizes from variants
+        const colors = [...new Set(data.variants?.map((v) => v.color).filter(Boolean) as string[])];
+        const sizes = [...new Set(data.variants?.map((v) => v.size).filter(Boolean) as string[])];
+        if (colors.length > 0) setSelectedColor(colors[0]);
+        if (sizes.length > 0) setSelectedSize(sizes[0]);
+
+        // Fetch related products from same category
+        if (data.categorySlug) {
+          fetchProducts({ category: data.categorySlug, limit: 5 })
+            .then((relData) => {
+              const related = relData.products.filter((p) => p.id !== data.id).slice(0, 4);
+              setRelatedProducts(related);
+            })
+            .catch(() => {});
+        }
+      })
+      .catch(() => {
+        setNotFound(true);
+      })
+      .finally(() => setLoading(false));
+  }, [slug]);
+
+  if (loading) {
+    return (
+      <ShopLayout>
+        <PageBreadcrumb title="Loading..." crumbs={[]} />
+        <div style={{ maxWidth: "1280px", margin: "36px auto", padding: "0 16px" }}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-14">
+            <div>
+              <div style={{ aspectRatio: "1", background: "#f5f5f5", borderRadius: "6px" }} className="animate-pulse" />
+            </div>
+            <div>
+              <div style={{ height: "20px", background: "#f0f0f0", borderRadius: "4px", width: "40%", marginBottom: "16px" }} className="animate-pulse" />
+              <div style={{ height: "32px", background: "#f0f0f0", borderRadius: "4px", width: "80%", marginBottom: "12px" }} className="animate-pulse" />
+              <div style={{ height: "24px", background: "#f0f0f0", borderRadius: "4px", width: "30%", marginBottom: "24px" }} className="animate-pulse" />
+              <div style={{ height: "14px", background: "#f0f0f0", borderRadius: "4px", width: "100%", marginBottom: "8px" }} className="animate-pulse" />
+              <div style={{ height: "14px", background: "#f0f0f0", borderRadius: "4px", width: "90%", marginBottom: "8px" }} className="animate-pulse" />
+              <div style={{ height: "14px", background: "#f0f0f0", borderRadius: "4px", width: "70%", marginBottom: "32px" }} className="animate-pulse" />
+              <div style={{ height: "48px", background: "#f0f0f0", borderRadius: "4px", width: "60%" }} className="animate-pulse" />
+            </div>
+          </div>
+        </div>
+      </ShopLayout>
+    );
+  }
+
+  if (notFound || !product) {
     return (
       <ShopLayout>
         <div style={{ maxWidth: "1280px", margin: "80px auto", padding: "0 16px", textAlign: "center" }}>
@@ -53,29 +107,23 @@ export default function ProductDetailPage() {
     );
   }
 
+  // Extract colors/sizes from variants
+  const productColors = [...new Set(product.variants?.map((v) => v.color).filter(Boolean) as string[])];
+  const productSizes = [...new Set(product.variants?.map((v) => v.size).filter(Boolean) as string[])];
+  const productImages = product.images?.length
+    ? product.images.map((img) => img.imageUrl)
+    : product.image
+      ? [product.image]
+      : ["/placeholder-product.png"];
+
   const handleAddToCart = () => {
     setAddedToCart(true);
     setTimeout(() => setAddedToCart(false), 2000);
   };
 
-  // Get related products from the same category, excluding the current product
-  const relatedProducts = products
-    .filter((p) => p.category === product.category && p.id !== product.id)
-    .slice(0, 4);
-
-  // If not enough related products from the same category, fill with others
-  const displayRelated = relatedProducts.length >= 4
-    ? relatedProducts
-    : [
-      ...relatedProducts,
-      ...products
-        .filter((p) => p.id !== product.id && !relatedProducts.find((r) => r.id === p.id))
-        .slice(0, 4 - relatedProducts.length),
-    ];
-
   return (
     <ShopLayout>
-      <PageBreadcrumb title={product.name} crumbs={[{ label: "Products", href: "/products" }, { label: product.category, href: `/category/${product.category}` }]} />
+      <PageBreadcrumb title={product.name} crumbs={[{ label: "Products", href: "/products" }, ...(product.category ? [{ label: product.category, href: `/products?category=${product.categorySlug}` }] : [])]} />
 
       <div style={{ maxWidth: "1280px", margin: "36px auto", padding: "0 16px" }}>
         {/* Top: Gallery + Info */}
@@ -85,7 +133,8 @@ export default function ProductDetailPage() {
           <div>
             {/* Main image */}
             <div style={{ position: "relative", borderRadius: "6px", overflow: "hidden", marginBottom: "14px", background: "#fafafa", border: "1px solid #f0f0f0", aspectRatio: "1" }}>
-              <img src={productImages[activeImg] || product.image} alt={product.name}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={productImages[activeImg] || productImages[0]} alt={product.name}
                 style={{ width: "100%", height: "100%", objectFit: "cover", transition: "opacity 0.3s" }} />
             </div>
             {/* Thumbnails */}
@@ -94,6 +143,7 @@ export default function ProductDetailPage() {
                 {productImages.slice(0, 9).map((img: string, i: number) => (
                   <button key={i} onClick={() => setActiveImg(i)}
                     style={{ aspectRatio: "1", border: `2px solid ${activeImg === i ? "#f57224" : "#e5e5e5"}`, borderRadius: "4px", overflow: "hidden", cursor: "pointer", padding: 0, background: "none", transition: "border-color 0.2s" }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={img} alt={`Thumbnail ${i + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   </button>
                 ))}
@@ -130,9 +180,9 @@ export default function ProductDetailPage() {
 
             {/* Price */}
             <div style={{ display: "flex", alignItems: "baseline", gap: "12px", marginBottom: "20px", paddingBottom: "20px", borderBottom: "1px solid #f0f0f0" }}>
-              <span style={{ fontSize: "32px", fontWeight: 800, color: "#1a1a1a" }}>${product.price.toFixed(2)}</span>
+              <span style={{ fontSize: "32px", fontWeight: 800, color: "#1a1a1a" }}>{formatNGN(product.price)}</span>
               {product.originalPrice && (
-                <span style={{ fontSize: "18px", color: "#aaa", textDecoration: "line-through" }}>${product.originalPrice.toFixed(2)}</span>
+                <span style={{ fontSize: "18px", color: "#aaa", textDecoration: "line-through" }}>{formatNGN(product.originalPrice)}</span>
               )}
             </div>
 
@@ -142,48 +192,52 @@ export default function ProductDetailPage() {
             </p>
 
             {/* Color */}
-            <div style={{ marginBottom: "20px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px" }}>
-                <span style={{ fontSize: "13px", fontWeight: 700, color: "#1a1a1a" }}>Color:</span>
-                <span style={{ fontSize: "13px", color: "#f57224", fontWeight: 600 }}>{selectedColor}</span>
+            {productColors.length > 0 && (
+              <div style={{ marginBottom: "20px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px" }}>
+                  <span style={{ fontSize: "13px", fontWeight: 700, color: "#1a1a1a" }}>Color:</span>
+                  <span style={{ fontSize: "13px", color: "#f57224", fontWeight: 600 }}>{selectedColor}</span>
+                </div>
+                <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                  {productColors.map((color: string) => (
+                    <button key={color} onClick={() => setSelectedColor(color)}
+                      style={{
+                        padding: "7px 18px", borderRadius: "3px", cursor: "pointer",
+                        border: `2px solid ${selectedColor === color ? "#f57224" : "#e5e5e5"}`,
+                        background: selectedColor === color ? "#fff8f5" : "#fff",
+                        color: selectedColor === color ? "#f57224" : "#555",
+                        fontSize: "13px", fontWeight: 600, transition: "all 0.2s",
+                      }}>
+                      {color}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-                {productColors.map((color: string) => (
-                  <button key={color} onClick={() => setSelectedColor(color)}
-                    style={{
-                      padding: "7px 18px", borderRadius: "3px", cursor: "pointer",
-                      border: `2px solid ${selectedColor === color ? "#f57224" : "#e5e5e5"}`,
-                      background: selectedColor === color ? "#fff8f5" : "#fff",
-                      color: selectedColor === color ? "#f57224" : "#555",
-                      fontSize: "13px", fontWeight: 600, transition: "all 0.2s",
-                    }}>
-                    {color}
-                  </button>
-                ))}
-              </div>
-            </div>
+            )}
 
             {/* Size */}
-            <div style={{ marginBottom: "24px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px" }}>
-                <span style={{ fontSize: "13px", fontWeight: 700, color: "#1a1a1a" }}>Size:</span>
-                <span style={{ fontSize: "13px", color: "#f57224", fontWeight: 600 }}>{selectedSize}</span>
+            {productSizes.length > 0 && (
+              <div style={{ marginBottom: "24px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px" }}>
+                  <span style={{ fontSize: "13px", fontWeight: 700, color: "#1a1a1a" }}>Size:</span>
+                  <span style={{ fontSize: "13px", color: "#f57224", fontWeight: 600 }}>{selectedSize}</span>
+                </div>
+                <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                  {productSizes.map((size: string) => (
+                    <button key={size} onClick={() => setSelectedSize(size)}
+                      style={{
+                        minWidth: "48px", padding: "7px 14px", borderRadius: "3px", cursor: "pointer",
+                        border: `2px solid ${selectedSize === size ? "#f57224" : "#e5e5e5"}`,
+                        background: selectedSize === size ? "#f57224" : "#fff",
+                        color: selectedSize === size ? "#fff" : "#555",
+                        fontSize: "13px", fontWeight: 700, transition: "all 0.2s",
+                      }}>
+                      {size}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-                {productSizes.map((size: string) => (
-                  <button key={size} onClick={() => setSelectedSize(size)}
-                    style={{
-                      minWidth: "48px", padding: "7px 14px", borderRadius: "3px", cursor: "pointer",
-                      border: `2px solid ${selectedSize === size ? "#f57224" : "#e5e5e5"}`,
-                      background: selectedSize === size ? "#f57224" : "#fff",
-                      color: selectedSize === size ? "#fff" : "#555",
-                      fontSize: "13px", fontWeight: 700, transition: "all 0.2s",
-                    }}>
-                    {size}
-                  </button>
-                ))}
-              </div>
-            </div>
+            )}
 
             {/* Qty + Buttons */}
             <div className="flex gap-2 md:gap-3 items-center flex-wrap">
@@ -226,8 +280,7 @@ export default function ProductDetailPage() {
               {[
                 { label: "SKU", value: product.sku || "N/A" },
                 { label: "Brand", value: product.brand || "N/A" },
-                { label: "Categories", value: product.category },
-                { label: "Tags", value: product.tags?.join(", ") || "N/A" },
+                { label: "Categories", value: product.category || "N/A" },
               ].map(({ label, value }) => (
                 <div key={label} style={{ display: "flex", gap: "8px", fontSize: "13px" }}>
                   <span style={{ fontWeight: 700, color: "#1a1a1a", minWidth: "80px" }}>{label}:</span>
@@ -289,6 +342,7 @@ export default function ProductDetailPage() {
                   <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
                     {REVIEWS.map(review => (
                       <div key={review.id} style={{ display: "flex", gap: "16px", paddingBottom: "24px", borderBottom: "1px solid #f0f0f0" }}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={review.avatar} alt={review.name} style={{ width: "48px", height: "48px", borderRadius: "50%", flexShrink: 0, objectFit: "cover" }} />
                         <div style={{ flex: 1 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "6px" }}>
@@ -357,12 +411,14 @@ export default function ProductDetailPage() {
         </div>
 
         {/* Related Products */}
-        <div>
-          <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#1a1a1a", marginBottom: "24px" }}>Related Products</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-            {displayRelated.map(p => <ProductCard key={p.id} product={p} />)}
+        {relatedProducts.length > 0 && (
+          <div>
+            <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#1a1a1a", marginBottom: "24px" }}>Related Products</h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+              {relatedProducts.map(p => <ProductCard key={p.id} product={p} />)}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </ShopLayout>
   );
