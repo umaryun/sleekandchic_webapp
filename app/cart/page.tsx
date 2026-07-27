@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Minus, Plus, Trash2, ShoppingBag, ArrowRight, Tag } from "lucide-react";
+import { Minus, Plus, Trash2, ShoppingCart, ArrowRight, Tag } from "lucide-react";
 import ShopLayout from "@/components/ShopLayout";
 import PageBreadcrumb from "@/components/PageBreadcrumb";
+import { formatNGN } from "@/lib/utils";
 
 const initialCart = [
   { id: 1, name: "Elegant Wooden Wall Clock", price: 49.99, quantity: 1, size: "M", color: "Brown", image: "https://placehold.co/80x80/f0ece4/999?text=P1" },
@@ -35,7 +36,7 @@ export default function CartPage() {
       <div style={{ maxWidth: "1280px", margin: "36px auto", padding: "0 16px" }}>
         {cart.length === 0 ? (
           <div style={{ textAlign: "center", padding: "80px 20px" }}>
-            <ShoppingBag size={64} color="#e0e0e0" style={{ margin: "0 auto 20px" }} />
+            <ShoppingCart size={64} color="#e0e0e0" style={{ margin: "0 auto 20px" }} />
             <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#1a1a1a", marginBottom: "10px" }}>Your cart is empty</h2>
             <p style={{ color: "#888", marginBottom: "28px" }}>Looks like you haven&apos;t added anything to your cart yet.</p>
             <Link href="/products" style={{ padding: "12px 32px", background: "#f57224", color: "#fff", textDecoration: "none", borderRadius: "3px", fontWeight: 700, fontSize: "14px" }}>
@@ -59,10 +60,10 @@ export default function CartPage() {
                         <Link href={`/products/${item.id}`} className="text-sm font-semibold text-[#1a1a1a] no-underline hover:text-[#b88d7a] transition-colors">{item.name}</Link>
                         <p className="text-xs text-[#888] mt-1">Color: {item.color} · Size: {item.size}</p>
                         {/* Mobile price indicator */}
-                        <p className="text-xs text-[#555] font-semibold mt-1 md:hidden">Price: ${item.price.toFixed(2)}</p>
+                        <p className="text-xs text-[#555] font-semibold mt-1 md:hidden">Price: {formatNGN(item.price)}</p>
                       </div>
                     </div>
-                    <span className="hidden md:block text-center text-sm font-semibold text-[#555] w-full">${item.price.toFixed(2)}</span>
+                    <span className="hidden md:block text-center text-sm font-semibold text-[#555] w-full">{formatNGN(item.price)}</span>
                     <div className="flex items-center md:justify-center w-full md:w-auto">
                       <span className="text-xs font-semibold text-[#888] mr-3 md:hidden">Qty:</span>
                       <div className="flex border border-[#e5e5e5] rounded overflow-hidden">
@@ -77,7 +78,7 @@ export default function CartPage() {
                     </div>
                     <div className="flex md:justify-center items-center w-full border-t border-[#f5f5f5] pt-3 md:pt-0 md:border-t-0 md:w-auto">
                       <span className="text-xs font-bold text-[#888] mr-3 md:hidden">Subtotal:</span>
-                      <span className="text-sm font-bold text-[#1a1a1a]">${(item.price * item.quantity).toFixed(2)}</span>
+                      <span className="text-sm font-bold text-[#1a1a1a]">{formatNGN(item.price * item.quantity)}</span>
                     </div>
                     <button onClick={() => remove(item.id)} className="absolute top-5 right-5 md:static bg-none border-none cursor-pointer text-[#ccc] hover:text-red-500 transition-colors flex items-center justify-center" aria-label="Remove item">
                       <Trash2 size={16} />
@@ -101,9 +102,9 @@ export default function CartPage() {
 
               <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "20px" }}>
                 {[
-                  { label: "Subtotal", value: `$${subtotal.toFixed(2)}` },
-                  { label: "Shipping", value: shipping === 0 ? "Free" : `$${shipping.toFixed(2)}` },
-                  ...(discount ? [{ label: "Coupon Discount", value: `-$${discount.toFixed(2)}` }] : []),
+                  { label: "Subtotal", value: formatNGN(subtotal) },
+                  { label: "Shipping", value: shipping === 0 ? "Free" : formatNGN(shipping) },
+                  ...(discount ? [{ label: "Coupon Discount", value: `-${formatNGN(discount)}` }] : []),
                 ].map(({ label, value }) => (
                   <div key={label} style={{ display: "flex", justifyContent: "space-between", fontSize: "13px" }}>
                     <span style={{ color: "#666" }}>{label}</span>
@@ -132,7 +133,7 @@ export default function CartPage() {
 
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "20px" }}>
                 <span style={{ fontSize: "16px", fontWeight: 700 }}>Total</span>
-                <span style={{ fontSize: "20px", fontWeight: 800, color: "#1a1a1a" }}>${total.toFixed(2)}</span>
+                <span style={{ fontSize: "20px", fontWeight: 800, color: "#1a1a1a" }}>{formatNGN(total)}</span>
               </div>
 
               <Link href="/checkout" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", padding: "14px", background: "#f57224", color: "#fff", textDecoration: "none", borderRadius: "3px", fontWeight: 700, fontSize: "15px", transition: "background 0.2s" }}

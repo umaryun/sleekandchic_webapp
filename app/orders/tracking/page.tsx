@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Package, Truck, MapPin, CheckCircle, Clock, Search } from "lucide-react";
 import ShopLayout from "@/components/ShopLayout";
 import PageBreadcrumb from "@/components/PageBreadcrumb";
+import { formatNGN } from "@/lib/utils";
 
 type TrackStatus = "processing" | "shipped" | "out_for_delivery" | "delivered";
 
@@ -202,12 +203,12 @@ export default function OrderTrackingPage() {
                         <p style={{ fontSize: "13px", fontWeight: 600, color: "#1a1a1a", marginBottom: "2px" }}>{item.name}</p>
                         <p style={{ fontSize: "12px", color: "#888" }}>Qty: {item.qty}</p>
                       </div>
-                      <span style={{ fontSize: "13px", fontWeight: 700, color: "#1a1a1a" }}>${(item.price * item.qty).toFixed(2)}</span>
+                      <span style={{ fontSize: "13px", fontWeight: 700, color: "#1a1a1a" }}>{formatNGN(item.price * item.qty)}</span>
                     </div>
                   ))}
                   <div style={{ borderTop: "2px solid #f0f0f0", paddingTop: "12px", marginTop: "12px", display: "flex", justifyContent: "space-between" }}>
                     <span style={{ fontSize: "14px", fontWeight: 700 }}>Total</span>
-                    <span style={{ fontSize: "16px", fontWeight: 800, color: "#f57224" }}>${order.total.toFixed(2)}</span>
+                    <span style={{ fontSize: "16px", fontWeight: 800, color: "#f57224" }}>{formatNGN(order.total)}</span>
                   </div>
                 </div>
 

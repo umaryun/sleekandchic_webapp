@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Heart, ShoppingCart, Eye, X, Minus, Plus } from "lucide-react";
 import StarRating from "./StarRating";
 import type { Product } from "@/types";
+import { formatNGN } from "@/lib/utils";
 
 interface ProductCardProps {
   product: Product;
@@ -31,8 +32,16 @@ export default function ProductCard({
 
   const defaultSizes = ["S", "M", "L", "XL"];
   const defaultColors = ["Black", "White", "Brown"];
-  const sizes = product.sizes?.length ? product.sizes : defaultSizes;
-  const colors = product.colors?.length ? product.colors : defaultColors;
+  const sizes: string[] = product.sizes?.length
+    ? product.sizes
+    : (product.variants?.map((v) => v.size).filter((s): s is string => Boolean(s))?.length ?? 0) > 0
+    ? Array.from(new Set(product.variants!.map((v) => v.size).filter((s): s is string => Boolean(s))))
+    : defaultSizes;
+  const colors: string[] = product.colors?.length
+    ? product.colors
+    : (product.variants?.map((v) => v.color).filter((c): c is string => Boolean(c))?.length ?? 0) > 0
+    ? Array.from(new Set(product.variants!.map((v) => v.color).filter((c): c is string => Boolean(c))))
+    : defaultColors;
 
   const openModal = () => {
     setSelectedSize(sizes[0]);
@@ -129,7 +138,7 @@ export default function ProductCard({
         </button>
 
         {/* Product image */}
-        <Link href={`/products/${product.id}`}>
+        <Link href={`/products/${product.slug}`}>
           <div
             style={{
               position: "relative",
@@ -140,7 +149,7 @@ export default function ProductCard({
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={product.image}
+              src={product.image || "/placeholder-product.png"}
               alt={product.name}
               style={{
                 position: "absolute",
@@ -164,7 +173,7 @@ export default function ProductCard({
         >
           {/* Product Name */}
           <Link
-            href={`/products/${product.id}`}
+            href={`/products/${product.slug}`}
             style={{ textDecoration: "none" }}
           >
             <h3
@@ -208,7 +217,7 @@ export default function ProductCard({
                   color: "#b88d7a",
                 }}
               >
-                ${product.price.toFixed(2)}
+                {formatNGN(product.price)}
               </span>
               {product.originalPrice && (
                 <span
@@ -218,7 +227,7 @@ export default function ProductCard({
                     textDecoration: "line-through",
                   }}
                 >
-                  ${product.originalPrice.toFixed(2)}
+                  {formatNGN(product.originalPrice)}
                 </span>
               )}
             </div>
@@ -265,7 +274,7 @@ export default function ProductCard({
             {addedToCart ? "Added!" : "Add to Cart"}
           </button>
           <Link
-            href={`/products/${product.id}`}
+            href={`/products/${product.slug}`}
             onMouseEnter={() => setViewBtnHovered(true)}
             onMouseLeave={() => setViewBtnHovered(false)}
             style={{
@@ -365,7 +374,7 @@ export default function ProductCard({
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={product.image}
+                  src={product.image || "/placeholder-product.png"}
                   alt={product.name}
                   style={{ width: "100%", height: "100%", objectFit: "cover" }}
                 />
@@ -375,7 +384,7 @@ export default function ProductCard({
                   {product.name}
                 </p>
                 <p style={{ fontSize: "16px", fontWeight: 700, color: "#b88d7a", margin: 0 }}>
-                  ${product.price.toFixed(2)}
+                  {formatNGN(product.price)}
                 </p>
               </div>
             </div>
@@ -390,7 +399,7 @@ export default function ProductCard({
                   Size
                 </p>
                 <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-                  {sizes.map((size) => (
+                  {sizes.map((size: string) => (
                     <button
                       key={size}
                       onClick={() => setSelectedSize(size)}
@@ -418,7 +427,7 @@ export default function ProductCard({
                   Color
                 </p>
                 <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-                  {colors.map((color) => (
+                  {colors.map((color: string) => (
                     <button
                       key={color}
                       onClick={() => setSelectedColor(color)}
@@ -527,7 +536,7 @@ export default function ProductCard({
                 onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "#1a1a1a"; }}
               >
                 <ShoppingCart size={15} />
-                Add to Cart — ${(product.price * quantity).toFixed(2)}
+                Add to Cart — {formatNGN(product.price * quantity)}
               </button>
             </div>
           </div>

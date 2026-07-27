@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Search,
@@ -12,7 +12,8 @@ import {
   X,
   Menu,
 } from "lucide-react";
-import { categories } from "@/data";
+import { fetchCategories } from "@/lib/api";
+import type { Category } from "@/types";
 import CartDrawer from "./CartDrawer";
 import MobileMenu from "./MobileMenu";
 
@@ -29,6 +30,13 @@ export default function Header({ cartCount, wishlistCount, compareCount }: Heade
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
   const [cartOpen, setCartOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  useEffect(() => {
+    fetchCategories()
+      .then((data) => setCategories(data))
+      .catch((err) => console.error("Header categories fetch error:", err));
+  }, []);
   const [searchOpen, setSearchOpen] = useState(false);
 
   return (
@@ -147,7 +155,7 @@ export default function Header({ cartCount, wishlistCount, compareCount }: Heade
                     marginTop: "2px",
                   }}
                 >
-                  {["All Categories", ...categories.map((c) => c.name)].map((cat) => (
+                  {["All Categories", ...categories.map((c: Category) => c.name)].map((cat) => (
                     <button
                       key={cat}
                       onClick={() => {

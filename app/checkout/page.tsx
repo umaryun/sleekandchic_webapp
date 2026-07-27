@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ChevronRight, Check, CreditCard, Truck, Package, MapPin, Lock, ChevronDown } from "lucide-react";
 import ShopLayout from "@/components/ShopLayout";
 import PageBreadcrumb from "@/components/PageBreadcrumb";
+import { formatNGN } from "@/lib/utils";
 
 const STEPS = ["Shipping", "Payment", "Confirmation"] as const;
 type Step = (typeof STEPS)[number];
@@ -137,8 +138,8 @@ export default function CheckoutPage() {
                 </h3>
                 <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                   {([
-                    { id: "standard", label: "Standard Shipping", sub: "5–8 business days", price: subtotal >= 100 ? "Free" : "$9.99" },
-                    { id: "express", label: "Express Shipping", sub: "1–3 business days", price: "$14.99" },
+                    { id: "standard", label: "Standard Shipping", sub: "5–8 business days", price: subtotal >= 100 ? "Free" : formatNGN(9.99) },
+                    { id: "express", label: "Express Shipping", sub: "1–3 business days", price: formatNGN(14.99) },
                   ] as const).map(({ id, label, sub, price }) => (
                     <label key={id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 18px", border: `2px solid ${shippingMethod === id ? "#f57224" : "#e5e5e5"}`, borderRadius: "6px", cursor: "pointer", background: shippingMethod === id ? "#fff8f5" : "#fff", transition: "all 0.2s" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
@@ -294,7 +295,7 @@ export default function CheckoutPage() {
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", paddingTop: "12px", borderTop: "1px solid #e5e5e5" }}>
                   <span style={{ fontSize: "14px", fontWeight: 700 }}>Total</span>
-                  <span style={{ fontSize: "16px", fontWeight: 800, color: "#1a1a1a" }}>${total.toFixed(2)}</span>
+                  <span style={{ fontSize: "16px", fontWeight: 800, color: "#1a1a1a" }}>{formatNGN(total)}</span>
                 </div>
               </div>
 
@@ -332,16 +333,16 @@ export default function CheckoutPage() {
                 <div style={{ flex: 1 }}>
                   <p style={{ fontSize: "13px", fontWeight: 600, color: "#1a1a1a", lineHeight: 1.4 }}>{item.name}</p>
                 </div>
-                <span style={{ fontSize: "13px", fontWeight: 700, color: "#1a1a1a", flexShrink: 0 }}>${(item.price * item.quantity).toFixed(2)}</span>
+                <span style={{ fontSize: "13px", fontWeight: 700, color: "#1a1a1a", flexShrink: 0 }}>{formatNGN(item.price * item.quantity)}</span>
               </div>
             ))}
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: "10px", borderTop: "1px solid #f0f0f0", paddingTop: "16px", marginBottom: "16px" }}>
             {[
-              { label: "Subtotal", value: `$${subtotal.toFixed(2)}` },
-              { label: `Shipping (${shippingMethod === "express" ? "Express" : "Standard"})`, value: shippingCost === 0 ? "Free" : `$${shippingCost.toFixed(2)}` },
-              { label: "Tax (8%)", value: `$${tax.toFixed(2)}` },
+              { label: "Subtotal", value: formatNGN(subtotal) },
+              { label: `Shipping (${shippingMethod === "express" ? "Express" : "Standard"})`, value: shippingCost === 0 ? "Free" : formatNGN(shippingCost) },
+              { label: "Tax (8%)", value: formatNGN(tax) },
             ].map(({ label, value }) => (
               <div key={label} style={{ display: "flex", justifyContent: "space-between", fontSize: "13px" }}>
                 <span style={{ color: "#666" }}>{label}</span>
@@ -352,7 +353,7 @@ export default function CheckoutPage() {
 
           <div style={{ display: "flex", justifyContent: "space-between", padding: "14px 0", borderTop: "2px solid #1a1a1a", borderBottom: "2px solid #1a1a1a", marginBottom: "16px" }}>
             <span style={{ fontSize: "16px", fontWeight: 700 }}>Total</span>
-            <span style={{ fontSize: "20px", fontWeight: 800, color: "#f57224" }}>${total.toFixed(2)}</span>
+            <span style={{ fontSize: "20px", fontWeight: 800, color: "#f57224" }}>{formatNGN(total)}</span>
           </div>
 
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", fontSize: "12px", color: "#888" }}>

@@ -1,43 +1,24 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { SlidersHorizontal, Grid, List, ChevronDown, ChevronRight, X, Star } from "lucide-react";
+import { SlidersHorizontal, Grid, List, ChevronDown, ChevronRight, X } from "lucide-react";
 import ShopLayout from "@/components/ShopLayout";
 import PageBreadcrumb from "@/components/PageBreadcrumb";
 import ProductCard from "@/components/ProductCard";
 import StarRating from "@/components/StarRating";
-import { products, categories } from "@/data";
-import type { Product } from "@/types";
+import { fetchProducts, fetchCategories, type FetchProductsParams } from "@/lib/api";
+import type { Product, Category, PaginationMeta } from "@/types";
+import { formatNGN } from "@/lib/utils";
 
-const BRANDS = ["Fashion Live", "Hand Crafted", "Mestonix", "Sunshine", "Pure", "Anfold"];
-const TAGS = ["Office", "Mobile", "Printer", "Iphone", "IT", "Electronic"];
-const COLORS = [
-  { name: "Green", hex: "#4caf50" },
-  { name: "Blue", hex: "#2196f3" },
-  { name: "Red", hex: "#f44336" },
-  { name: "Black", hex: "#1a1a1a" },
-  { name: "Brown", hex: "#795548" },
-];
-const SIZES = ["S", "M", "L", "XL", "XXL"];
 const SORT_OPTIONS = [
-  { value: "default", label: "Default" },
-  { value: "newest", label: "Newest" },
-  { value: "oldest", label: "Oldest" },
-  { value: "price-asc", label: "Price: Low to High" },
-  { value: "price-desc", label: "Price: High to Low" },
-  { value: "name-az", label: "Name: A-Z" },
-  { value: "name-za", label: "Name: Z-A" },
-  { value: "rating-asc", label: "Rating: Low to High" },
-  { value: "rating-desc", label: "Rating: High to Low" },
+  { value: "newest", label: "Newest", api: "newest" as const },
+  { value: "price-asc", label: "Price: Low to High", api: "price_asc" as const },
+  { value: "price-desc", label: "Price: High to Low", api: "price_desc" as const },
+  { value: "name-az", label: "Name: A-Z", api: "name" as const },
+  { value: "rating-desc", label: "Rating: High to Low", api: "rating" as const },
 ];
-
-// Expand mock product list to 75 items
-const allProducts: Product[] = Array.from({ length: 75 }, (_, i) => ({
-  ...products[i % products.length],
-  id: i + 1,
-  name: products[i % products.length].name + (i >= products.length ? ` #${Math.floor(i / products.length) + 1}` : ""),
-}));
 
 function FilterSection({ title, children, defaultOpen = true }: { title: string; children: React.ReactNode; defaultOpen?: boolean }) {
   const [open, setOpen] = useState(defaultOpen);
@@ -53,111 +34,135 @@ function FilterSection({ title, children, defaultOpen = true }: { title: string;
   );
 }
 
-export default function ProductsPage() {
+function ProductsContent() {
+  const searchParams = useSearchParams();
+  const initialCategory = searchParams.get("category") || "";
+
   const [layout, setLayout] = useState<"grid" | "list">("grid");
   const [perPage, setPerPage] = useState(20);
-  const [sort, setSort] = useState("default");
+  const [sort, setSort] = useState("newest");
   const [sortOpen, setSortOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
-  const [selectedCats, setSelectedCats] = useState<string[]>([]);
-  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
-  const [selectedColors, setSelectedColors] = useState<string[]>([]);
-  const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
+  const [selectedCat, setSelectedCat] = useState<string>(initialCategory);
   const [onSaleOnly, setOnSaleOnly] = useState(false);
-  const [priceRange, setPriceRange] = useState([0, 500]);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const filtered = useMemo(() => {
-    let out = [...allProducts];
-    if (selectedCats.length) out = out.filter(p => selectedCats.includes(p.category));
-    if (onSaleOnly) out = out.filter(p => p.badge === "sale");
-    if (sort === "price-asc") out.sort((a, b) => a.price - b.price);
-    else if (sort === "price-desc") out.sort((a, b) => b.price - a.price);
-    else if (sort === "name-az") out.sort((a, b) => a.name.localeCompare(b.name));
-    else if (sort === "name-za") out.sort((a, b) => b.name.localeCompare(a.name));
-    else if (sort === "rating-asc") out.sort((a, b) => a.rating - b.rating);
-    else if (sort === "rating-desc") out.sort((a, b) => b.rating - a.rating);
-    return out;
-  }, [selectedCats, onSaleOnly, sort]);
+  // Data state
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [pagination, setPagination] = useState<PaginationMeta | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [catsLoading, setCatsLoading] = useState(true);
 
-  const totalPages = Math.ceil(filtered.length / perPage);
-  const paginated = filtered.slice((page - 1) * perPage, page * perPage);
-  const currentSort = SORT_OPTIONS.find(o => o.value === sort)?.label ?? "Default";
+  // Fetch categories once
+  useEffect(() => {
+    fetchCategories()
+      .then((data) => setCategories(data))
+      .catch((err) => console.error("Categories fetch error:", err))
+      .finally(() => setCatsLoading(false));
+  }, []);
 
-  const toggleCat = (cat: string) => setSelectedCats(prev => prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]);
-  const toggleBrand = (b: string) => setSelectedBrands(prev => prev.includes(b) ? prev.filter(x => x !== b) : [...prev, b]);
-  const toggleColor = (c: string) => setSelectedColors(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]);
-  const toggleSize = (s: string) => setSelectedSizes(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
+  // Fetch products whenever filters/sort/page change
+  const loadProducts = useCallback(async () => {
+    setLoading(true);
+    try {
+      const sortOption = SORT_OPTIONS.find((o) => o.value === sort);
+      const params: FetchProductsParams = {
+        page,
+        limit: perPage,
+        sort: sortOption?.api || "newest",
+      };
+
+      if (selectedCat) params.category = selectedCat;
+      if (onSaleOnly) params.badge = "sale";
+      if (searchQuery.trim()) params.search = searchQuery.trim();
+
+      const data = await fetchProducts(params);
+      setProducts(data.products);
+      setPagination(data.pagination);
+    } catch (err) {
+      console.error("Products fetch error:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [page, perPage, sort, selectedCat, onSaleOnly, searchQuery]);
+
+  useEffect(() => {
+    loadProducts();
+  }, [loadProducts]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [selectedCat, onSaleOnly, sort, perPage, searchQuery]);
+
+  const totalProducts = pagination?.total ?? 0;
+  const totalPages = pagination?.totalPages ?? 1;
+  const currentSort = SORT_OPTIONS.find(o => o.value === sort)?.label ?? "Newest";
+
+  const selectCat = (slug: string) => {
+    setSelectedCat(selectedCat === slug ? "" : slug);
+  };
+
+  const clearFilters = () => {
+    setSelectedCat("");
+    setOnSaleOnly(false);
+    setSearchQuery("");
+  };
+
+  const hasFilters = selectedCat || onSaleOnly || searchQuery;
 
   const renderSidebar = () => (
     <aside style={{ width: "260px", flexShrink: 0 }}>
       <div style={{ background: "#fff", border: "1px solid #f0f0f0", borderRadius: "4px", padding: "20px" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
           <h3 style={{ fontSize: "15px", fontWeight: 700, color: "#1a1a1a" }}>Filter Products</h3>
-          {(selectedCats.length || selectedBrands.length || selectedColors.length || selectedSizes.length || onSaleOnly) ? (
-            <button onClick={() => { setSelectedCats([]); setSelectedBrands([]); setSelectedColors([]); setSelectedSizes([]); setOnSaleOnly(false); }}
+          {hasFilters ? (
+            <button onClick={clearFilters}
               style={{ fontSize: "11px", color: "#f57224", background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}>
               Clear All
             </button>
           ) : null}
         </div>
 
+        {/* Search */}
+        <FilterSection title="Search">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search products..."
+            style={{
+              width: "100%",
+              padding: "8px 12px",
+              border: "1px solid #e5e5e5",
+              borderRadius: "4px",
+              fontSize: "13px",
+              outline: "none",
+            }}
+            onFocus={(e) => (e.currentTarget.style.borderColor = "#f57224")}
+            onBlur={(e) => (e.currentTarget.style.borderColor = "#e5e5e5")}
+          />
+        </FilterSection>
+
         {/* Categories */}
         <FilterSection title="Categories">
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-            {categories.map(cat => (
-              <label key={cat.id} style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", fontSize: "13px", color: selectedCats.includes(cat.name) ? "#f57224" : "#555" }}>
-                <input type="checkbox" checked={selectedCats.includes(cat.name)} onChange={() => toggleCat(cat.name)}
-                  style={{ accentColor: "#f57224", width: "14px", height: "14px" }} />
-                {cat.name}
-                {cat.children && <ChevronRight size={12} color="#ccc" />}
-              </label>
-            ))}
-          </div>
-        </FilterSection>
-
-        {/* Brands */}
-        <FilterSection title="Brands">
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-            {BRANDS.map(brand => (
-              <label key={brand} style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", fontSize: "13px", color: selectedBrands.includes(brand) ? "#f57224" : "#555" }}>
-                <input type="checkbox" checked={selectedBrands.includes(brand)} onChange={() => toggleBrand(brand)}
-                  style={{ accentColor: "#f57224", width: "14px", height: "14px" }} />
-                {brand}
-              </label>
-            ))}
-          </div>
-        </FilterSection>
-
-        {/* Tags */}
-        <FilterSection title="Tags">
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-            {TAGS.map(tag => (
-              <button key={tag} style={{
-                padding: "4px 12px", borderRadius: "20px", fontSize: "12px",
-                border: "1px solid #e5e5e5", cursor: "pointer",
-                background: "#fafafa", color: "#555",
-                transition: "all 0.2s",
-              }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#f57224"; (e.currentTarget as HTMLButtonElement).style.color = "#fff"; (e.currentTarget as HTMLButtonElement).style.borderColor = "#f57224"; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#fafafa"; (e.currentTarget as HTMLButtonElement).style.color = "#555"; (e.currentTarget as HTMLButtonElement).style.borderColor = "#e5e5e5"; }}
-              >
-                {tag}
-              </button>
-            ))}
-          </div>
-        </FilterSection>
-
-        {/* Price */}
-        <FilterSection title="Price">
-          <div style={{ padding: "0 4px" }}>
-            <input type="range" min={0} max={500} value={priceRange[1]}
-              onChange={(e) => setPriceRange([0, Number(e.target.value)])}
-              style={{ width: "100%", accentColor: "#f57224" }}
-            />
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", color: "#888", marginTop: "6px" }}>
-              <span>$0</span><span>${priceRange[1]}</span>
-            </div>
+            {catsLoading ? (
+              Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} style={{ height: "18px", background: "#f0f0f0", borderRadius: "4px", width: `${60 + Math.random() * 40}%` }} className="animate-pulse" />
+              ))
+            ) : (
+              categories.map(cat => (
+                <label key={cat.id} style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", fontSize: "13px", color: selectedCat === cat.slug ? "#f57224" : "#555" }}>
+                  <input type="checkbox" checked={selectedCat === cat.slug} onChange={() => selectCat(cat.slug)}
+                    style={{ accentColor: "#f57224", width: "14px", height: "14px" }} />
+                  {cat.name}
+                  <span style={{ marginLeft: "auto", fontSize: "11px", color: "#aaa" }}>({cat.productCount ?? 0})</span>
+                </label>
+              ))
+            )}
           </div>
         </FilterSection>
 
@@ -168,39 +173,6 @@ export default function ProductsPage() {
               style={{ accentColor: "#f57224", width: "14px", height: "14px" }} />
             Show only discounted products
           </label>
-        </FilterSection>
-
-        {/* Color */}
-        <FilterSection title="Color">
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-            {COLORS.map(({ name, hex }) => (
-              <button key={name} title={name} onClick={() => toggleColor(name)}
-                style={{
-                  width: "28px", height: "28px", borderRadius: "50%", background: hex,
-                  border: selectedColors.includes(name) ? "3px solid #f57224" : "2px solid #e5e5e5",
-                  cursor: "pointer", transition: "border 0.2s",
-                }} />
-            ))}
-          </div>
-        </FilterSection>
-
-        {/* Size */}
-        <FilterSection title="Size" defaultOpen={true}>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-            {SIZES.map(size => (
-              <button key={size} onClick={() => toggleSize(size)}
-                style={{
-                  minWidth: "40px", padding: "5px 10px", border: "1px solid",
-                  borderColor: selectedSizes.includes(size) ? "#f57224" : "#e5e5e5",
-                  background: selectedSizes.includes(size) ? "#f57224" : "#fff",
-                  color: selectedSizes.includes(size) ? "#fff" : "#555",
-                  borderRadius: "3px", cursor: "pointer", fontSize: "12px", fontWeight: 600,
-                  transition: "all 0.2s",
-                }}>
-                {size}
-              </button>
-            ))}
-          </div>
         </FilterSection>
       </div>
     </aside>
@@ -230,7 +202,7 @@ export default function ProductsPage() {
                 <SlidersHorizontal size={14} /> Filter
               </button>
               <span style={{ fontSize: "13px", color: "#888" }}>
-                <strong style={{ color: "#1a1a1a" }}>{filtered.length}</strong> Products found
+                <strong style={{ color: "#1a1a1a" }}>{totalProducts}</strong> Products found
               </span>
             </div>
 
@@ -239,7 +211,7 @@ export default function ProductsPage() {
               <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "#888" }}>
                 Show:
                 {[20, 30, 40, 60].map(n => (
-                  <button key={n} onClick={() => { setPerPage(n); setPage(1); }}
+                  <button key={n} onClick={() => setPerPage(n)}
                     style={{ padding: "3px 7px", border: "1px solid", borderColor: perPage === n ? "#f57224" : "#e5e5e5", background: perPage === n ? "#f57224" : "transparent", color: perPage === n ? "#fff" : "#555", borderRadius: "2px", cursor: "pointer", fontSize: "12px", fontWeight: 600 }}>
                     {n}
                   </button>
@@ -277,21 +249,45 @@ export default function ProductsPage() {
           </div>
 
           {/* Product Grid */}
-          {layout === "grid" ? (
+          {loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[18px]">
-              {paginated.map(product => (
+              {Array.from({ length: perPage > 12 ? 12 : perPage }).map((_, i) => (
+                <div key={i} style={{ background: "#fff", borderRadius: "5px", overflow: "hidden" }}>
+                  <div style={{ paddingTop: "100%", background: "#f5f5f5" }} className="animate-pulse" />
+                  <div style={{ padding: "14px 16px" }}>
+                    <div style={{ height: "16px", background: "#f0f0f0", borderRadius: "4px", marginBottom: "10px", width: "80%" }} className="animate-pulse" />
+                    <div style={{ height: "14px", background: "#f0f0f0", borderRadius: "4px", width: "50%" }} className="animate-pulse" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : products.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "60px 20px" }}>
+              <p style={{ fontSize: "18px", fontWeight: 600, color: "#1a1a1a", marginBottom: "8px" }}>No products found</p>
+              <p style={{ fontSize: "14px", color: "#888", marginBottom: "24px" }}>Try adjusting your filters or search query.</p>
+              {hasFilters && (
+                <button onClick={clearFilters}
+                  style={{ padding: "10px 24px", background: "#1a1a1a", color: "#fff", border: "none", borderRadius: "3px", cursor: "pointer", fontWeight: 600, fontSize: "13px" }}>
+                  Clear All Filters
+                </button>
+              )}
+            </div>
+          ) : layout === "grid" ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[18px]">
+              {products.map(product => (
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-              {paginated.map(product => (
+              {products.map(product => (
                 <div key={product.id} style={{ display: "flex", gap: "20px", background: "#fff", border: "1px solid #f0f0f0", borderRadius: "4px", padding: "16px", transition: "box-shadow 0.2s" }}
                   onMouseEnter={(e) => ((e.currentTarget as HTMLDivElement).style.boxShadow = "0 4px 16px rgba(0,0,0,0.08)")}
                   onMouseLeave={(e) => ((e.currentTarget as HTMLDivElement).style.boxShadow = "none")}
                 >
-                  <Link href={`/products/${product.id}`} style={{ flexShrink: 0 }}>
-                    <img src={product.image} alt={product.name} style={{ width: "140px", height: "140px", objectFit: "cover", borderRadius: "4px" }} />
+                  <Link href={`/products/${product.slug}`} style={{ flexShrink: 0 }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={product.image || "/placeholder-product.png"} alt={product.name} style={{ width: "140px", height: "140px", objectFit: "cover", borderRadius: "4px" }} />
                   </Link>
                   <div style={{ flex: 1 }}>
                     {product.badge && (
@@ -299,7 +295,7 @@ export default function ProductsPage() {
                         {product.badge === "sale" && product.discount ? `-${product.discount}%` : product.badge}
                       </span>
                     )}
-                    <Link href={`/products/${product.id}`} style={{ textDecoration: "none" }}>
+                    <Link href={`/products/${product.slug}`} style={{ textDecoration: "none" }}>
                       <h3 style={{ fontSize: "16px", fontWeight: 600, color: "#1a1a1a", marginBottom: "6px" }}
                         onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#f57224")}
                         onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#1a1a1a")}
@@ -307,8 +303,8 @@ export default function ProductsPage() {
                     </Link>
                     <StarRating rating={product.rating} reviewCount={product.reviewCount} />
                     <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "10px" }}>
-                      <span style={{ fontSize: "18px", fontWeight: 700 }}>${product.price.toFixed(2)}</span>
-                      {product.originalPrice && <span style={{ fontSize: "14px", color: "#aaa", textDecoration: "line-through" }}>${product.originalPrice.toFixed(2)}</span>}
+                      <span style={{ fontSize: "18px", fontWeight: 700 }}>{formatNGN(product.price)}</span>
+                      {product.originalPrice && <span style={{ fontSize: "14px", color: "#aaa", textDecoration: "line-through" }}>{formatNGN(product.originalPrice)}</span>}
                     </div>
                     <button style={{ marginTop: "14px", padding: "9px 20px", background: "#1a1a1a", color: "#fff", border: "none", borderRadius: "3px", cursor: "pointer", fontSize: "13px", fontWeight: 600, transition: "background 0.2s" }}
                       onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.background = "#f57224")}
@@ -328,7 +324,17 @@ export default function ProductsPage() {
                 ‹ Prev
               </button>
               {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
-                const p = i + 1;
+                // Smart pagination: show pages around current page
+                let p: number;
+                if (totalPages <= 7) {
+                  p = i + 1;
+                } else if (page <= 4) {
+                  p = i + 1;
+                } else if (page >= totalPages - 3) {
+                  p = totalPages - 6 + i;
+                } else {
+                  p = page - 3 + i;
+                }
                 return (
                   <button key={p} onClick={() => setPage(p)}
                     style={{ width: "36px", height: "36px", border: "1px solid", borderColor: page === p ? "#f57224" : "#e5e5e5", borderRadius: "3px", background: page === p ? "#f57224" : "#fff", color: page === p ? "#fff" : "#555", cursor: "pointer", fontSize: "13px", fontWeight: page === p ? 700 : 400 }}>
@@ -368,5 +374,25 @@ export default function ProductsPage() {
         }
       `}</style>
     </ShopLayout>
+  );
+}
+
+export default function ProductsPage() {
+  return (
+    <Suspense
+      fallback={
+        <ShopLayout>
+          <PageBreadcrumb title="Products" crumbs={[]} />
+          <div style={{ maxWidth: "1280px", margin: "32px auto", padding: "0 16px" }}>
+            <div className="animate-pulse flex gap-6">
+              <div className="hidden lg:block w-[260px] h-[400px] bg-neutral-100 rounded" />
+              <div className="flex-1 h-[600px] bg-neutral-100 rounded" />
+            </div>
+          </div>
+        </ShopLayout>
+      }
+    >
+      <ProductsContent />
+    </Suspense>
   );
 }

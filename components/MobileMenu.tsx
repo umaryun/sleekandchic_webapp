@@ -1,9 +1,40 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { X, ChevronDown, ChevronRight } from "lucide-react";
-import { navItems, categories } from "@/data";
+import { fetchCategories } from "@/lib/api";
+import type { Category } from "@/types";
+
+const navItems = [
+  {
+    label: "Home",
+    href: "/",
+  },
+  {
+    label: "Shop",
+    href: "/products",
+    children: [
+      { label: "Shop Grid", href: "/products" },
+      { label: "Shop List", href: "/products?layout=list" },
+      { label: "Store Location", href: "/store-locator" },
+      { label: "Cart", href: "/cart" },
+      { label: "Wishlist", href: "/wishlist" },
+    ],
+  },
+  {
+    label: "Pages",
+    href: "#",
+    children: [
+      { label: "Order Tracking", href: "/orders/tracking" },
+      { label: "About", href: "/about" },
+      { label: "Sign up", href: "/register" },
+      { label: "Login", href: "/login" },
+      { label: "Coming soon", href: "/coming-soon" },
+    ],
+  },
+  { label: "Contact", href: "/contact" },
+];
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -13,6 +44,13 @@ interface MobileMenuProps {
 export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
   const [openSection, setOpenSection] = useState<string | null>(null);
   const [catOpen, setCatOpen] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  useEffect(() => {
+    fetchCategories()
+      .then((data) => setCategories(data))
+      .catch((err) => console.error("MobileMenu categories fetch error:", err));
+  }, []);
 
   return (
     <aside
@@ -92,7 +130,7 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
             {categories.map((cat) => (
               <Link
                 key={cat.id}
-                href={`/category/${cat.slug}`}
+                href={`/products?category=${cat.slug}`}
                 onClick={onClose}
                 style={{
                   display: "flex",

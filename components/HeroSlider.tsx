@@ -2,33 +2,72 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { ChevronRight, ArrowRight } from "lucide-react";
-import { heroSlides, categories } from "@/data";
+import { ChevronRight } from "lucide-react";
+import { fetchHeroSlides, fetchCategories } from "@/lib/api";
+import type { HeroSlide, Category } from "@/types";
 
 export default function HeroSlider() {
+  const [slides, setSlides] = useState<HeroSlide[]>([]);
+  const [cats, setCats] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
   const [current, setCurrent] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const [hoveredCat, setHoveredCat] = useState<number | null>(null);
+  const [hoveredCat, setHoveredCat] = useState<string | null>(null);
   const [hoveredPromo, setHoveredPromo] = useState<number | null>(null);
+
+  useEffect(() => {
+    Promise.all([fetchHeroSlides(), fetchCategories()])
+      .then(([slidesData, catsData]) => {
+        setSlides(slidesData);
+        setCats(catsData);
+      })
+      .catch((err) => console.error("HeroSlider fetch error:", err))
+      .finally(() => setLoading(false));
+  }, []);
 
   const goTo = useCallback(
     (index: number) => {
-      if (isTransitioning) return;
+      if (isTransitioning || slides.length === 0) return;
       setIsTransitioning(true);
       setCurrent(index);
       setTimeout(() => setIsTransitioning(false), 600);
     },
-    [isTransitioning]
+    [isTransitioning, slides.length]
   );
 
   const next = useCallback(() => {
-    goTo((current + 1) % heroSlides.length);
-  }, [current, goTo]);
+    if (slides.length === 0) return;
+    goTo((current + 1) % slides.length);
+  }, [current, goTo, slides.length]);
 
   useEffect(() => {
+    if (slides.length === 0) return;
     const timer = setInterval(next, 5000);
     return () => clearInterval(timer);
-  }, [next]);
+  }, [next, slides.length]);
+
+  // Skeleton while loading
+  if (loading) {
+    return (
+      <section
+        style={{
+          maxWidth: "1280px",
+          margin: "0 auto",
+          padding: "0 16px",
+          display: "flex",
+          gap: "25px",
+          marginBottom: "30px",
+        }}
+      >
+        <div className="hidden lg:block w-[220px] shrink-0 bg-[#f5f5f5] rounded-[5px] animate-pulse" style={{ minHeight: "420px" }} />
+        <div className="flex-1 bg-[#f0ece6] rounded-[5px] animate-pulse" style={{ minHeight: "420px" }} />
+        <div className="hidden lg:flex flex-col gap-5 w-[260px] shrink-0">
+          <div className="flex-1 bg-[#f5f5f5] rounded-[5px] animate-pulse" />
+          <div className="flex-1 bg-[#f5f5f5] rounded-[5px] animate-pulse" />
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section
@@ -44,10 +83,10 @@ export default function HeroSlider() {
     >
       {/* ─── Left: Category Sidebar ─── */}
       <div className="hidden lg:block w-[220px] shrink-0 border border-t-0 border-[#e8e8e8] bg-white overflow-y-auto rounded-b-[5px]">
-        {categories.map((cat) => (
+        {cats.map((cat) => (
           <Link
             key={cat.id}
-            href={`/category/${cat.slug}`}
+            href={`/products?category=${cat.slug}`}
             style={{
               display: "flex",
               alignItems: "center",
@@ -57,7 +96,6 @@ export default function HeroSlider() {
               textDecoration: "none",
               fontSize: "13.5px",
               fontWeight: 400,
-              // borderBottom: "1px solid #f5f5f5",
               transition: "color 0.15s, padding-left 0.15s",
               paddingLeft: hoveredCat === cat.id ? "22px" : "18px",
               lineHeight: "1.4",
@@ -66,7 +104,7 @@ export default function HeroSlider() {
             onMouseLeave={() => setHoveredCat(null)}
           >
             <span>{cat.name}</span>
-            {cat.children && (
+            {cat.children && cat.children.length > 0 && (
               <ChevronRight
                 size={12}
                 style={{
@@ -82,10 +120,9 @@ export default function HeroSlider() {
       {/* ─── Center: Main Slider ─── */}
       <div className="flex-1 relative overflow-hidden bg-[#f0ece6] min-h-[300px] sm:min-h-[420px] rounded-[5px]">
         {/* Slides */}
-        {heroSlides.map((s, i) => (
-          <Link href={"/products"}>
+        {slides.map((s, i) => (
+          <Link href={s.href || "/products"} key={s.id}>
             <div
-              key={s.id}
               style={{
                 position: "absolute",
                 inset: 0,
@@ -99,7 +136,7 @@ export default function HeroSlider() {
                 style={{
                   position: "absolute",
                   inset: 0,
-                  backgroundImage: `url(${s.image})`,
+                  backgroundImage: `url(${s.imageUrl})`,
                   backgroundSize: "cover",
                   backgroundPosition: "center",
                 }}
@@ -114,8 +151,6 @@ export default function HeroSlider() {
                   display: "flex",
                   alignItems: "center",
                   paddingLeft: "50px"
-                  // background:
-                  //   "linear-gradient(90deg, rgba(240,236,230,0.95) 0%, rgba(240,236,230,0.85) 40%, rgba(240,236,230,0.4) 70%, rgba(240,236,230,0.1) 100%)",
                 }}
               >
                 <div className="px-5 sm:px-22 max-w-[500px]">
@@ -128,105 +163,47 @@ export default function HeroSlider() {
                         "opacity 0.7s ease 0.2s, transform 0.7s ease 0.2s",
                     }}
                   >
-                    {/* Category tag */}
-                    <div
-                      style={{
-                        fontSize: "14px",
-                        color: "#b88d7a",
-                        fontWeight: 500,
-                        marginBottom: "10px",
-                        letterSpacing: "0.5px",
-                      }}
-                    >
-                      {s.category}
-                    </div>
-
-                    {/* Headline */}
-                    <h1 className="text-2xl sm:text-3xl md:text-[42px] font-normal leading-tight text-[#1a1a1a] mb-1 font-serif">
-                      {s.title}
-                      <span
-                        style={{
-                          color: "#b88d7a",
-                          fontWeight: 400,
-                          fontStyle: "italic",
-                        }}
-                      >
-                        {s.highlight}
-                      </span>
-                    </h1>
-
-                    {/* Subtitle */}
-                    <p className="text-lg sm:text-2xl md:text-3xl font-normal leading-snug text-[#1a1a1a] mb-7 font-serif">
-                      {s.subtitle}
-                    </p>
-
-                    {/* CTA Button */}
-                    {/* <Link
-                      href={s.href}
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "10px",
-                        padding: "12px 28px",
-                        background: "#1a1a1a",
-                        color: "#fff",
-                        textDecoration: "none",
-                        fontWeight: 500,
-                        fontSize: "13px",
-                        letterSpacing: "0.5px",
-                        border: "2px solid #1a1a1a",
-                        transition: "all 0.25s",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = "transparent";
-                        e.currentTarget.style.color = "#1a1a1a";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = "#1a1a1a";
-                        e.currentTarget.style.color = "#fff";
-                      }}
-                    >
-                      Shop Now
-                      <ArrowRight size={15} />
-                    </Link> */}
+               
+                    
                   </div>
                 </div>
               </div>
             </div>
           </Link>
-          
         ))}
 
         {/* Dot Indicators */}
-        <div
-          style={{
-            position: "absolute",
-            bottom: "20px",
-            left: "50%",
-            transform: "translateX(-50%)",
-            display: "flex",
-            gap: "6px",
-            zIndex: 10,
-          }}
-        >
-          {heroSlides.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => goTo(i)}
-              style={{
-                width: i === current ? "24px" : "8px",
-                height: "4px",
-                borderRadius: "2px",
-                background: i === current ? "#b88d7a" : "rgba(0,0,0,0.2)",
-                border: "none",
-                cursor: "pointer",
-                padding: 0,
-                transition: "all 0.3s ease",
-              }}
-              aria-label={`Go to slide ${i + 1}`}
-            />
-          ))}
-        </div>
+        {slides.length > 1 && (
+          <div
+            style={{
+              position: "absolute",
+              bottom: "20px",
+              left: "50%",
+              transform: "translateX(-50%)",
+              display: "flex",
+              gap: "6px",
+              zIndex: 10,
+            }}
+          >
+            {slides.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => goTo(i)}
+                style={{
+                  width: i === current ? "24px" : "8px",
+                  height: "4px",
+                  borderRadius: "2px",
+                  background: i === current ? "#b88d7a" : "rgba(0,0,0,0.2)",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: 0,
+                  transition: "all 0.3s ease",
+                }}
+                aria-label={`Go to slide ${i + 1}`}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* ─── Right: Promo Banners ─── */}
@@ -246,7 +223,6 @@ export default function HeroSlider() {
           onMouseLeave={() => setHoveredPromo(null)}
         >
           <div
-        
             style={{
               position: "absolute",
               inset: 0,

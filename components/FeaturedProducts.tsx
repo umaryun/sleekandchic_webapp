@@ -1,16 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import ProductCard from "./ProductCard";
-import { products } from "@/data";
+import { fetchProducts } from "@/lib/api";
 import type { Product } from "@/types";
 
 const tabs = [
-  { id: "all", label: "All" },
-  { id: "sale", label: "On Sale" },
-  { id: "new", label: "New Arrivals" },
-  { id: "hot", label: "Best Sellers" },
+  { id: "all", label: "All", badge: undefined as "sale" | "new" | "hot" | undefined },
+  { id: "sale", label: "On Sale", badge: "sale" as const },
+  { id: "new", label: "New Arrivals", badge: "new" as const },
+  { id: "hot", label: "Best Sellers", badge: "hot" as const },
 ];
 
 interface FeaturedProductsProps {
@@ -20,11 +20,21 @@ interface FeaturedProductsProps {
 
 export default function FeaturedProducts({ onAddToCart, onAddToWishlist }: FeaturedProductsProps) {
   const [activeTab, setActiveTab] = useState("all");
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filtered =
-    activeTab === "all"
-      ? products
-      : products.filter((p) => p.badge === activeTab);
+  useEffect(() => {
+    setLoading(true);
+    const tab = tabs.find((t) => t.id === activeTab);
+    fetchProducts({
+      limit: 8,
+      badge: tab?.badge,
+      sort: "newest",
+    })
+      .then((data) => setProducts(data.products))
+      .catch((err) => console.error("FeaturedProducts fetch error:", err))
+      .finally(() => setLoading(false));
+  }, [activeTab]);
 
   return (
     <section
@@ -102,16 +112,34 @@ export default function FeaturedProducts({ onAddToCart, onAddToWishlist }: Featu
       </div>
 
       {/* Product Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-        {filtered.slice(0, 8).map((product) => (
-          <ProductCard
-            key={product.id}
-            product={product}
-            onAddToCart={onAddToCart}
-            onAddToWishlist={onAddToWishlist}
-          />
-        ))}
-      </div>
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} style={{ background: "#fff", borderRadius: "5px", overflow: "hidden" }}>
+              <div style={{ paddingTop: "100%", background: "#f5f5f5" }} className="animate-pulse" />
+              <div style={{ padding: "14px 16px" }}>
+                <div style={{ height: "16px", background: "#f0f0f0", borderRadius: "4px", marginBottom: "10px", width: "80%" }} className="animate-pulse" />
+                <div style={{ height: "14px", background: "#f0f0f0", borderRadius: "4px", width: "50%" }} className="animate-pulse" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : products.length === 0 ? (
+        <div style={{ textAlign: "center", padding: "48px 0", color: "#888" }}>
+          <p style={{ fontSize: "16px" }}>No products found in this category.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+          {products.map((product) => (
+            <ProductCard
+              key={product.id}
+              product={product}
+              onAddToCart={onAddToCart}
+              onAddToWishlist={onAddToWishlist}
+            />
+          ))}
+        </div>
+      )}
 
       {/* View All */}
       <div style={{ textAlign: "center", marginTop: "36px" }}>
