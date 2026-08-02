@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Home, Grid3x3, Heart, ShoppingCart, User } from "lucide-react";
+import { Home, Grid3x3, Tags, ShoppingCart, User } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 export default function MobileBottomNav() {
@@ -10,7 +10,7 @@ export default function MobileBottomNav() {
   const navItems = [
     { href: "/", Icon: Home, label: "Home" },
     { href: "/products", Icon: Grid3x3, label: "Shop" },
-    { href: "/wishlist", Icon: Heart, label: "Wishlist" },
+    { href: "/products?sort=newest", Icon: Tags, label: "New In" },
     { href: "/cart", Icon: ShoppingCart, label: "Cart" },
     { href: "/login", Icon: User, label: "Account" },
   ];

@@ -26,7 +26,7 @@ const MOCK_ORDER = {
     { date: "Jun 17, 2025", time: "09:15", label: "Arrived at Local Facility", location: "Lagos, NG", done: true },
     { date: "Jun 16, 2025", time: "22:04", label: "In Transit", location: "Amsterdam Hub", done: true },
     { date: "Jun 15, 2025", time: "17:50", label: "Shipped", location: "New York Warehouse", done: true },
-    { date: "Jun 15, 2025", time: "11:00", label: "Order Confirmed & Processing", location: "Ninico Fulfillment Center", done: true },
+    { date: "Jun 15, 2025", time: "11:00", label: "Order Confirmed & Processing", location: "Sleekandchic Fulfillment Center", done: true },
   ],
   address: "24 Victoria Island, Lagos, Nigeria",
   subtotal: 229.97,

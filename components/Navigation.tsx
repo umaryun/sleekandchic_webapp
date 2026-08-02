@@ -19,7 +19,6 @@ const navItems = [
       { label: "Shop List", href: "/products?layout=list" },
       { label: "Store Location", href: "/store-locator" },
       { label: "Cart", href: "/cart" },
-      { label: "Wishlist", href: "/wishlist" },
     ],
   },
   {

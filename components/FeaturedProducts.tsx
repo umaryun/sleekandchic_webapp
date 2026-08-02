@@ -13,12 +13,7 @@ const tabs = [
   { id: "hot", label: "Best Sellers", badge: "hot" as const },
 ];
 
-interface FeaturedProductsProps {
-  onAddToCart?: (product: Product) => void;
-  onAddToWishlist?: (product: Product) => void;
-}
-
-export default function FeaturedProducts({ onAddToCart, onAddToWishlist }: FeaturedProductsProps) {
+export default function FeaturedProducts() {
   const [activeTab, setActiveTab] = useState("all");
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -134,8 +129,6 @@ export default function FeaturedProducts({ onAddToCart, onAddToWishlist }: Featu
             <ProductCard
               key={product.id}
               product={product}
-              onAddToCart={onAddToCart}
-              onAddToWishlist={onAddToWishlist}
             />
           ))}
         </div>

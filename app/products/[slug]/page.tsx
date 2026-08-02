@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { Heart, GitCompare, ShoppingCart, Zap, Minus, Plus, Star, Facebook, Twitter, Linkedin, Check } from "lucide-react";
+import { GitCompare, ShoppingCart, Zap, Minus, Plus, Star, Facebook, Twitter, Linkedin, Check } from "lucide-react";
 import ShopLayout from "@/components/ShopLayout";
 import PageBreadcrumb from "@/components/PageBreadcrumb";
 import ProductCard from "@/components/ProductCard";
@@ -11,6 +11,7 @@ import StarRating from "@/components/StarRating";
 import { fetchProduct, fetchProducts } from "@/lib/api";
 import type { Product } from "@/types";
 import { formatNGN } from "@/lib/utils";
+import { useCart } from "@/context/CartContext";
 
 const REVIEWS = [
   { id: 1, name: "Alice M.", rating: 5, date: "Jun 12, 2025", comment: "Absolutely love this product! The quality is outstanding and it arrived quickly. Would definitely recommend to anyone looking for a premium item.", avatar: "https://placehold.co/48x48/e0ecf5/666?text=A" },
@@ -34,7 +35,7 @@ export default function ProductDetailPage() {
   const [qty, setQty] = useState(1);
   const [activeTab, setActiveTab] = useState("description");
   const [addedToCart, setAddedToCart] = useState(false);
-  const [wishlisted, setWishlisted] = useState(false);
+
   const [reviewForm, setReviewForm] = useState({ name: "", email: "", rating: 5, comment: "" });
 
   useEffect(() => {
@@ -116,7 +117,28 @@ export default function ProductDetailPage() {
       ? [product.image]
       : ["/placeholder-product.png"];
 
+  const { addItem } = useCart();
+
   const handleAddToCart = () => {
+    if (!product) return;
+    const matchingVariant = product.variants?.find(
+      (v) =>
+        (v.size || null) === (selectedSize || null) &&
+        (v.color || null) === (selectedColor || null)
+    );
+    const unitPrice = matchingVariant?.priceOverride
+      ? Number(matchingVariant.priceOverride)
+      : Number(product.price);
+    const mainImage = product.images?.[0]?.imageUrl || product.image || null;
+
+    addItem(product.id, matchingVariant?.id || null, qty, {
+      productName: product.name,
+      unitPrice,
+      image: mainImage,
+      size: selectedSize || undefined,
+      color: selectedColor || undefined,
+      productSlug: product.slug,
+    });
     setAddedToCart(true);
     setTimeout(() => setAddedToCart(false), 2000);
   };
@@ -127,7 +149,7 @@ export default function ProductDetailPage() {
 
       <div style={{ maxWidth: "1280px", margin: "36px auto", padding: "0 16px" }}>
         {/* Top: Gallery + Info */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-14">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12 mb-10 md:mb-14">
 
           {/* Gallery */}
           <div>
@@ -139,7 +161,7 @@ export default function ProductDetailPage() {
             </div>
             {/* Thumbnails */}
             {productImages.length > 1 && (
-              <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(productImages.length, 5)}, 1fr)`, gap: "10px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(productImages.length, 5)}, 1fr)`, gap: "8px" }}>
                 {productImages.slice(0, 9).map((img: string, i: number) => (
                   <button key={i} onClick={() => setActiveImg(i)}
                     style={{ aspectRatio: "1", border: `2px solid ${activeImg === i ? "#f57224" : "#e5e5e5"}`, borderRadius: "4px", overflow: "hidden", cursor: "pointer", padding: 0, background: "none", transition: "border-color 0.2s" }}>
@@ -159,7 +181,7 @@ export default function ProductDetailPage() {
               <Link href="#reviews" style={{ fontSize: "13px", color: "#f57224", textDecoration: "none" }}>{product.reviewCount} Reviews</Link>
             </div>
 
-            <h1 style={{ fontSize: "28px", fontWeight: 800, color: "#1a1a1a", lineHeight: 1.2, marginBottom: "10px" }}>
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-[#1a1a1a] leading-tight mb-2.5">
               {product.name}
             </h1>
 
@@ -180,7 +202,7 @@ export default function ProductDetailPage() {
 
             {/* Price */}
             <div style={{ display: "flex", alignItems: "baseline", gap: "12px", marginBottom: "20px", paddingBottom: "20px", borderBottom: "1px solid #f0f0f0" }}>
-              <span style={{ fontSize: "32px", fontWeight: 800, color: "#1a1a1a" }}>{formatNGN(product.price)}</span>
+              <span className="text-2xl sm:text-3xl font-extrabold text-[#1a1a1a]">{formatNGN(product.price)}</span>
               {product.originalPrice && (
                 <span style={{ fontSize: "18px", color: "#aaa", textDecoration: "line-through" }}>{formatNGN(product.originalPrice)}</span>
               )}
@@ -240,36 +262,35 @@ export default function ProductDetailPage() {
             )}
 
             {/* Qty + Buttons */}
-            <div className="flex gap-2 md:gap-3 items-center flex-wrap">
-              {/* Qty */}
-              <div className="flex items-center border border-[#e5e5e5] rounded-[3px] overflow-hidden">
-                <button onClick={() => setQty(q => Math.max(1, q - 1))}
-                  className="w-8 h-10 md:w-10 md:h-12 border-none bg-[#f5f5f5] cursor-pointer flex items-center justify-center text-neutral-600">
-                  <Minus size={14} />
-                </button>
-                <span className="w-10 md:w-[52px] text-center text-sm md:text-[15px] font-bold">{qty}</span>
-                <button onClick={() => setQty(q => q + 1)}
-                  className="w-8 h-10 md:w-10 md:h-12 border-none bg-[#f5f5f5] cursor-pointer flex items-center justify-center text-neutral-600">
-                  <Plus size={14} />
+            <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center mb-4">
+              <div className="flex items-center gap-3 w-full sm:w-auto">
+                {/* Qty */}
+                <div className="flex items-center border border-[#e5e5e5] rounded-[3px] overflow-hidden shrink-0">
+                  <button onClick={() => setQty(q => Math.max(1, q - 1))}
+                    className="w-10 h-11 border-none bg-[#f5f5f5] cursor-pointer flex items-center justify-center text-neutral-600">
+                    <Minus size={14} />
+                  </button>
+                  <span className="w-11 text-center text-sm font-bold">{qty}</span>
+                  <button onClick={() => setQty(q => q + 1)}
+                    className="w-10 h-11 border-none bg-[#f5f5f5] cursor-pointer flex items-center justify-center text-neutral-600">
+                    <Plus size={14} />
+                  </button>
+                </div>
+
+                <button onClick={handleAddToCart}
+                  className={`flex-1 sm:w-auto px-5 h-11 sm:h-12 ${addedToCart ? "bg-[#28a745]" : "bg-[#1a1a1a]"} text-white border-none rounded-[3px] cursor-pointer flex items-center justify-center gap-2 font-bold text-xs sm:text-sm transition-colors duration-200`}>
+                  {addedToCart ? <><Check size={16} /> Added to Cart</> : <><ShoppingCart size={16} /> Add To Cart</>}
                 </button>
               </div>
 
-              <button onClick={handleAddToCart}
-                className={`w-[35%] flex h-10 md:h-12 ${addedToCart ? "bg-[#28a745]" : "bg-[#1a1a1a]"} text-white border-none rounded-[3px] cursor-pointer flex items-center justify-center gap-2 font-bold text-xs md:text-sm transition-colors duration-200`}>
-                {addedToCart ? <><Check size={16} /> Added to Cart</> : <><ShoppingCart size={16} /> Add To Cart</>}
-              </button>
-
-              <button className="w-[34%] h-10 md:h-12 px-10 md:px-[18px] bg-[#f57224] justify-center text-white border-none rounded-[3px] cursor-pointer flex items-center gap-2 font-bold text-xs md:text-sm">
+              <button className="w-full sm:w-auto flex-1 h-11 sm:h-12 px-6 bg-[#f57224] text-white border-none rounded-[3px] cursor-pointer flex items-center justify-center gap-2 font-bold text-xs sm:text-sm">
                 <Zap size={16} /> Buy Now             
               </button>
             </div>
 
             {/* Secondary actions */}
             <div style={{ display: "flex", gap: "20px", marginBottom: "24px", marginTop: "10px" }}>
-              <button onClick={() => setWishlisted(!wishlisted)}
-                style={{ display: "flex", alignItems: "center", gap: "6px", background: "none", border: "none", cursor: "pointer", fontSize: "13px", color: wishlisted ? "#f57224" : "#666", fontWeight: 500 }}>
-                <Heart size={16} fill={wishlisted ? "#f57224" : "none"} /> Wishlist
-              </button>
+
               <button style={{ display: "flex", alignItems: "center", gap: "6px", background: "none", border: "none", cursor: "pointer", fontSize: "13px", color: "#666", fontWeight: 500 }}>
                 <GitCompare size={16} /> Compare
               </button>
@@ -306,16 +327,12 @@ export default function ProductDetailPage() {
 
         {/* Tabs: Description | Reviews */}
         <div style={{ marginBottom: "48px" }}>
-          <div style={{ display: "flex", borderBottom: "2px solid #f0f0f0", marginBottom: "32px", gap: "0" }}>
+          <div className="flex border-b-2 border-[#f0f0f0] mb-6 sm:mb-8 overflow-x-auto no-scrollbar">
             {["description", "reviews"].map(tab => (
               <button key={tab} onClick={() => setActiveTab(tab)}
-                style={{
-                  padding: "12px 28px", border: "none", background: "none", cursor: "pointer",
-                  fontSize: "15px", fontWeight: 700, textTransform: "capitalize",
-                  color: activeTab === tab ? "#1a1a1a" : "#888",
-                  borderBottom: `3px solid ${activeTab === tab ? "#f57224" : "transparent"}`,
-                  marginBottom: "-2px", transition: "all 0.2s",
-                }}>
+                className={`px-5 sm:px-7 py-3 border-none bg-none cursor-pointer text-sm sm:text-base font-bold capitalize whitespace-nowrap transition-colors ${
+                  activeTab === tab ? "text-[#1a1a1a] border-b-3 border-[#f57224] -mb-[2px]" : "text-[#888] border-b-3 border-transparent -mb-[2px]"
+                }`}>
                 {tab}{tab === "reviews" ? ` (${REVIEWS.length})` : ""}
               </button>
             ))}

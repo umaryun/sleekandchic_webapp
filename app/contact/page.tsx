@@ -27,7 +27,7 @@ export default function ContactPage() {
           {[
             { Icon: MapPin, title: "Our Address", lines: ["24/26 Strait Bargate,", "Boston, PE21, United Kingdom"] },
             { Icon: Phone, title: "Phone Number", lines: ["+098 (905) 786 897 8", "Mon–Fri 9am–6pm EST"] },
-            { Icon: Mail, title: "Email Address", lines: ["hello@ninico.com", "support@ninico.com"] },
+            { Icon: Mail, title: "Email Address", lines: ["hello@sleekandchic.com", "support@sleekandchic.com"] },
             { Icon: Clock, title: "Store Hours", lines: ["Mon–Fri: 10am–8pm", "Sat–Sun: 10am–6pm"] },
           ].map(({ Icon, title, lines }) => (
             <div key={title} style={{ background: "#fff", padding: "28px 24px", borderRadius: "6px", textAlign: "center", border: "1px solid #f0f0f0", transition: "box-shadow 0.2s" }}

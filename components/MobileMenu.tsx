@@ -8,10 +8,6 @@ import type { Category } from "@/types";
 
 const navItems = [
   {
-    label: "Home",
-    href: "/",
-  },
-  {
     label: "Shop",
     href: "/products",
     children: [
@@ -19,7 +15,6 @@ const navItems = [
       { label: "Shop List", href: "/products?layout=list" },
       { label: "Store Location", href: "/store-locator" },
       { label: "Cart", href: "/cart" },
-      { label: "Wishlist", href: "/wishlist" },
     ],
   },
   {
@@ -79,10 +74,12 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
           justifyContent: "space-between",
         }}
       >
-        <span style={{ fontSize: "18px", fontWeight: 800 }}>
-          <span style={{ color: "#1a1a1a" }}>Nin</span>
-          <span style={{ color: "#b88d7a" }}>ico</span>
-        </span>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/logo.png"
+          alt="Sleekandchic"
+          style={{ width: "120px", height: "auto" }}
+        />
         <button
           onClick={onClose}
           style={{
@@ -97,6 +94,26 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
         </button>
       </div>
 
+      <Link
+        href={"/"}
+        style={{
+            width: "100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "14px 20px",
+            background: catOpen ? "#fff3ec" : "transparent",
+            border: "none",
+            borderBottom: "1px solid #f0f0f0",
+            cursor: "pointer",
+            fontSize: "14px",
+            fontWeight: 600,
+            color: "#1a1a1a",
+        }}
+      >
+        Home
+      </Link>
+      
       {/* Categories */}
       <div style={{ padding: "0 0 8px" }}>
         <button
@@ -143,7 +160,7 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
                   borderBottom: "1px solid #f0f0f0",
                 }}
               >
-                <ChevronRight size={12} color="#b88d7a" />
+                {/* <ChevronRight size={12} color="#b88d7a" /> */}
                 {cat.name}
               </Link>
             ))}
@@ -204,7 +221,7 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
                       fontSize: "13px",
                     }}
                   >
-                    <ChevronRight size={12} color="#ccc" />
+                    {/* <ChevronRight size={12} color="#ccc" /> */}
                     {child.label}
                   </Link>
                 ))}

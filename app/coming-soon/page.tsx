@@ -49,10 +49,12 @@ export default function ComingSoonPage() {
 
       {/* Logo */}
       <Link href="/" style={{ textDecoration: "none", marginBottom: "48px", position: "relative" }}>
-        <span style={{ fontSize: "36px", fontWeight: 900, letterSpacing: "-1px" }}>
-          <span style={{ color: "#fff" }}>Nin</span>
-          <span style={{ color: "#f57224" }}>ico</span>
-        </span>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/logo.png"
+          alt="Sleekandchic"
+          style={{ width: "220px", height: "auto", filter: "invert(1)" }}
+        />
       </Link>
 
       {/* Badge */}
@@ -163,7 +165,7 @@ export default function ComingSoonPage() {
           onMouseLeave={(e) => ((e.currentTarget as HTMLAnchorElement).style.color = "#555")}
         >Shop Now</Link>
       </div>
-      <p style={{ fontSize: "12px", color: "#444", marginTop: "16px" }}>© {new Date().getFullYear()} Ninico. All rights reserved.</p>
+      <p style={{ fontSize: "12px", color: "#444", marginTop: "16px" }}>© {new Date().getFullYear()} Sleekandchic. All rights reserved.</p>
     </div>
   );
 }

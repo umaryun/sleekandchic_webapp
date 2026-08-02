@@ -2,23 +2,20 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Heart, ShoppingCart, Eye, X, Minus, Plus } from "lucide-react";
+import { ShoppingCart, Eye, X, Minus, Plus } from "lucide-react";
 import StarRating from "./StarRating";
 import type { Product } from "@/types";
 import { formatNGN } from "@/lib/utils";
+import { useCart } from "@/context/CartContext";
 
 interface ProductCardProps {
   product: Product;
-  onAddToCart?: (product: Product) => void;
-  onAddToWishlist?: (product: Product) => void;
 }
 
 export default function ProductCard({
   product,
-  onAddToCart,
-  onAddToWishlist,
 }: ProductCardProps) {
-  const [isWished, setIsWished] = useState(false);
+  const { addItem } = useCart();
   const [addedToCart, setAddedToCart] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [btnHovered, setBtnHovered] = useState(false);
@@ -51,16 +48,31 @@ export default function ProductCard({
   };
 
   const confirmAddToCart = () => {
-    onAddToCart?.(product);
+    // Find matching variant by selected size/color
+    const matchingVariant = product.variants?.find(
+      (v) =>
+        (v.size || null) === (selectedSize || null) &&
+        (v.color || null) === (selectedColor || null)
+    );
+    const unitPrice = matchingVariant?.priceOverride
+      ? Number(matchingVariant.priceOverride)
+      : Number(product.price);
+    const mainImage = product.images?.[0]?.imageUrl || product.image || null;
+
+    addItem(product.id, matchingVariant?.id || null, quantity, {
+      productName: product.name,
+      unitPrice,
+      image: mainImage,
+      size: selectedSize || undefined,
+      color: selectedColor || undefined,
+      productSlug: product.slug,
+    });
     setShowModal(false);
     setAddedToCart(true);
     setTimeout(() => setAddedToCart(false), 1500);
   };
 
-  const handleWishlist = () => {
-    setIsWished(!isWished);
-    onAddToWishlist?.(product);
-  };
+
 
   const badgeColors: Record<string, { bg: string; color: string }> = {
     sale: { bg: "#b88d7a", color: "#fff" },
@@ -110,32 +122,7 @@ export default function ProductCard({
           </div>
         )}
 
-        {/* Wishlist button */}
-        <button
-          onClick={handleWishlist}
-          style={{
-            position: "absolute",
-            top: "12px",
-            right: "12px",
-            zIndex: 2,
-            width: "34px",
-            height: "34px",
-            borderRadius: "50%",
-            background: isWished ? "rgba(184,141,122,0.1)" : "rgba(255,255,255,0.9)",
-            backdropFilter: "blur(4px)",
-            border: isWished ? "1px solid #b88d7a" : "1px solid #e8e5e2",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-            transition: "all 0.2s ease",
-            color: isWished ? "#b88d7a" : "#888",
-          }}
-          aria-label="Add to wishlist"
-        >
-          <Heart size={15} fill={isWished ? "#b88d7a" : "none"} />
-        </button>
+
 
         {/* Product image */}
         <Link href={`/products/${product.slug}`}>

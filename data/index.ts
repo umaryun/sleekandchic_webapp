@@ -58,7 +58,6 @@ export const navItems: NavItem[] = [
       { label: "Shop Detail", href: "/products/detail" },
       { label: "Shop Location", href: "/store-locator" },
       { label: "Cart", href: "/cart" },
-      { label: "Wishlist", href: "/wishlist" },
     ],
   },
   {
