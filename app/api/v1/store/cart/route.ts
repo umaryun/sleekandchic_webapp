@@ -250,7 +250,10 @@ export async function POST(req: NextRequest) {
           .where(
             and(
               eq(cartItems.cartId, cart.id),
-              eq(cartItems.productId, productId)
+              eq(cartItems.productId, productId),
+              variantId
+                ? eq(cartItems.variantId, variantId)
+                : sql`${cartItems.variantId} IS NULL`
             )
           );
       } else {
