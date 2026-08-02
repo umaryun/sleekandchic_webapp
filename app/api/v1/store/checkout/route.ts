@@ -32,6 +32,8 @@ const checkoutSchema = z.object({
     firstName: z.string().min(1),
     lastName: z.string().min(1),
   }),
+  shippingMethod: z.enum(["standard", "express"]).default("standard"),
+  paymentMethod: z.enum(["paystack", "card", "cod"]).default("paystack"),
   discountCode: z.string().optional(),
 });
 
@@ -42,7 +44,14 @@ export async function POST(req: NextRequest) {
 
     const session = await getSession(req);
     const userId = session?.user?.id || null;
-    const { guestToken, guestEmail, shippingAddress, discountCode } = data!;
+    const {
+      guestToken,
+      guestEmail,
+      shippingAddress,
+      shippingMethod,
+      paymentMethod,
+      discountCode,
+    } = data!;
 
     // Must be authenticated or provide guest email
     if (!userId && !guestEmail) {
@@ -159,8 +168,13 @@ export async function POST(req: NextRequest) {
       appliedDiscount = discount;
     }
 
-    // Shipping fee (simplified — can be enhanced later)
-    const shippingFee = subtotal >= 50000 ? 0 : 2500; // Free shipping over ₦50,000
+    // Shipping fee (Nigeria rates in NGN)
+    const shippingFee =
+      shippingMethod === "express"
+        ? 5000
+        : subtotal >= 50000
+        ? 0
+        : 2500;
 
     const totalAmount = subtotal - discountAmount + shippingFee;
     const orderNumber = generateOrderNumber();
@@ -189,7 +203,7 @@ export async function POST(req: NextRequest) {
         shippingAddress,
         discountCode: discountCode?.toUpperCase() || null,
         status: "pending",
-        paymentStatus: "unpaid",
+        paymentStatus: paymentMethod === "cod" ? "unpaid" : "unpaid",
       })
       .returning();
 
@@ -218,41 +232,71 @@ export async function POST(req: NextRequest) {
         .where(eq(discounts.id, appliedDiscount.id));
     }
 
-    // Initialize Paystack payment
-    const paystackResponse = await fetch(
-      "https://api.paystack.co/transaction/initialize",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: userId ? session!.user.email : guestEmail,
-          amount: Math.round(totalAmount * 100), // Paystack uses kobo
-          currency: "NGN",
-          reference: orderNumber,
-          callback_url: `${process.env.BETTER_AUTH_URL}/orders/confirmation?ref=${orderNumber}`,
-          metadata: {
-            orderId: order.id,
-            orderNumber,
-          },
-        }),
-      }
-    );
+    // Clear cart in database
+    await db.delete(cartItems).where(eq(cartItems.cartId, cart.id));
 
-    const paystackData = await paystackResponse.json();
-
-    if (!paystackData.status) {
-      console.error("Paystack init failed:", paystackData);
-      return apiError("Payment initialization failed", 500);
+    // If Cash on Delivery or no Paystack key configured, complete order directly
+    if (paymentMethod === "cod" || !process.env.PAYSTACK_SECRET_KEY) {
+      return apiSuccess({
+        orderNumber,
+        orderId: order.id,
+        subtotal,
+        discountAmount,
+        shippingFee,
+        totalAmount,
+        isCod: true,
+      });
     }
 
-    // Save payment reference
-    await db
-      .update(orders)
-      .set({ paymentReference: paystackData.data.reference })
-      .where(eq(orders.id, order.id));
+    // Initialize Paystack payment
+    try {
+      const paystackResponse = await fetch(
+        "https://api.paystack.co/transaction/initialize",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: userId ? session!.user.email : guestEmail,
+            amount: Math.round(totalAmount * 100), // Paystack uses kobo
+            currency: "NGN",
+            reference: orderNumber,
+            callback_url: `${process.env.BETTER_AUTH_URL || ""}/orders/tracking?ref=${orderNumber}`,
+            metadata: {
+              orderId: order.id,
+              orderNumber,
+            },
+          }),
+        }
+      );
+
+      const paystackData = await paystackResponse.json();
+
+      if (paystackData.status) {
+        await db
+          .update(orders)
+          .set({ paymentReference: paystackData.data.reference })
+          .where(eq(orders.id, order.id));
+
+        return apiSuccess({
+          orderNumber,
+          orderId: order.id,
+          subtotal,
+          discountAmount,
+          shippingFee,
+          totalAmount,
+          payment: {
+            authorization_url: paystackData.data.authorization_url,
+            access_code: paystackData.data.access_code,
+            reference: paystackData.data.reference,
+          },
+        });
+      }
+    } catch (paystackErr) {
+      console.warn("Paystack gateway unavailable, falling back to COD response:", paystackErr);
+    }
 
     return apiSuccess({
       orderNumber,
@@ -261,11 +305,7 @@ export async function POST(req: NextRequest) {
       discountAmount,
       shippingFee,
       totalAmount,
-      payment: {
-        authorization_url: paystackData.data.authorization_url,
-        access_code: paystackData.data.access_code,
-        reference: paystackData.data.reference,
-      },
+      isCod: true,
     });
   } catch (err) {
     if (err instanceof Response) return err;

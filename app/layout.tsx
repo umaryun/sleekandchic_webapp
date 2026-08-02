@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { CartProvider } from "@/context/CartContext";
 
 export const metadata: Metadata = {
   title: "Sleekandchic — Premium Handcrafted Goods & Accessories",
@@ -28,7 +29,7 @@ export default function RootLayout({
         />
       </head>
       <body style={{ fontFamily: "'Inter', 'Helvetica Neue', Arial, sans-serif" }}>
-        {children}
+        <CartProvider>{children}</CartProvider>
       </body>
     </html>
   );

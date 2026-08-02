@@ -151,8 +151,25 @@ export interface LegacyHeroSlide {
 // Cart
 // ──────────────────────────────────────────────
 
-export interface CartItem extends Product {
+export interface CartItem {
+  id: string;              // cart item row id
+  productId: string;
+  productName: string | null;
+  productSlug: string | null;
+  productInStock: boolean | null;
+  image: string | null;
+  variantId: string | null;
+  size: string | null;
+  color: string | null;
   quantity: number;
+  unitPrice: number;
+  total: number;
+}
+
+export interface CartData {
+  items: CartItem[];
+  subtotal: number;
+  guestToken: string | null;
 }
 
 // ──────────────────────────────────────────────

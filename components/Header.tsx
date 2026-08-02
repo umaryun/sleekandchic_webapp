@@ -5,7 +5,6 @@ import Link from "next/link";
 import {
   Search,
   ShoppingCart,
-  Heart,
   User,
   GitCompare,
   ChevronDown,
@@ -16,15 +15,15 @@ import { fetchCategories } from "@/lib/api";
 import type { Category } from "@/types";
 import CartDrawer from "./CartDrawer";
 import MobileMenu from "./MobileMenu";
+import { useCart } from "@/context/CartContext";
 
 interface HeaderProps {
-  cartCount: number;
-  wishlistCount: number;
   compareCount: number;
 }
 
 
-export default function Header({ cartCount, wishlistCount, compareCount }: HeaderProps) {
+export default function Header({ compareCount }: HeaderProps) {
+  const { cartCount } = useCart();
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
@@ -260,46 +259,7 @@ export default function Header({ cartCount, wishlistCount, compareCount }: Heade
               <span style={{ color: "#666", fontSize: "11px" }}>Compare</span>
             </Link>
 
-            {/* Wishlist */}
-            <Link
-              href="/wishlist"
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                color: "#1a1a1a",
-                textDecoration: "none",
-                position: "relative",
-                fontSize: "11px",
-                gap: "2px",
-              }}
-            >
-              <div style={{ position: "relative" }}>
-                <Heart size={22} />
-                {wishlistCount > 0 && (
-                  <span
-                    style={{
-                      position: "absolute",
-                      top: "-6px",
-                      right: "-8px",
-                      background: "#b88d7a",
-                      color: "#fff",
-                      borderRadius: "50%",
-                      width: "16px",
-                      height: "16px",
-                      fontSize: "10px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontWeight: 700,
-                    }}
-                  >
-                    {wishlistCount}
-                  </span>
-                )}
-              </div>
-              <span style={{ color: "#666", fontSize: "11px" }}>Wishlist</span>
-            </Link>
+
 
             {/* Account */}
             <Link

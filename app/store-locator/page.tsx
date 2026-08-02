@@ -6,14 +6,14 @@ import ShopLayout from "@/components/ShopLayout";
 import PageBreadcrumb from "@/components/PageBreadcrumb";
 
 const STORES = [
-  { id: 1, name: "Ninico New York — Flagship", address: "24 E 64th St, New York, NY 10065", phone: "+1 (212) 555-0182", hours: "Mon–Sat: 10am–9pm · Sun: 11am–7pm", lat: 40.769, lng: -73.971, mapLabel: "New York, NY" },
-  { id: 2, name: "Ninico Los Angeles", address: "8500 Beverly Blvd, Los Angeles, CA 90048", phone: "+1 (310) 555-0193", hours: "Mon–Sat: 10am–8pm · Sun: 11am–6pm", lat: 34.076, lng: -118.386, mapLabel: "Los Angeles, CA" },
-  { id: 3, name: "Ninico London", address: "145 Oxford Street, London W1D 2JD, UK", phone: "+44 20 7946 0958", hours: "Mon–Sat: 10am–8pm · Sun: 12pm–6pm", lat: 51.514, lng: -0.142, mapLabel: "London, UK" },
-  { id: 4, name: "Ninico Paris", address: "17 Avenue des Champs-Élysées, Paris 75008", phone: "+33 1 42 99 00 10", hours: "Mon–Sat: 10am–9pm · Sun: 11am–7pm", lat: 48.871, lng: 2.308, mapLabel: "Paris, France" },
-  { id: 5, name: "Ninico Berlin", address: "Kurfürstendamm 28, 10719 Berlin, Germany", phone: "+49 30 8899 4421", hours: "Mon–Sat: 10am–8pm · Closed Sunday", lat: 52.502, lng: 13.328, mapLabel: "Berlin, Germany" },
-  { id: 6, name: "Ninico Lagos", address: "1532 Adeola Odeku St, Victoria Island, Lagos", phone: "+234 1 461 0000", hours: "Mon–Sat: 9am–8pm · Sun: 12pm–6pm", lat: 6.428, lng: 3.420, mapLabel: "Lagos, Nigeria" },
-  { id: 7, name: "Ninico Tokyo", address: "5-5-3 Ginza, Chuo City, Tokyo 104-0061", phone: "+81 3-6271-0900", hours: "Daily: 11am–9pm", lat: 35.671, lng: 139.764, mapLabel: "Tokyo, Japan" },
-  { id: 8, name: "Ninico Sydney", address: "500 George St, Sydney NSW 2000, Australia", phone: "+61 2 9265 6000", hours: "Mon–Sat: 9am–7pm · Sun: 11am–5pm", lat: -33.873, lng: 151.206, mapLabel: "Sydney, Australia" },
+  { id: 1, name: "Sleekandchic New York — Flagship", address: "24 E 64th St, New York, NY 10065", phone: "+1 (212) 555-0182", hours: "Mon–Sat: 10am–9pm · Sun: 11am–7pm", lat: 40.769, lng: -73.971, mapLabel: "New York, NY" },
+  { id: 2, name: "Sleekandchic Los Angeles", address: "8500 Beverly Blvd, Los Angeles, CA 90048", phone: "+1 (310) 555-0193", hours: "Mon–Sat: 10am–8pm · Sun: 11am–6pm", lat: 34.076, lng: -118.386, mapLabel: "Los Angeles, CA" },
+  { id: 3, name: "Sleekandchic London", address: "145 Oxford Street, London W1D 2JD, UK", phone: "+44 20 7946 0958", hours: "Mon–Sat: 10am–8pm · Sun: 12pm–6pm", lat: 51.514, lng: -0.142, mapLabel: "London, UK" },
+  { id: 4, name: "Sleekandchic Paris", address: "17 Avenue des Champs-Élysées, Paris 75008", phone: "+33 1 42 99 00 10", hours: "Mon–Sat: 10am–9pm · Sun: 11am–7pm", lat: 48.871, lng: 2.308, mapLabel: "Paris, France" },
+  { id: 5, name: "Sleekandchic Berlin", address: "Kurfürstendamm 28, 10719 Berlin, Germany", phone: "+49 30 8899 4421", hours: "Mon–Sat: 10am–8pm · Closed Sunday", lat: 52.502, lng: 13.328, mapLabel: "Berlin, Germany" },
+  { id: 6, name: "Sleekandchic Lagos", address: "1532 Adeola Odeku St, Victoria Island, Lagos", phone: "+234 1 461 0000", hours: "Mon–Sat: 9am–8pm · Sun: 12pm–6pm", lat: 6.428, lng: 3.420, mapLabel: "Lagos, Nigeria" },
+  { id: 7, name: "Sleekandchic Tokyo", address: "5-5-3 Ginza, Chuo City, Tokyo 104-0061", phone: "+81 3-6271-0900", hours: "Daily: 11am–9pm", lat: 35.671, lng: 139.764, mapLabel: "Tokyo, Japan" },
+  { id: 8, name: "Sleekandchic Sydney", address: "500 George St, Sydney NSW 2000, Australia", phone: "+61 2 9265 6000", hours: "Mon–Sat: 9am–7pm · Sun: 11am–5pm", lat: -33.873, lng: 151.206, mapLabel: "Sydney, Australia" },
 ];
 
 export default function StoreLocatorPage() {

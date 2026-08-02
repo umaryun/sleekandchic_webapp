@@ -63,11 +63,14 @@ async function getCartWithItems(cartId: string) {
     .leftJoin(products, eq(cartItems.productId, products.id))
     .where(eq(cartItems.cartId, cartId));
 
-  // Get first image for each product
+  if (items.length === 0) return [];
+
   const productIds = [...new Set(items.map((i) => i.productId))];
-  const images =
+  const variantIds = items.filter((i) => i.variantId).map((i) => i.variantId!);
+
+  const [images, variants] = await Promise.all([
     productIds.length > 0
-      ? await db
+      ? db
           .select({
             productId: productImages.productId,
             imageUrl: productImages.imageUrl,
@@ -75,7 +78,14 @@ async function getCartWithItems(cartId: string) {
           .from(productImages)
           .where(sql`${productImages.productId} IN ${productIds}`)
           .orderBy(asc(productImages.displayOrder))
-      : [];
+      : Promise.resolve([]),
+    variantIds.length > 0
+      ? db
+          .select()
+          .from(productVariants)
+          .where(sql`${productVariants.id} IN ${variantIds}`)
+      : Promise.resolve([]),
+  ]);
 
   const imageMap = new Map<string, string>();
   for (const img of images) {
@@ -83,16 +93,6 @@ async function getCartWithItems(cartId: string) {
       imageMap.set(img.productId, img.imageUrl);
     }
   }
-
-  // Get variant info
-  const variantIds = items.filter((i) => i.variantId).map((i) => i.variantId!);
-  const variants =
-    variantIds.length > 0
-      ? await db
-          .select()
-          .from(productVariants)
-          .where(sql`${productVariants.id} IN ${variantIds}`)
-      : [];
 
   const variantMap = new Map(variants.map((v) => [v.id, v]));
 

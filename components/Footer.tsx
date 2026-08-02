@@ -26,8 +26,8 @@ const footerLinks = {
 
 const contactInfo = [
   { heading: "EMAIL", value: "hello@slickandchic.com" },
-  { heading: "CALL US", value: "+1 (800) 123-4567" },
-  { heading: "ADDRESS", value: "123 Commerce St, New York" },
+  { heading: "CALL US", value: "+234 903 377 7385" },
+  { heading: "ADDRESS", value: "Grey parrot center, beside second gate urban shelter. Millenium city"},
 ];
 
 function AccordionSection({
@@ -194,7 +194,7 @@ export default function Footer() {
           }}
         >
           <div className="flex items-center gap-6 flex-wrap justify-center">
-            <span>Lagos, Nigeria</span>
+            <span>Kaduna, Nigeria</span>
             <Link
               href="/terms"
               className="text-neutral-500 no-underline hover:text-[#b88d7a] transition-colors duration-200"

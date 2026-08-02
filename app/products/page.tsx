@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { SlidersHorizontal, Grid, List, ChevronDown, ChevronRight, X } from "lucide-react";
+import { SlidersHorizontal, Grid, List, ChevronDown, ChevronRight, ChevronLeft, X } from "lucide-react";
 import ShopLayout from "@/components/ShopLayout";
 import PageBreadcrumb from "@/components/PageBreadcrumb";
 import ProductCard from "@/components/ProductCard";
@@ -126,6 +126,36 @@ function ProductsContent() {
           ) : null}
         </div>
 
+        {/* Sort By */}
+        <FilterSection title="Sort By">
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            {SORT_OPTIONS.map((opt) => (
+              <label
+                key={opt.value}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  cursor: "pointer",
+                  fontSize: "13px",
+                  color: sort === opt.value ? "#f57224" : "#555",
+                  fontWeight: sort === opt.value ? 600 : 400,
+                }}
+              >
+                <input
+                  type="radio"
+                  name="sortOption"
+                  value={opt.value}
+                  checked={sort === opt.value}
+                  onChange={() => setSort(opt.value)}
+                  style={{ accentColor: "#f57224", width: "14px", height: "14px" }}
+                />
+                {opt.label}
+              </label>
+            ))}
+          </div>
+        </FilterSection>
+
         {/* Search */}
         <FilterSection title="Search">
           <input
@@ -182,61 +212,23 @@ function ProductsContent() {
     <ShopLayout>
       <PageBreadcrumb title="Products" crumbs={[]} />
 
-      <div style={{ maxWidth: "1280px", margin: "32px auto", padding: "0 16px", display: "flex", gap: "28px", alignItems: "flex-start" }}>
+      <div className="w-full max-w-[1280px] my-6 sm:my-8 mx-auto px-4 flex gap-7 items-start">
         {/* Desktop Sidebar */}
-        <div className="desktop-sidebar">{renderSidebar()}</div>
+        <div className="hidden lg:block shrink-0">{renderSidebar()}</div>
 
         {/* Main Content */}
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div className="flex-1 min-w-0">
           {/* Toolbar */}
-          <div style={{
-            display: "flex", alignItems: "center", justifyContent: "space-between",
-            flexWrap: "wrap", gap: "12px", marginBottom: "20px",
-            background: "#fff", border: "1px solid #f0f0f0", borderRadius: "4px", padding: "12px 16px",
-          }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-5 bg-white border border-[#f0f0f0] rounded-md p-2  sm:p-4">
+            <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
               {/* Mobile filter */}
               <button onClick={() => setMobileFilterOpen(true)}
-                className="mobile-filter-btn"
-                style={{ display: "none", alignItems: "center", gap: "6px", padding: "7px 14px", background: "#1a1a1a", color: "#fff", border: "none", borderRadius: "3px", cursor: "pointer", fontSize: "13px", fontWeight: 600 }}>
+                className="lg:hidden flex items-center gap-1.5 px-3.5 py-1.5 bg-[#1a1a1a] text-white rounded text-xs font-semibold cursor-pointer">
                 <SlidersHorizontal size={14} /> Filter
               </button>
-              <span style={{ fontSize: "13px", color: "#888" }}>
-                <strong style={{ color: "#1a1a1a" }}>{totalProducts}</strong> Products found
+              <span className="text-xs sm:text-sm text-[#888]">
+                <strong className="text-[#1a1a1a]">{totalProducts}</strong> Products found
               </span>
-            </div>
-
-            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-              {/* Per page */}
-              <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "#888" }}>
-                Show:
-                {[20, 30, 40, 60].map(n => (
-                  <button key={n} onClick={() => setPerPage(n)}
-                    style={{ padding: "3px 7px", border: "1px solid", borderColor: perPage === n ? "#f57224" : "#e5e5e5", background: perPage === n ? "#f57224" : "transparent", color: perPage === n ? "#fff" : "#555", borderRadius: "2px", cursor: "pointer", fontSize: "12px", fontWeight: 600 }}>
-                    {n}
-                  </button>
-                ))}
-              </div>
-
-              {/* Sort */}
-              <div style={{ position: "relative" }}>
-                <button onClick={() => setSortOpen(!sortOpen)}
-                  style={{ display: "flex", alignItems: "center", gap: "6px", padding: "7px 12px", border: "1px solid #e5e5e5", borderRadius: "3px", background: "#fff", cursor: "pointer", fontSize: "13px", color: "#555", whiteSpace: "nowrap" }}>
-                  {currentSort} <ChevronDown size={13} />
-                </button>
-                {sortOpen && (
-                  <div style={{ position: "absolute", top: "100%", right: 0, background: "#fff", border: "1px solid #e5e5e5", borderRadius: "4px", boxShadow: "0 8px 24px rgba(0,0,0,0.1)", zIndex: 50, minWidth: "200px", marginTop: "4px" }}>
-                    {SORT_OPTIONS.map(opt => (
-                      <button key={opt.value} onClick={() => { setSort(opt.value); setSortOpen(false); }}
-                        style={{ display: "block", width: "100%", padding: "9px 16px", background: sort === opt.value ? "#fff8f5" : "#fff", border: "none", cursor: "pointer", textAlign: "left", fontSize: "13px", color: sort === opt.value ? "#f57224" : "#555", fontWeight: sort === opt.value ? 600 : 400, borderBottom: "1px solid #f5f5f5" }}>
-                        {opt.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Grid/List toggle */}
               <div style={{ display: "flex", border: "1px solid #e5e5e5", borderRadius: "3px", overflow: "hidden" }}>
                 {(["grid", "list"] as const).map((v) => (
                   <button key={v} onClick={() => setLayout(v)}
@@ -250,7 +242,7 @@ function ProductsContent() {
 
           {/* Product Grid */}
           {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[18px]">
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-[18px]">
               {Array.from({ length: perPage > 12 ? 12 : perPage }).map((_, i) => (
                 <div key={i} style={{ background: "#fff", borderRadius: "5px", overflow: "hidden" }}>
                   <div style={{ paddingTop: "100%", background: "#f5f5f5" }} className="animate-pulse" />
@@ -273,43 +265,52 @@ function ProductsContent() {
               )}
             </div>
           ) : layout === "grid" ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[18px]">
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-[18px]">
               {products.map(product => (
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-              {products.map(product => (
-                <div key={product.id} style={{ display: "flex", gap: "20px", background: "#fff", border: "1px solid #f0f0f0", borderRadius: "4px", padding: "16px", transition: "box-shadow 0.2s" }}
-                  onMouseEnter={(e) => ((e.currentTarget as HTMLDivElement).style.boxShadow = "0 4px 16px rgba(0,0,0,0.08)")}
-                  onMouseLeave={(e) => ((e.currentTarget as HTMLDivElement).style.boxShadow = "none")}
+            <div className="flex flex-col gap-3.5 sm:gap-4">
+              {products.map((product) => (
+                <div
+                  key={product.id}
+                  className="flex flex-row gap-3 sm:gap-5 bg-white border border-[#f0f0f0] rounded-md p-3 sm:p-4 hover:shadow-md transition-shadow items-center sm:items-start"
                 >
-                  <Link href={`/products/${product.slug}`} style={{ flexShrink: 0 }}>
+                  <Link href={`/products/${product.slug}`} className="shrink-0 relative block">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={product.image || "/placeholder-product.png"} alt={product.name} style={{ width: "140px", height: "140px", objectFit: "cover", borderRadius: "4px" }} />
-                  </Link>
-                  <div style={{ flex: 1 }}>
+                    <img
+                      src={product.image || "/placeholder-product.png"}
+                      alt={product.name}
+                      className="w-32 h-32 sm:w-40 sm:h-40 object-cover rounded-md border border-[#f0f0f0]"
+                    />
                     {product.badge && (
-                      <span style={{ fontSize: "10px", fontWeight: 700, padding: "2px 8px", borderRadius: "2px", background: product.badge === "sale" ? "#f57224" : product.badge === "new" ? "#28a745" : "#dc3545", color: "#fff", textTransform: "uppercase", display: "inline-block", marginBottom: "8px" }}>
+                      <span className="absolute top-1.5 left-1.5 text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#f57224] text-white uppercase z-10 shadow-xs">
                         {product.badge === "sale" && product.discount ? `-${product.discount}%` : product.badge}
                       </span>
                     )}
-                    <Link href={`/products/${product.slug}`} style={{ textDecoration: "none" }}>
-                      <h3 style={{ fontSize: "16px", fontWeight: 600, color: "#1a1a1a", marginBottom: "6px" }}
-                        onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#f57224")}
-                        onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#1a1a1a")}
-                      >{product.name}</h3>
-                    </Link>
-                    <StarRating rating={product.rating} reviewCount={product.reviewCount} />
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "10px" }}>
-                      <span style={{ fontSize: "18px", fontWeight: 700 }}>{formatNGN(product.price)}</span>
-                      {product.originalPrice && <span style={{ fontSize: "14px", color: "#aaa", textDecoration: "line-through" }}>{formatNGN(product.originalPrice)}</span>}
+                  </Link>
+                  <div className="flex-1 min-w-0 flex flex-col justify-between">
+                    <div>
+                      <Link href={`/products/${product.slug}`} className="no-underline">
+                        <h3 className="text-xs sm:text-base font-semibold text-[#1a1a1a] mb-1 line-clamp-2 hover:text-[#f57224] transition-colors">
+                          {product.name}
+                        </h3>
+                      </Link>
+                      <StarRating rating={product.rating} reviewCount={product.reviewCount} />
                     </div>
-                    <button style={{ marginTop: "14px", padding: "9px 20px", background: "#1a1a1a", color: "#fff", border: "none", borderRadius: "3px", cursor: "pointer", fontSize: "13px", fontWeight: 600, transition: "background 0.2s" }}
-                      onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.background = "#f57224")}
-                      onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.background = "#1a1a1a")}
-                    >Add to Cart</button>
+
+                    <div className="mt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-sm sm:text-lg font-bold text-[#1a1a1a]">{formatNGN(product.price)}</span>
+                        {product.originalPrice && (
+                          <span className="text-[11px] sm:text-sm text-[#aaa] line-through">{formatNGN(product.originalPrice)}</span>
+                        )}
+                      </div>
+                      <button className="px-3 py-1.5 sm:px-4 sm:py-2 bg-[#1a1a1a] hover:bg-[#f57224] text-white border-0 rounded text-[11px] sm:text-xs font-semibold cursor-pointer transition-colors w-fit sm:w-auto">
+                        Add to Cart
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -318,13 +319,18 @@ function ProductsContent() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", marginTop: "36px" }}>
-              <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-                style={{ padding: "8px 14px", border: "1px solid #e5e5e5", borderRadius: "3px", background: "#fff", cursor: page === 1 ? "default" : "pointer", color: page === 1 ? "#ccc" : "#555", fontSize: "13px" }}>
-                ‹ Prev
+            <div className="flex items-center justify-center gap-1.5 sm:gap-2 mt-9 sm:mt-12 flex-wrap">
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="flex items-center gap-1 px-3 sm:px-4 py-2 border border-[#e5e5e5] rounded bg-white text-[#555] disabled:text-[#ccc] disabled:cursor-not-allowed hover:enabled:bg-[#f8f8f8] text-xs sm:text-sm font-semibold transition-colors cursor-pointer"
+              >
+                <ChevronLeft size={14} />
+                <span>Previous</span>
               </button>
+
               {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
-                // Smart pagination: show pages around current page
                 let p: number;
                 if (totalPages <= 7) {
                   p = i + 1;
@@ -336,15 +342,29 @@ function ProductsContent() {
                   p = page - 3 + i;
                 }
                 return (
-                  <button key={p} onClick={() => setPage(p)}
-                    style={{ width: "36px", height: "36px", border: "1px solid", borderColor: page === p ? "#f57224" : "#e5e5e5", borderRadius: "3px", background: page === p ? "#f57224" : "#fff", color: page === p ? "#fff" : "#555", cursor: "pointer", fontSize: "13px", fontWeight: page === p ? 700 : 400 }}>
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setPage(p)}
+                    className={`w-8 h-8 sm:w-9 sm:h-9 border rounded text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                      page === p
+                        ? "border-[#f57224] bg-[#f57224] text-white"
+                        : "border-[#e5e5e5] bg-white text-[#555] hover:bg-[#f8f8f8]"
+                    }`}
+                  >
                     {p}
                   </button>
                 );
               })}
-              <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-                style={{ padding: "8px 14px", border: "1px solid #e5e5e5", borderRadius: "3px", background: "#fff", cursor: page === totalPages ? "default" : "pointer", color: page === totalPages ? "#ccc" : "#555", fontSize: "13px" }}>
-                Next ›
+
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="flex items-center gap-1 px-3 sm:px-4 py-2 border border-[#e5e5e5] rounded bg-white text-[#555] disabled:text-[#ccc] disabled:cursor-not-allowed hover:enabled:bg-[#f8f8f8] text-xs sm:text-sm font-semibold transition-colors cursor-pointer"
+              >
+                <span>Next</span>
+                <ChevronRight size={14} />
               </button>
             </div>
           )}
@@ -364,15 +384,6 @@ function ProductsContent() {
           </div>
         </>
       )}
-
-      <style>{`
-        .desktop-sidebar { display: block; }
-        .mobile-filter-btn { display: none !important; }
-        @media (max-width: 1024px) {
-          .desktop-sidebar { display: none !important; }
-          .mobile-filter-btn { display: flex !important; }
-        }
-      `}</style>
     </ShopLayout>
   );
 }

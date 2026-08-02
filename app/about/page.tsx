@@ -34,7 +34,7 @@ export default function AboutPage() {
             Crafted with Passion,<br />Delivered with Care
           </h1>
           <p style={{ fontSize: "16px", color: "#888", lineHeight: 1.8 }}>
-            Founded in 2016, Ninico connects discerning shoppers with the world&apos;s finest handcrafted goods. We believe that every object in your home should tell a story.
+            Founded in 2016, Sleekandchic connects discerning shoppers with the world&apos;s finest handcrafted goods. We believe that every object in your home should tell a story.
           </p>
         </div>
       </section>
@@ -103,7 +103,7 @@ export default function AboutPage() {
       {/* Team */}
       <section style={{ maxWidth: "1280px", margin: "72px auto", padding: "0 16px" }}>
         <div style={{ textAlign: "center", marginBottom: "48px" }}>
-          <p style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "2px", color: "#f57224", textTransform: "uppercase", marginBottom: "10px" }}>The People Behind Ninico</p>
+          <p style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "2px", color: "#f57224", textTransform: "uppercase", marginBottom: "10px" }}>The People Behind Sleekandchic</p>
           <h2 style={{ fontSize: "32px", fontWeight: 800, color: "#1a1a1a" }}>Meet Our Team</h2>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
