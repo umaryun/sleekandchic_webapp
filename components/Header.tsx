@@ -263,7 +263,7 @@ export default function Header({ compareCount }: HeaderProps) {
 
             {/* Account */}
             <Link
-              href="/login"
+              href="/profile"
               style={{
                 display: "flex",
                 flexDirection: "column",

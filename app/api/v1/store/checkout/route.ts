@@ -18,6 +18,7 @@ import {
   getSession,
   generateOrderNumber,
 } from "@/lib/api-utils";
+import { calculateShipping } from "@/lib/shipping";
 
 const checkoutSchema = z.object({
   guestToken: z.string().optional(),
@@ -168,13 +169,15 @@ export async function POST(req: NextRequest) {
       appliedDiscount = discount;
     }
 
-    // Shipping fee (Nigeria rates in NGN)
-    const shippingFee =
-      shippingMethod === "express"
-        ? 5000
-        : subtotal >= 50000
-        ? 0
-        : 2500;
+    // Dynamic shipping fee based on destination state, method, subtotal & item count
+    const totalItemCount = items.reduce((sum, i) => sum + i.quantity, 0);
+    const shippingQuote = calculateShipping(
+      shippingAddress.state,
+      shippingMethod,
+      subtotal - discountAmount,
+      totalItemCount
+    );
+    const shippingFee = shippingQuote.fee;
 
     const totalAmount = subtotal - discountAmount + shippingFee;
     const orderNumber = generateOrderNumber();

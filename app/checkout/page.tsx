@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
   ChevronRight,
@@ -20,6 +20,7 @@ import ShopLayout from "@/components/ShopLayout";
 import PageBreadcrumb from "@/components/PageBreadcrumb";
 import { formatNGN } from "@/lib/utils";
 import { useCart } from "@/context/CartContext";
+import { getShippingQuotes, type ShippingQuote } from "@/lib/shipping";
 
 const STEPS = ["Shipping & Delivery", "Payment Method", "Order Placed"] as const;
 type Step = (typeof STEPS)[number];
@@ -117,14 +118,24 @@ export default function CheckoutPage() {
   const { items, subtotal, clearCart } = useCart();
   const totalItemsCount = items.reduce((s, i) => s + i.quantity, 0);
 
-  const shippingCost =
-    shippingMethod === "express"
-      ? 5000
-      : subtotal >= 50000
-        ? 0
-        : items.length > 0
-          ? 2500
-          : 0;
+  // Dynamic shipping calculation based on destination state
+  const [shippingQuotes, setShippingQuotes] = useState<{
+    standard: ShippingQuote;
+    express: ShippingQuote;
+  } | null>(null);
+
+  const computeQuotes = useCallback(() => {
+    if (items.length === 0) return;
+    const quotes = getShippingQuotes(shipping.state, subtotal - discountAmount, totalItemsCount);
+    setShippingQuotes(quotes);
+  }, [shipping.state, subtotal, discountAmount, totalItemsCount, items.length]);
+
+  useEffect(() => {
+    computeQuotes();
+  }, [computeQuotes]);
+
+  const activeQuote = shippingQuotes?.[shippingMethod];
+  const shippingCost = activeQuote?.fee ?? 0;
 
   const vatTax = Math.round(subtotal * 0.075); // 7.5% Nigerian VAT
   const total = Math.max(
@@ -514,24 +525,44 @@ export default function CheckoutPage() {
 
                   {/* Shipping Method Selector */}
                   <div className="my-7">
-                    <h3 className="text-sm sm:text-base font-bold text-[#1a1a1a] mb-3.5 flex items-center gap-2">
-                      <Truck size={18} color="#f57224" /> Choose Shipping Option
-                    </h3>
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-3.5">
+                      <h3 className="text-sm sm:text-base font-bold text-[#1a1a1a] flex items-center gap-2">
+                        <Truck size={18} color="#f57224" /> Choose Shipping Option
+                      </h3>
+                      {shippingQuotes && (
+                        <span
+                          style={{
+                            fontSize: "11px",
+                            fontWeight: 700,
+                            background: "linear-gradient(135deg, #fff8f5, #fff0e8)",
+                            color: "#f57224",
+                            padding: "4px 10px",
+                            borderRadius: "20px",
+                            border: "1px solid #ffe0d0",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "4px",
+                          }}
+                        >
+                          <MapPin size={11} /> Zone {shippingQuotes.standard.zone} — {shippingQuotes.standard.zoneName}
+                        </span>
+                      )}
+                    </div>
                     <div className="flex flex-col gap-2.5">
-                      {[
+                      {shippingQuotes && ([
                         {
-                          id: "standard",
-                          label: "Standard Nationwide Delivery",
-                          sub: "3–5 business days across Nigeria",
-                          price: subtotal >= 50000 ? "Free" : formatNGN(2500),
+                          id: "standard" as const,
+                          label: "Standard Delivery",
+                          quote: shippingQuotes.standard,
+                          icon: "📦",
                         },
                         {
-                          id: "express",
+                          id: "express" as const,
                           label: "Express Priority Delivery",
-                          sub: "1–2 business days (Major cities)",
-                          price: formatNGN(5000),
+                          quote: shippingQuotes.express,
+                          icon: "⚡",
                         },
-                      ].map(({ id, label, sub, price }) => (
+                      ].map(({ id, label, quote, icon }) => (
                         <label
                           key={id}
                           className={`flex flex-col sm:flex-row items-start sm:items-center justify-between p-3.5 sm:p-4 border-2 rounded-md cursor-pointer transition-all gap-2 sm:gap-4 ${
@@ -544,24 +575,52 @@ export default function CheckoutPage() {
                               name="shipping"
                               value={id}
                               checked={shippingMethod === id}
-                              onChange={() => setShippingMethod(id as "standard" | "express")}
+                              onChange={() => setShippingMethod(id)}
                               className="accent-[#f57224] w-4 h-4 mt-0.5 shrink-0"
                             />
                             <div>
-                              <p className="text-sm font-bold text-[#1a1a1a]">
-                                {label}
+                              <p className="text-sm font-bold text-[#1a1a1a] flex items-center gap-1.5">
+                                <span>{icon}</span> {label}
                               </p>
-                              <p className="text-xs text-[#777]">{sub}</p>
+                              <p className="text-xs text-[#777]">
+                                Est. {quote.estimatedDays} to {shipping.state} State
+                              </p>
+                              {quote.isFree && (
+                                <p className="text-[11px] text-[#28a745] font-semibold mt-0.5">
+                                  ✓ Free shipping on orders over {formatNGN(quote.freeThreshold)}
+                                </p>
+                              )}
+                              {!quote.isFree && id === "standard" && (
+                                <p className="text-[11px] text-[#888] mt-0.5">
+                                  Free over {formatNGN(quote.freeThreshold)} to {shipping.state}
+                                </p>
+                              )}
                             </div>
                           </div>
                           <span className={`text-sm font-extrabold self-end sm:self-center ml-7 sm:ml-0 ${
                             shippingMethod === id ? "text-[#f57224]" : "text-[#1a1a1a]"
                           }`}>
-                            {price}
+                            {quote.isFree ? (
+                              <span className="flex items-center gap-1">
+                                <span style={{ textDecoration: "line-through", color: "#bbb", fontWeight: 500, fontSize: "12px" }}>
+                                  {formatNGN(getShippingQuotes(shipping.state, 0, totalItemsCount).standard.fee)}
+                                </span>
+                                <span style={{ color: "#28a745" }}>Free</span>
+                              </span>
+                            ) : (
+                              formatNGN(quote.fee)
+                            )}
                           </span>
                         </label>
-                      ))}
+                      )))}
                     </div>
+
+                    {/* Bulk item note */}
+                    {totalItemsCount > 3 && (
+                      <p style={{ fontSize: "11px", color: "#888", marginTop: "8px", display: "flex", alignItems: "center", gap: "4px" }}>
+                        <Package size={12} /> Includes ₦{((totalItemsCount - 3) * 200).toLocaleString()} handling fee for {totalItemsCount} items
+                      </p>
+                    )}
                   </div>
 
                   <button
@@ -835,10 +894,15 @@ export default function CheckoutPage() {
                   </div>
                 )}
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px" }}>
-                  <span style={{ color: "#666" }}>
-                    Shipping ({shippingMethod === "express" ? "Express" : "Standard"})
+                  <span style={{ color: "#666", display: "flex", flexDirection: "column" }}>
+                    <span>Shipping ({shippingMethod === "express" ? "Express" : "Standard"})</span>
+                    {activeQuote && (
+                      <span style={{ fontSize: "10px", color: "#999" }}>
+                        Zone {activeQuote.zone} · {activeQuote.estimatedDays}
+                      </span>
+                    )}
                   </span>
-                  <span style={{ fontWeight: 600, color: "#1a1a1a" }}>
+                  <span style={{ fontWeight: 600, color: shippingCost === 0 ? "#28a745" : "#1a1a1a" }}>
                     {shippingCost === 0 ? "Free" : formatNGN(shippingCost)}
                   </span>
                 </div>

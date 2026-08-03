@@ -67,6 +67,10 @@ export const users = pgTable("users", {
   role: userRoleEnum("role").notNull().default("customer"),
   phone: text("phone"),
   isAnonymous: boolean("is_anonymous").default(false),
+  // Admin plugin fields required by better-auth admin plugin
+  banned: boolean("banned").default(false),
+  banReason: text("ban_reason"),
+  banExpires: timestamp("ban_expires"),
 });
 
 export const sessions = pgTable("sessions", {
@@ -80,6 +84,7 @@ export const sessions = pgTable("sessions", {
   userId: text("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
+  impersonatedBy: text("impersonated_by"),
 });
 
 export const accounts = pgTable("accounts", {
