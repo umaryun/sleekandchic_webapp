@@ -12,7 +12,7 @@ export default function MobileBottomNav() {
     { href: "/products", Icon: Grid3x3, label: "Shop" },
     { href: "/products?sort=newest", Icon: Tags, label: "New In" },
     { href: "/cart", Icon: ShoppingCart, label: "Cart" },
-    { href: "/login", Icon: User, label: "Account" },
+    { href: "/profile", Icon: User, label: "Account" },
   ];
 
   return (
