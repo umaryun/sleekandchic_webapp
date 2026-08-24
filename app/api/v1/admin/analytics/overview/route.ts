@@ -123,3 +123,7 @@ export async function GET(req: NextRequest) {
     return apiError("Internal server error", 500);
   }
 }
+
+export async function OPTIONS() {
+  return new Response(null, { status: 204 });
+}

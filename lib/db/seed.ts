@@ -1,5 +1,5 @@
 import { db } from "./index";
-import { categories, products, productImages, productVariants, heroSlides } from "./schema";
+import { categories, products, productImages, productVariants, heroSlides, users } from "./schema";
 import { categories as defaultCategories, products as defaultProducts, heroSlides as defaultSlides } from "@/data/index";
 import { slugify } from "../api-utils";
 import { eq } from "drizzle-orm";
@@ -116,6 +116,25 @@ async function seed() {
     });
   }
   console.log("Seeded hero slides.");
+
+  // 4. Ensure Super Admin Accounts exist
+  const superAdminEmails = ["admin@slickandchic.com", "umaryunusa443@gmail.com"];
+  for (const email of superAdminEmails) {
+    const [adminUser] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1);
+
+    if (adminUser && adminUser.role !== "super_admin") {
+      await db
+        .update(users)
+        .set({ role: "super_admin" })
+        .where(eq(users.id, adminUser.id));
+      console.log(`Elevated ${email} to super_admin.`);
+    }
+  }
+
   console.log("Database seed completed successfully!");
 }
 
