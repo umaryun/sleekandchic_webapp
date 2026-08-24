@@ -195,3 +195,38 @@ export interface ProductsResponse {
   products: Product[];
   pagination: PaginationMeta;
 }
+
+// ──────────────────────────────────────────────
+// Admin Team & Roles (RBAC)
+// ──────────────────────────────────────────────
+
+export type AdminRole = "super_admin" | "admin";
+
+export interface AdminUser {
+  id: string;
+  name: string;
+  email: string;
+  role: AdminRole;
+  status: "active" | "invited" | "suspended";
+  avatarUrl?: string | null;
+  createdAt: string;
+  lastLoginAt?: string | null;
+}
+
+export interface AdminListResponse {
+  admins: AdminUser[];
+  pagination?: PaginationMeta;
+}
+
+export interface InviteAdminInput {
+  name: string;
+  email: string;
+  role: AdminRole;
+  password?: string;
+}
+
+export interface UpdateAdminInput {
+  adminId?: string;
+  role?: AdminRole;
+  status?: "active" | "suspended";
+}

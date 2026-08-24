@@ -7,6 +7,7 @@ import {
   apiSuccess,
   apiError,
   requireAdmin,
+  requireSuperAdmin,
   withCors,
   parseBody,
   auditLog,
@@ -62,7 +63,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await requireAdmin(req);
+    const session = await requireSuperAdmin(req);
     const { id } = await params;
 
     const [existing] = await db

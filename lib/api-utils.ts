@@ -58,8 +58,17 @@ export function parseQuery<T extends z.ZodType>(
 }
 
 // ──────────────────────────────────────────────
-// Auth Helpers
+// Auth Helpers & RBAC
 // ──────────────────────────────────────────────
+
+export interface AuthenticatedUser {
+  id: string;
+  name: string;
+  email: string;
+  role?: string;
+  banned?: boolean;
+  image?: string | null;
+}
 
 export async function getSession(req: NextRequest) {
   const session = await auth.api.getSession({
@@ -73,16 +82,42 @@ export async function requireAuth(req: NextRequest) {
   if (!session) {
     throw apiError("Unauthorized", 401);
   }
+  const user = session.user as AuthenticatedUser;
+  if (user.banned) {
+    throw apiError("Forbidden: Account suspended", 403);
+  }
   return session;
 }
 
 export async function requireAdmin(req: NextRequest) {
   const session = await requireAuth(req);
-  const role = (session.user as { role?: string }).role;
+  const user = session.user as AuthenticatedUser;
+  const role = user.role;
   if (role !== "admin" && role !== "super_admin") {
     throw apiError("Forbidden: Admin access required", 403);
   }
   return session;
+}
+
+export async function requireSuperAdmin(req: NextRequest) {
+  const session = await requireAuth(req);
+  const user = session.user as AuthenticatedUser;
+  const role = user.role;
+  if (role !== "super_admin") {
+    throw apiError("Forbidden: Super Admin access required", 403);
+  }
+  return session;
+}
+
+export function isSuperAdmin(session: { user: { role?: string } } | null): boolean {
+  return session?.user?.role === "super_admin";
+}
+
+export function getAdminRole(session: { user: { role?: string } } | null): "super_admin" | "admin" | "customer" {
+  const role = session?.user?.role;
+  if (role === "super_admin") return "super_admin";
+  if (role === "admin") return "admin";
+  return "customer";
 }
 
 // ──────────────────────────────────────────────
