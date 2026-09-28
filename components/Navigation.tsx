@@ -5,37 +5,45 @@ import Link from "next/link";
 import { ChevronDown, Grid3x3 } from "lucide-react";
 import { fetchCategories } from "@/lib/api";
 import type { Category } from "@/types";
+import { useSession } from "@/lib/auth-client";
 
-const navItems = [
-  {
-    label: "Home",
-    href: "/",
-  },
-  {
-    label: "Shop",
-    href: "/products",
-    children: [
-      { label: "Shop Grid", href: "/products" },
-      { label: "Shop List", href: "/products?layout=list" },
-      { label: "Store Location", href: "/store-locator" },
-      { label: "Cart", href: "/cart" },
-    ],
-  },
-  {
-    label: "Pages",
-    href: "#",
-    children: [
-      { label: "Order Tracking", href: "/orders/tracking" },
-      { label: "About", href: "/about" },
-      { label: "Sign up", href: "/register" },
-      { label: "Login", href: "/login" },
-      { label: "Coming soon", href: "/coming-soon" },
-    ],
-  },
-  { label: "Contact", href: "/contact" },
-];
+function getNavItems(isLoggedIn: boolean) {
+  const pagesChildren = [
+    { label: "Order Tracking", href: "/orders/tracking" },
+    { label: "About", href: "/about" },
+    ...(isLoggedIn
+      ? [
+          { label: "My Account", href: "/profile" },
+        ]
+      : [
+          { label: "Sign up", href: "/register" },
+          { label: "Login", href: "/login" },
+        ]),
+    { label: "Coming soon", href: "/coming-soon" },
+  ];
+
+  return [
+    { label: "Home", href: "/" },
+    {
+      label: "Shop",
+      href: "/products",
+      children: [
+        { label: "Shop Grid", href: "/products" },
+        { label: "Shop List", href: "/products?layout=list" },
+        { label: "Cart", href: "/cart" },
+      ],
+    },
+    { label: "Pages", href: "#", children: pagesChildren },
+    { label: "Contact", href: "/contact" },
+  ];
+}
+
 
 export default function Navigation() {
+  const { data: session } = useSession();
+  const isLoggedIn = !!session?.user;
+  const navItems = getNavItems(isLoggedIn);
+
   const [activeNav, setActiveNav] = useState<string | null>(null);
   const [catMenuOpen, setCatMenuOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);

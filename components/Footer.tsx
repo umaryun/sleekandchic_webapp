@@ -9,7 +9,6 @@ const footerLinks = {
     { label: "Track Your Order", href: "/orders/tracking" },
     { label: "Contact Us", href: "/contact" },
     { label: "FAQs", href: "/faqs" },
-    { label: "Store Locator", href: "/store-locator" },
   ],
   Information: [
     { label: "About Us", href: "/about" },

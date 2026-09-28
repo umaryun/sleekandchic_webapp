@@ -6,7 +6,6 @@ import {
   Search,
   ShoppingCart,
   User,
-  GitCompare,
   ChevronDown,
   X,
   Menu,
@@ -17,12 +16,8 @@ import CartDrawer from "./CartDrawer";
 import MobileMenu from "./MobileMenu";
 import { useCart } from "@/context/CartContext";
 
-interface HeaderProps {
-  compareCount: number;
-}
 
-
-export default function Header({ compareCount }: HeaderProps) {
+export default function Header() {
   const { cartCount } = useCart();
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryOpen, setCategoryOpen] = useState(false);
@@ -218,46 +213,6 @@ export default function Header({ compareCount }: HeaderProps) {
 
           {/* Action Icons */}
           <div className="hidden md:flex items-center gap-5 ml-auto shrink-0">
-            {/* Compare */}
-            <Link
-              href="/compare"
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                color: "#1a1a1a",
-                textDecoration: "none",
-                position: "relative",
-                fontSize: "11px",
-                gap: "2px",
-              }}
-            >
-              <div style={{ position: "relative" }}>
-                <GitCompare size={22} />
-                {compareCount > 0 && (
-                  <span
-                    style={{
-                      position: "absolute",
-                      top: "-6px",
-                      right: "-8px",
-                      background: "#b88d7a",
-                      color: "#fff",
-                      borderRadius: "50%",
-                      width: "16px",
-                      height: "16px",
-                      fontSize: "10px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontWeight: 700,
-                    }}
-                  >
-                    {compareCount}
-                  </span>
-                )}
-              </div>
-              <span style={{ color: "#666", fontSize: "11px" }}>Compare</span>
-            </Link>
 
 
 

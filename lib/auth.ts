@@ -24,6 +24,10 @@ export const auth = betterAuth({
   // Email/Password authentication
   emailAndPassword: {
     enabled: true,
+    sendResetPassword: async ({ user, url }) => {
+      // TODO: Replace with actual email sending (e.g., Resend, SendGrid)
+      console.log(`[Password Reset] Send to: ${user.email}, URL: ${url}`);
+    },
   },
 
   // Custom user fields

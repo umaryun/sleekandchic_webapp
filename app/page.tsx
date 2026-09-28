@@ -13,7 +13,7 @@ export default function HomePage() {
   return (
     <>
       {/* Sticky header with logo, search, icons */}
-      <Header compareCount={0} />
+      <Header />
 
       {/* Navigation with category dropdown + links */}
       <Navigation />

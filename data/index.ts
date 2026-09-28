@@ -56,7 +56,6 @@ export const navItems: NavItem[] = [
       { label: "Shop Grid", href: "/products" },
       { label: "Shop List", href: "/products?layout=list" },
       { label: "Shop Detail", href: "/products/detail" },
-      { label: "Shop Location", href: "/store-locator" },
       { label: "Cart", href: "/cart" },
     ],
   },
