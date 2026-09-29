@@ -18,7 +18,7 @@ import {
   getSession,
   generateOrderNumber,
 } from "@/lib/api-utils";
-import { calculateShipping } from "@/lib/shipping";
+import { calculateShippingAsync } from "@/lib/shipping";
 
 const checkoutSchema = z.object({
   guestToken: z.string().optional(),
@@ -171,7 +171,7 @@ export async function POST(req: NextRequest) {
 
     // Dynamic shipping fee based on destination state, method, subtotal & item count
     const totalItemCount = items.reduce((sum, i) => sum + i.quantity, 0);
-    const shippingQuote = calculateShipping(
+    const shippingQuote = await calculateShippingAsync(
       shippingAddress.state,
       shippingMethod,
       subtotal - discountAmount,

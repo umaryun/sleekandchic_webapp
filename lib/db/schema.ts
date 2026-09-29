@@ -379,6 +379,34 @@ export const auditLogs = pgTable(
 );
 
 // ──────────────────────────────────────────────
+// Shipping Rates / Delivery Fees
+// ──────────────────────────────────────────────
+
+export const shippingRates = pgTable(
+  "shipping_rates",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    state: text("state").notNull().unique(),
+    zone: varchar("zone", { length: 10 }).notNull().default("C"),
+    standardBase: integer("standard_base").notNull(),
+    expressBase: integer("express_base").notNull(),
+    estimatedDaysStandard: text("estimated_days_standard").notNull().default("3–5 days"),
+    estimatedDaysExpress: text("estimated_days_express").notNull().default("1–2 days"),
+    freeShippingThreshold: integer("free_shipping_threshold").notNull().default(75000),
+    isActive: boolean("is_active").notNull().default(true),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("shipping_rates_state_idx").on(table.state),
+    index("shipping_rates_zone_idx").on(table.zone),
+  ]
+);
+
+export type ShippingRateRecord = typeof shippingRates.$inferSelect;
+export type NewShippingRateRecord = typeof shippingRates.$inferInsert;
+
+// ──────────────────────────────────────────────
 // Relations (for Drizzle relational queries)
 // ──────────────────────────────────────────────
 

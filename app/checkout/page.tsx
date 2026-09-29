@@ -20,7 +20,7 @@ import ShopLayout from "@/components/ShopLayout";
 import PageBreadcrumb from "@/components/PageBreadcrumb";
 import { formatNGN } from "@/lib/utils";
 import { useCart } from "@/context/CartContext";
-import { getShippingQuotes, type ShippingQuote } from "@/lib/shipping";
+import { getShippingQuotesClient as getShippingQuotes, type ShippingQuote, type ShippingZone } from "@/lib/shipping-base";
 
 const STEPS = ["Shipping & Delivery", "Payment Method", "Order Placed"] as const;
 type Step = (typeof STEPS)[number];
@@ -118,17 +118,39 @@ export default function CheckoutPage() {
   const { items, subtotal, clearCart } = useCart();
   const totalItemsCount = items.reduce((s, i) => s + i.quantity, 0);
 
-  // Dynamic shipping calculation based on destination state
+  // Dynamic shipping calculation based on destination state & live DB rates
+  const [ratesMap, setRatesMap] = useState<Record<string, ShippingZone> | undefined>(undefined);
   const [shippingQuotes, setShippingQuotes] = useState<{
     standard: ShippingQuote;
     express: ShippingQuote;
   } | null>(null);
 
+  useEffect(() => {
+    fetch("/api/v1/store/shipping-rates")
+      .then((res) => res.json())
+      .then((json) => {
+        if (json?.data?.rates && Array.isArray(json.data.rates)) {
+          const map: Record<string, ShippingZone> = {};
+          for (const r of json.data.rates) {
+            map[r.state] = {
+              zone: r.zone,
+              standardBase: r.standardBase,
+              expressBase: r.expressBase,
+              estimatedDays: r.estimatedDays,
+              freeShippingThreshold: r.freeShippingThreshold,
+            };
+          }
+          setRatesMap(map);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   const computeQuotes = useCallback(() => {
     if (items.length === 0) return;
-    const quotes = getShippingQuotes(shipping.state, subtotal - discountAmount, totalItemsCount);
+    const quotes = getShippingQuotes(shipping.state, subtotal - discountAmount, totalItemsCount, ratesMap);
     setShippingQuotes(quotes);
-  }, [shipping.state, subtotal, discountAmount, totalItemsCount, items.length]);
+  }, [shipping.state, subtotal, discountAmount, totalItemsCount, items.length, ratesMap]);
 
   useEffect(() => {
     computeQuotes();
@@ -603,7 +625,7 @@ export default function CheckoutPage() {
                             {quote.isFree ? (
                               <span className="flex items-center gap-1">
                                 <span style={{ textDecoration: "line-through", color: "#bbb", fontWeight: 500, fontSize: "12px" }}>
-                                  {formatNGN(getShippingQuotes(shipping.state, 0, totalItemsCount).standard.fee)}
+                                  {formatNGN(getShippingQuotes(shipping.state, 0, totalItemsCount, ratesMap).standard.fee)}
                                 </span>
                                 <span style={{ color: "#28a745" }}>Free</span>
                               </span>
