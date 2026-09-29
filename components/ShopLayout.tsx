@@ -13,7 +13,7 @@ interface ShopLayoutProps {
 export default function ShopLayout({ children }: ShopLayoutProps) {
   return (
     <>
-      <Header compareCount={0} />
+      <Header />
       <Navigation />
       <main>{children}</main>
       <Footer />

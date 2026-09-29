@@ -2,34 +2,39 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { X, ChevronDown, ChevronRight } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { X, ChevronDown } from "lucide-react";
 import { fetchCategories } from "@/lib/api";
 import type { Category } from "@/types";
+import { useSession, signOut } from "@/lib/auth-client";
 
-const navItems = [
-  {
-    label: "Shop",
-    href: "/products",
-    children: [
-      { label: "Shop Grid", href: "/products" },
-      { label: "Shop List", href: "/products?layout=list" },
-      { label: "Store Location", href: "/store-locator" },
-      { label: "Cart", href: "/cart" },
-    ],
-  },
-  {
-    label: "Pages",
-    href: "#",
-    children: [
-      { label: "Order Tracking", href: "/orders/tracking" },
-      { label: "About", href: "/about" },
-      { label: "Sign up", href: "/register" },
-      { label: "Login", href: "/login" },
-      { label: "Coming soon", href: "/coming-soon" },
-    ],
-  },
-  { label: "Contact", href: "/contact" },
-];
+function getNavItems(isLoggedIn: boolean) {
+  const pagesChildren = [
+    { label: "Order Tracking", href: "/orders/tracking" },
+    { label: "About", href: "/about" },
+    ...(isLoggedIn
+      ? [{ label: "My Account", href: "/profile" }]
+      : [
+          { label: "Sign up", href: "/register" },
+          { label: "Login", href: "/login" },
+        ]),
+    { label: "Coming soon", href: "/coming-soon" },
+  ];
+
+  return [
+    {
+      label: "Shop",
+      href: "/products",
+      children: [
+        { label: "Shop Grid", href: "/products" },
+        { label: "Shop List", href: "/products?layout=list" },
+        { label: "Cart", href: "/cart" },
+      ],
+    },
+    { label: "Pages", href: "#", children: pagesChildren },
+    { label: "Contact", href: "/contact" },
+  ];
+}
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -37,6 +42,11 @@ interface MobileMenuProps {
 }
 
 export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
+  const router = useRouter();
+  const { data: session } = useSession();
+  const isLoggedIn = !!session?.user;
+  const navItems = getNavItems(isLoggedIn);
+
   const [openSection, setOpenSection] = useState<string | null>(null);
   const [catOpen, setCatOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -46,6 +56,12 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
       .then((data) => setCategories(data))
       .catch((err) => console.error("MobileMenu categories fetch error:", err));
   }, []);
+
+  const handleLogout = async () => {
+    await signOut();
+    onClose();
+    router.push("/");
+  };
 
   return (
     <aside
@@ -96,6 +112,7 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
 
       <Link
         href={"/"}
+        onClick={onClose}
         style={{
             width: "100%",
             display: "flex",
@@ -160,7 +177,6 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
                   borderBottom: "1px solid #f0f0f0",
                 }}
               >
-                {/* <ChevronRight size={12} color="#b88d7a" /> */}
                 {cat.name}
               </Link>
             ))}
@@ -221,7 +237,6 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
                       fontSize: "13px",
                     }}
                   >
-                    {/* <ChevronRight size={12} color="#ccc" /> */}
                     {child.label}
                   </Link>
                 ))}
@@ -240,40 +255,81 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
           gap: "12px",
         }}
       >
-        <Link
-          href="/login"
-          onClick={onClose}
-          style={{
-            flex: 1,
-            textAlign: "center",
-            padding: "10px",
-            border: "1px solid #1a1a1a",
-            color: "#1a1a1a",
-            textDecoration: "none",
-            fontSize: "13px",
-            fontWeight: 600,
-            borderRadius: "2px",
-          }}
-        >
-          Login
-        </Link>
-        <Link
-          href="/register"
-          onClick={onClose}
-          style={{
-            flex: 1,
-            textAlign: "center",
-            padding: "10px",
-            background: "#b88d7a",
-            color: "#fff",
-            textDecoration: "none",
-            fontSize: "13px",
-            fontWeight: 600,
-            borderRadius: "2px",
-          }}
-        >
-          Register
-        </Link>
+        {isLoggedIn ? (
+          <>
+            <Link
+              href="/profile"
+              onClick={onClose}
+              style={{
+                flex: 1,
+                textAlign: "center",
+                padding: "10px",
+                border: "1px solid #1a1a1a",
+                color: "#1a1a1a",
+                textDecoration: "none",
+                fontSize: "13px",
+                fontWeight: 600,
+                borderRadius: "2px",
+              }}
+            >
+              My Account
+            </Link>
+            <button
+              onClick={handleLogout}
+              style={{
+                flex: 1,
+                textAlign: "center",
+                padding: "10px",
+                background: "#b88d7a",
+                color: "#fff",
+                border: "none",
+                fontSize: "13px",
+                fontWeight: 600,
+                borderRadius: "2px",
+                cursor: "pointer",
+              }}
+            >
+              Logout
+            </button>
+          </>
+        ) : (
+          <>
+            <Link
+              href="/login"
+              onClick={onClose}
+              style={{
+                flex: 1,
+                textAlign: "center",
+                padding: "10px",
+                border: "1px solid #1a1a1a",
+                color: "#1a1a1a",
+                textDecoration: "none",
+                fontSize: "13px",
+                fontWeight: 600,
+                borderRadius: "2px",
+              }}
+            >
+              Login
+            </Link>
+            <Link
+              href="/register"
+              onClick={onClose}
+              style={{
+                flex: 1,
+                textAlign: "center",
+                padding: "10px",
+                background: "#b88d7a",
+                color: "#fff",
+                textDecoration: "none",
+                fontSize: "13px",
+                fontWeight: 600,
+                borderRadius: "2px",
+              }}
+            >
+              Register
+            </Link>
+          </>
+        )}
       </div>
     </aside>
   );
