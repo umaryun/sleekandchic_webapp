@@ -2,9 +2,22 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { admin, bearer } from "better-auth/plugins";
 import { anonymous } from "better-auth/plugins";
+import { createAccessControl } from "better-auth/plugins/access";
+import { defaultStatements } from "better-auth/plugins/admin/access";
 import { db } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import * as schema from "@/lib/db/schema";
+
+// The admin plugin is kept only for its ban enforcement at sign-in. Team and role
+// management go through /api/v1/admin/team, so no role may use the plugin's own
+// /api/auth/admin/* endpoints (set-role, impersonate-user, set-user-password, ...).
+const ac = createAccessControl(defaultStatements);
+const noPluginAccess = ac.newRole({ user: [], session: [] });
+const roles = {
+  customer: noPluginAccess,
+  admin: noPluginAccess,
+  super_admin: noPluginAccess,
+};
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -52,10 +65,11 @@ export const auth = betterAuth({
 
   // Plugins
   plugins: [
-    // Admin management (user CRUD, ban, impersonate)
     admin({
+      ac,
+      roles,
       defaultRole: "customer",
-      adminRole: ["admin", "super_admin"],
+      adminRoles: ["super_admin"],
     }),
 
     // Bearer token auth for external Admin app
