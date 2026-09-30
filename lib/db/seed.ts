@@ -56,15 +56,14 @@ async function seed() {
       .values({
         name: item.name,
         slug,
-        description: item.description || `High quality ${item.name} for modern style.`,
+        description: item.description ?? null,
         price: String(priceNGN),
         originalPrice: origPriceNGN ? String(origPriceNGN) : null,
         sku: item.sku || `SC-${Math.floor(1000 + Math.random() * 9000)}`,
-        brand: item.brand || "Slickandchic",
+        brand: item.brand || "Sleekandchic",
         badge: item.badge || null,
         discount: item.discount || null,
-        rating: item.rating || 5,
-        reviewCount: item.reviewCount || 10,
+        // Ratings come only from real reviews; seeded products start with none.
         inStock: item.inStock ?? true,
         categoryId,
       })

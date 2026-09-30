@@ -78,8 +78,11 @@ export default function LoginPage() {
                 height: "180px",
                 borderRadius: "50%",
                 background: "rgba(255,255,255,0.05)",
-                backgroundImage: "url(https://placehold.co/180x180/2a2a2a/555?text=Sleek%26Chic)",
-                backgroundSize: "cover",
+                backgroundColor: "#fff",
+                backgroundImage: "url(/logo.png)",
+                backgroundRepeat: "no-repeat",
+                backgroundPosition: "center",
+                backgroundSize: "80%",
                 marginBottom: "28px",
               }}
             />

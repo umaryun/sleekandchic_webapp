@@ -7,7 +7,6 @@ import { SlidersHorizontal, Grid, List, ChevronDown, ChevronRight, ChevronLeft, 
 import ShopLayout from "@/components/ShopLayout";
 import PageBreadcrumb from "@/components/PageBreadcrumb";
 import ProductCard from "@/components/ProductCard";
-import StarRating from "@/components/StarRating";
 import { fetchProducts, fetchCategories, type FetchProductsParams } from "@/lib/api";
 import type { Product, Category, PaginationMeta } from "@/types";
 import { formatNGN } from "@/lib/utils";
@@ -17,7 +16,6 @@ const SORT_OPTIONS = [
   { value: "price-asc", label: "Price: Low to High", api: "price_asc" as const },
   { value: "price-desc", label: "Price: High to Low", api: "price_desc" as const },
   { value: "name-az", label: "Name: A-Z", api: "name" as const },
-  { value: "rating-desc", label: "Rating: High to Low", api: "rating" as const },
 ];
 
 function FilterSection({ title, children, defaultOpen = true }: { title: string; children: React.ReactNode; defaultOpen?: boolean }) {
@@ -297,7 +295,6 @@ function ProductsContent() {
                           {product.name}
                         </h3>
                       </Link>
-                      <StarRating rating={product.rating} reviewCount={product.reviewCount} />
                     </div>
 
                     <div className="mt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2">

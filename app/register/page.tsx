@@ -90,8 +90,11 @@ export default function RegisterPage() {
                 height: "180px",
                 borderRadius: "50%",
                 background: "rgba(255,255,255,0.15)",
-                backgroundImage: "url(https://placehold.co/180x180/f57224/fff?text=Join+Us)",
-                backgroundSize: "cover",
+                backgroundColor: "#fff",
+                backgroundImage: "url(/logo.png)",
+                backgroundRepeat: "no-repeat",
+                backgroundPosition: "center",
+                backgroundSize: "80%",
                 marginBottom: "28px",
               }}
             />

@@ -19,7 +19,7 @@ function getNavItems(isLoggedIn: boolean) {
           { label: "Sign up", href: "/register" },
           { label: "Login", href: "/login" },
         ]),
-    { label: "Coming soon", href: "/coming-soon" },
+    { label: "Help & FAQs", href: "/help" },
   ];
 
   return [
@@ -223,8 +223,7 @@ export default function Navigation() {
         className="flex items-center justify-start w-[260px]"
         >
           <span style={{ color: "#888", fontSize: "12px" }}>
-            🔥 <span style={{ color: "#b88d7a", fontWeight: 600 }}>Hot Deal</span>
-            <span style={{ color: "#ccc" }}> — Free Shipping Over ₦100,000</span>
+            Nationwide delivery · Pay on delivery available
           </span>
         </div>
       </div>

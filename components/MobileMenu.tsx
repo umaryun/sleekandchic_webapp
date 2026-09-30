@@ -18,7 +18,7 @@ function getNavItems(isLoggedIn: boolean) {
           { label: "Sign up", href: "/register" },
           { label: "Login", href: "/login" },
         ]),
-    { label: "Coming soon", href: "/coming-soon" },
+    { label: "Help & FAQs", href: "/help" },
   ];
 
   return [

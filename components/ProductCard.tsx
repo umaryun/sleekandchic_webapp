@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ShoppingCart, Eye, Check } from "lucide-react";
-import StarRating from "./StarRating";
 import type { Product } from "@/types";
 import { formatNGN } from "@/lib/utils";
 import { useCart } from "@/context/CartContext";
@@ -77,14 +76,11 @@ export default function ProductCard({ product }: ProductCardProps) {
           </h3>
         </Link>
 
-        <div className="flex items-center justify-between mb-0.5">
-          <div className="flex items-center gap-2">
-            <span className="text-[17px] font-bold text-[#b88d7a]">{formatNGN(product.price)}</span>
-            {product.originalPrice && (
-              <span className="text-xs text-[#aaa] line-through">{formatNGN(product.originalPrice)}</span>
-            )}
-          </div>
-          <StarRating rating={product.rating} reviewCount={product.reviewCount} size={13} />
+        <div className="flex items-center gap-2 mb-0.5">
+          <span className="text-[17px] font-bold text-[#b88d7a]">{formatNGN(product.price)}</span>
+          {product.originalPrice && (
+            <span className="text-xs text-[#aaa] line-through">{formatNGN(product.originalPrice)}</span>
+          )}
         </div>
       </div>
 

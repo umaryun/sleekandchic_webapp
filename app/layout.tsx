@@ -3,14 +3,15 @@ import "./globals.css";
 import { CartProvider } from "@/context/CartContext";
 
 export const metadata: Metadata = {
-  title: "Sleekandchic — Premium Handcrafted Goods & Accessories",
+  title: "Sleekandchic | Abayas, Bubu, Kaftans & Modest Fashion",
   description:
-    "Discover premium handcrafted products, accessories, home décor, and more. Shop the latest collections with up to 40% off.",
-  keywords: "ecommerce, handcrafted, accessories, furniture, cosmetics, gifts",
+    "Abayas, bubu, kaftans, gowns and modest fashion from Kaduna, delivered across Nigeria. Pay by card, transfer or on delivery.",
   openGraph: {
-    title: "Sleekandchic — Premium Handcrafted Goods & Accessories",
-    description: "Shop the finest handcrafted products from around the world.",
+    title: "Sleekandchic | Modest Fashion",
+    description: "Abayas, bubu, kaftans and gowns from Kaduna, delivered across Nigeria.",
     type: "website",
+    siteName: "Sleekandchic",
+    locale: "en_NG",
   },
 };
 
