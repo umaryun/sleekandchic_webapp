@@ -12,6 +12,7 @@ import {
   auditLog,
   paginationMeta,
 } from "@/lib/api-utils";
+import { cancelOrder } from "@/lib/services/orders";
 
 // ──────────────────────────────────────────────
 // GET — List orders with filters
@@ -133,15 +134,27 @@ export async function PUT(req: NextRequest) {
 
     if (!existing) return apiError("Order not found", 404);
 
-    const updates: Record<string, unknown> = { updatedAt: new Date() };
-    if (data!.status) updates.status = data!.status;
-    if (data!.paymentStatus) updates.paymentStatus = data!.paymentStatus;
+    if (existing.status === "cancelled" && data!.status && data!.status !== "cancelled") {
+      return apiError("Cancelled orders can't be reopened; its stock has been returned. Ask the customer to order again.", 409);
+    }
 
-    const [updated] = await db
-      .update(orders)
-      .set(updates)
-      .where(eq(orders.id, data!.orderId))
-      .returning();
+    const updated = await db.transaction(async (tx) => {
+      // Cancelling returns the order's stock and promo-code use.
+      if (data!.status === "cancelled" && existing.status !== "cancelled") {
+        await cancelOrder(tx, existing.id, "order_cancelled", { actorId: session.user.id });
+      }
+
+      const updates: Partial<typeof orders.$inferInsert> = { updatedAt: new Date() };
+      if (data!.status) updates.status = data!.status;
+      if (data!.paymentStatus) {
+        updates.paymentStatus = data!.paymentStatus;
+        if (data!.paymentStatus === "paid" && existing.paymentStatus !== "paid") updates.paidAt = new Date();
+        if (data!.paymentStatus === "paid") updates.expiresAt = null;
+      }
+
+      const [row] = await tx.update(orders).set(updates).where(eq(orders.id, data!.orderId)).returning();
+      return row;
+    });
 
     await auditLog(session.user.id, "update", "order", {
       orderId: data!.orderId,

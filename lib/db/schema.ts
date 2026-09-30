@@ -51,6 +51,13 @@ export const discountTypeEnum = pgEnum("discount_type", [
   "fixed_amount",
 ]);
 
+export const paymentMethodEnum = pgEnum("payment_method", ["paystack", "cod"]);
+
+export const shippingMethodEnum = pgEnum("shipping_method", [
+  "standard",
+  "express",
+]);
+
 // ──────────────────────────────────────────────
 // Auth Tables (better-auth managed)
 // ──────────────────────────────────────────────
@@ -275,6 +282,8 @@ export const orders = pgTable(
       onDelete: "set null",
     }),
     guestEmail: varchar("guest_email", { length: 255 }),
+    // Items before discount and delivery. Null on orders placed before it was recorded.
+    subtotal: decimal("subtotal", { precision: 12, scale: 2 }),
     totalAmount: decimal("total_amount", { precision: 12, scale: 2 }).notNull(),
     discountAmount: decimal("discount_amount", {
       precision: 12,
@@ -288,8 +297,16 @@ export const orders = pgTable(
       .notNull()
       .default("unpaid"),
     shippingAddress: jsonb("shipping_address"),
+    // Null only on orders placed before these were recorded.
+    paymentMethod: paymentMethodEnum("payment_method"),
+    shippingMethod: shippingMethodEnum("shipping_method"),
     paymentIntentId: text("payment_intent_id"),
     paymentReference: text("payment_reference"),
+    paidAt: timestamp("paid_at"),
+    // Unpaid card orders are cancelled after this time and their stock released.
+    expiresAt: timestamp("expires_at"),
+    // The cart the order came from; cleared once the order is paid.
+    cartId: uuid("cart_id").references(() => carts.id, { onDelete: "set null" }),
     discountCode: varchar("discount_code", { length: 50 }),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
@@ -298,6 +315,8 @@ export const orders = pgTable(
     uniqueIndex("orders_number_idx").on(table.orderNumber),
     index("orders_user_idx").on(table.userId),
     index("orders_status_idx").on(table.status),
+    index("orders_created_idx").on(table.createdAt),
+    index("orders_payment_ref_idx").on(table.paymentReference),
   ]
 );
 
@@ -405,6 +424,60 @@ export const shippingRates = pgTable(
 
 export type ShippingRateRecord = typeof shippingRates.$inferSelect;
 export type NewShippingRateRecord = typeof shippingRates.$inferInsert;
+
+// ──────────────────────────────────────────────
+// Stock movements (every change to variant stock)
+// ──────────────────────────────────────────────
+
+export type StockMovementReason =
+  | "order"
+  | "order_cancelled"
+  | "order_expired"
+  | "late_payment"
+  | "adjustment";
+
+export const stockMovements = pgTable(
+  "stock_movements",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    variantId: uuid("variant_id").references(() => productVariants.id, {
+      onDelete: "set null",
+    }),
+    productId: uuid("product_id").references(() => products.id, {
+      onDelete: "set null",
+    }),
+    // Negative when stock leaves (an order), positive when it returns.
+    delta: integer("delta").notNull(),
+    reason: varchar("reason", { length: 30 }).$type<StockMovementReason>().notNull(),
+    orderId: uuid("order_id").references(() => orders.id, { onDelete: "set null" }),
+    actorId: text("actor_id").references(() => users.id, { onDelete: "set null" }),
+    note: text("note"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("stock_movements_variant_idx").on(table.variantId),
+    index("stock_movements_order_idx").on(table.orderId),
+  ]
+);
+
+// ──────────────────────────────────────────────
+// Payment provider events (webhook log; the unique event id makes retries safe)
+// ──────────────────────────────────────────────
+
+export const paymentEvents = pgTable(
+  "payment_events",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    provider: varchar("provider", { length: 20 }).notNull(),
+    eventId: varchar("event_id", { length: 100 }).notNull(),
+    eventType: varchar("event_type", { length: 60 }).notNull(),
+    reference: text("reference"),
+    orderId: uuid("order_id").references(() => orders.id, { onDelete: "set null" }),
+    payload: jsonb("payload"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex("payment_events_provider_event_idx").on(table.provider, table.eventId)]
+);
 
 // ──────────────────────────────────────────────
 // Relations (for Drizzle relational queries)

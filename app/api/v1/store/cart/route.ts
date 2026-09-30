@@ -1,118 +1,46 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
+import { and, eq, isNull } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { carts, cartItems, products, productImages, productVariants } from "@/lib/db/schema";
-import { eq, and, asc, sql } from "drizzle-orm";
+import { carts, cartItems, products, productVariants } from "@/lib/db/schema";
 import { apiSuccess, apiError, parseBody, getSession } from "@/lib/api-utils";
+import { describeVariant, findCart, firstImages, loadCartLines } from "@/lib/services/cart";
+import { koboToNaira } from "@/lib/money";
 
-// ──────────────────────────────────────────────
-// Helpers
-// ──────────────────────────────────────────────
+const MAX_LINE_QUANTITY = 20;
 
 async function findOrCreateCart(userId: string | null, guestToken: string | null) {
-  if (userId) {
-    const [existing] = await db
-      .select()
-      .from(carts)
-      .where(eq(carts.userId, userId))
-      .limit(1);
-    if (existing) return existing;
-    const [created] = await db
-      .insert(carts)
-      .values({ userId })
-      .returning();
-    return created;
-  }
-
-  if (guestToken) {
-    const [existing] = await db
-      .select()
-      .from(carts)
-      .where(eq(carts.guestSessionToken, guestToken))
-      .limit(1);
-    if (existing) return existing;
-    const [created] = await db
-      .insert(carts)
-      .values({ guestSessionToken: guestToken })
-      .returning();
-    return created;
-  }
-
-  // Generate new guest token
-  const token = crypto.randomUUID();
+  const existing = await findCart(userId, guestToken);
+  if (existing) return existing;
   const [created] = await db
     .insert(carts)
-    .values({ guestSessionToken: token })
+    .values(userId ? { userId } : { guestSessionToken: guestToken ?? crypto.randomUUID() })
     .returning();
   return created;
 }
 
-async function getCartWithItems(cartId: string) {
-  const items = await db
-    .select({
-      id: cartItems.id,
-      productId: cartItems.productId,
-      variantId: cartItems.variantId,
-      quantity: cartItems.quantity,
-      unitPrice: cartItems.unitPrice,
-      productName: products.name,
-      productSlug: products.slug,
-      productInStock: products.inStock,
-    })
-    .from(cartItems)
-    .leftJoin(products, eq(cartItems.productId, products.id))
-    .where(eq(cartItems.cartId, cartId));
-
-  if (items.length === 0) return [];
-
-  const productIds = [...new Set(items.map((i) => i.productId))];
-  const variantIds = items.filter((i) => i.variantId).map((i) => i.variantId!);
-
-  const [images, variants] = await Promise.all([
-    productIds.length > 0
-      ? db
-          .select({
-            productId: productImages.productId,
-            imageUrl: productImages.imageUrl,
-          })
-          .from(productImages)
-          .where(sql`${productImages.productId} IN ${productIds}`)
-          .orderBy(asc(productImages.displayOrder))
-      : Promise.resolve([]),
-    variantIds.length > 0
-      ? db
-          .select()
-          .from(productVariants)
-          .where(sql`${productVariants.id} IN ${variantIds}`)
-      : Promise.resolve([]),
-  ]);
-
-  const imageMap = new Map<string, string>();
-  for (const img of images) {
-    if (!imageMap.has(img.productId)) {
-      imageMap.set(img.productId, img.imageUrl);
-    }
-  }
-
-  const variantMap = new Map(variants.map((v) => [v.id, v]));
-
-  return items.map((item) => {
-    const variant = item.variantId ? variantMap.get(item.variantId) : null;
-    return {
-      id: item.id,
-      productId: item.productId,
-      productName: item.productName,
-      productSlug: item.productSlug,
-      productInStock: item.productInStock,
-      image: imageMap.get(item.productId) || null,
-      variantId: item.variantId,
-      size: variant?.size || null,
-      color: variant?.color || null,
-      quantity: item.quantity,
-      unitPrice: Number(item.unitPrice),
-      total: Number(item.unitPrice) * item.quantity,
-    };
-  });
+/** The cart as the storefront shows it, priced from the current catalogue. */
+async function cartResponse(cartId: string, guestToken: string | null) {
+  const lines = await loadCartLines(cartId);
+  const images = await firstImages([...new Set(lines.map((l) => l.productId))]);
+  const items = lines.map((line) => ({
+    id: line.itemId,
+    productId: line.productId,
+    productName: line.productName,
+    productSlug: line.productSlug,
+    productInStock: line.problem === null,
+    image: images.get(line.productId) ?? null,
+    variantId: line.variantId,
+    size: line.size,
+    color: line.color,
+    quantity: line.quantity,
+    unitPrice: koboToNaira(line.unitPriceKobo),
+    total: koboToNaira(line.unitPriceKobo * line.quantity),
+    stockAvailable: line.stockAvailable,
+    problem: line.problem,
+  }));
+  const subtotal = koboToNaira(lines.reduce((sum, l) => sum + l.unitPriceKobo * l.quantity, 0));
+  return apiSuccess({ items, subtotal, guestToken });
 }
 
 // ──────────────────────────────────────────────
@@ -123,42 +51,13 @@ export async function GET(req: NextRequest) {
   try {
     const session = await getSession(req);
     const guestToken = req.headers.get("x-guest-token");
-
     const userId = session?.user?.id || null;
-    if (!userId && !guestToken) {
-      return apiSuccess({ items: [], subtotal: 0, guestToken: null });
-    }
 
-    // Find cart
-    let cart;
-    if (userId) {
-      const [found] = await db
-        .select()
-        .from(carts)
-        .where(eq(carts.userId, userId))
-        .limit(1);
-      cart = found;
-    } else if (guestToken) {
-      const [found] = await db
-        .select()
-        .from(carts)
-        .where(eq(carts.guestSessionToken, guestToken))
-        .limit(1);
-      cart = found;
-    }
-
+    const cart = await findCart(userId, guestToken);
     if (!cart) {
-      return apiSuccess({ items: [], subtotal: 0, guestToken: guestToken || null });
+      return apiSuccess({ items: [], subtotal: 0, guestToken: userId ? null : guestToken });
     }
-
-    const items = await getCartWithItems(cart.id);
-    const subtotal = items.reduce((sum, i) => sum + i.total, 0);
-
-    return apiSuccess({
-      items,
-      subtotal,
-      guestToken: cart.guestSessionToken || null,
-    });
+    return cartResponse(cart.id, cart.guestSessionToken ?? null);
   } catch (err) {
     console.error("GET /api/v1/store/cart error:", err);
     return apiError("Internal server error", 500);
@@ -173,140 +72,91 @@ const cartActionSchema = z.object({
   action: z.enum(["add", "update", "remove"]),
   productId: z.string().uuid(),
   variantId: z.string().uuid().optional(),
-  quantity: z.number().int().min(0).default(1),
+  quantity: z.number().int().min(0).max(MAX_LINE_QUANTITY).default(1),
 });
 
 export async function POST(req: NextRequest) {
   try {
     const { data, error } = await parseBody(req, cartActionSchema);
     if (error) return error;
+    const { action, productId, variantId, quantity } = data!;
 
     const session = await getSession(req);
     const guestToken = req.headers.get("x-guest-token");
     const userId = session?.user?.id || null;
-
     const cart = await findOrCreateCart(userId, guestToken);
 
-    const { action, productId, variantId, quantity } = data!;
+    const sameLine = and(
+      eq(cartItems.cartId, cart.id),
+      eq(cartItems.productId, productId),
+      variantId ? eq(cartItems.variantId, variantId) : isNull(cartItems.variantId)
+    );
+    const [existing] = await db.select().from(cartItems).where(sameLine).limit(1);
 
-    if (action === "add") {
-      // Check product exists
-      const [product] = await db
-        .select({ price: products.price, inStock: products.inStock })
-        .from(products)
-        .where(eq(products.id, productId))
-        .limit(1);
-
-      if (!product) return apiError("Product not found", 404);
-      if (!product.inStock) return apiError("Product out of stock", 400);
-
-      // Check variant price override
-      let unitPrice = Number(product.price);
-      if (variantId) {
-        const [variant] = await db
-          .select()
-          .from(productVariants)
-          .where(eq(productVariants.id, variantId))
-          .limit(1);
-        if (variant?.priceOverride) {
-          unitPrice = Number(variant.priceOverride);
-        }
-      }
-
-      // Check if item already in cart
-      const conditions = [
-        eq(cartItems.cartId, cart.id),
-        eq(cartItems.productId, productId),
-      ];
-
-      const existing = await db
-        .select()
-        .from(cartItems)
-        .where(and(...conditions));
-
-      const match = existing.find(
-        (i) => (i.variantId || null) === (variantId || null)
-      );
-
-      if (match) {
-        await db
-          .update(cartItems)
-          .set({ quantity: match.quantity + quantity })
-          .where(eq(cartItems.id, match.id));
-      } else {
-        await db.insert(cartItems).values({
-          cartId: cart.id,
-          productId,
-          variantId: variantId || null,
-          quantity,
-          unitPrice: String(unitPrice),
-        });
-      }
-    } else if (action === "update") {
-      if (quantity <= 0) {
-        // Remove if quantity is 0
-        await db
-          .delete(cartItems)
-          .where(
-            and(
-              eq(cartItems.cartId, cart.id),
-              eq(cartItems.productId, productId),
-              variantId
-                ? eq(cartItems.variantId, variantId)
-                : sql`${cartItems.variantId} IS NULL`
-            )
-          );
-      } else {
-        const existing = await db
-          .select()
-          .from(cartItems)
-          .where(
-            and(
-              eq(cartItems.cartId, cart.id),
-              eq(cartItems.productId, productId)
-            )
-          );
-
-        const match = existing.find(
-          (i) => (i.variantId || null) === (variantId || null)
-        );
-
-        if (match) {
-          await db
-            .update(cartItems)
-            .set({ quantity })
-            .where(eq(cartItems.id, match.id));
-        }
-      }
-    } else if (action === "remove") {
-      const existing = await db
-        .select()
-        .from(cartItems)
-        .where(
-          and(
-            eq(cartItems.cartId, cart.id),
-            eq(cartItems.productId, productId)
-          )
-        );
-
-      const match = existing.find(
-        (i) => (i.variantId || null) === (variantId || null)
-      );
-
-      if (match) {
-        await db.delete(cartItems).where(eq(cartItems.id, match.id));
-      }
+    if (action === "remove" || (action === "update" && quantity === 0)) {
+      if (existing) await db.delete(cartItems).where(eq(cartItems.id, existing.id));
+      return cartResponse(cart.id, cart.guestSessionToken ?? null);
     }
 
-    // Return updated cart
-    const items = await getCartWithItems(cart.id);
-    const subtotal = items.reduce((sum, i) => sum + i.total, 0);
+    if (action === "update" && !existing) {
+      return apiError("That item is no longer in your bag", 404);
+    }
 
-    return apiSuccess({
-      items,
-      subtotal,
-      guestToken: cart.guestSessionToken || null,
-    });
+    const [product] = await db
+      .select({ id: products.id, name: products.name, price: products.price, inStock: products.inStock })
+      .from(products)
+      .where(eq(products.id, productId))
+      .limit(1);
+    if (!product) return apiError("This product is no longer available", 404);
+    if (!product.inStock) return apiError(`${product.name} is currently unavailable`, 409);
+
+    const variants = await db
+      .select()
+      .from(productVariants)
+      .where(eq(productVariants.productId, productId));
+
+    let variant: (typeof variants)[number] | undefined;
+    if (variants.length > 0) {
+      variant = variants.find((v) => v.id === variantId);
+      if (!variant) return apiError(`Choose a size and colour for ${product.name}`, 400);
+    } else if (variantId) {
+      return apiError("That option doesn't belong to this product", 400);
+    }
+
+    const newQuantity = action === "add" ? (existing?.quantity ?? 0) + Math.max(quantity, 1) : quantity;
+    if (newQuantity > MAX_LINE_QUANTITY) {
+      return apiError(`You can order up to ${MAX_LINE_QUANTITY} of one item`, 400);
+    }
+    if (variant && newQuantity > variant.stockQuantity) {
+      const label = `${product.name} (${describeVariant(variant)})`;
+      return apiError(
+        variant.stockQuantity === 0
+          ? `${label} is sold out`
+          : `Only ${variant.stockQuantity} left of ${label}`,
+        409
+      );
+    }
+
+    // Kept for reference only; the cart and checkout always price from the catalogue.
+    const unitPrice = variant?.priceOverride ?? product.price;
+
+    if (existing) {
+      await db
+        .update(cartItems)
+        .set({ quantity: newQuantity, unitPrice: String(unitPrice) })
+        .where(eq(cartItems.id, existing.id));
+    } else {
+      await db.insert(cartItems).values({
+        cartId: cart.id,
+        productId,
+        variantId: variant?.id ?? null,
+        quantity: newQuantity,
+        unitPrice: String(unitPrice),
+      });
+    }
+    await db.update(carts).set({ updatedAt: new Date() }).where(eq(carts.id, cart.id));
+
+    return cartResponse(cart.id, cart.guestSessionToken ?? null);
   } catch (err) {
     if (err instanceof Response) return err;
     console.error("POST /api/v1/store/cart error:", err);
