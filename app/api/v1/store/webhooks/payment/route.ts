@@ -5,6 +5,8 @@ import { db } from "@/lib/db";
 import { paymentEvents } from "@/lib/db/schema";
 import { env } from "@/lib/env";
 import { findOrderForReference, markOrderPaid, orderAmountKobo } from "@/lib/services/orders";
+import { afterResponse } from "@/lib/email/send";
+import { notifyNewOrder } from "@/lib/email/notify";
 
 function signatureMatches(body: string, signature: string | null, key: string) {
   if (!signature) return false;
@@ -43,7 +45,7 @@ export async function POST(req: NextRequest) {
 
   const { id, reference, amount, currency, metadata } = event.data;
   try {
-    await db.transaction(async (tx) => {
+    const paidOrderId = await db.transaction(async (tx): Promise<string | null> => {
       const inserted = await tx
         .insert(paymentEvents)
         .values({
@@ -55,13 +57,13 @@ export async function POST(req: NextRequest) {
         })
         .onConflictDoNothing()
         .returning({ id: paymentEvents.id });
-      if (inserted.length === 0) return; // already processed
+      if (inserted.length === 0) return null; // already processed
 
       const order = await findOrderForReference(reference, metadata?.orderId, tx);
       if (!order) {
         // Kept in payment_events for reconciliation.
         console.error(`Paystack webhook: no order for reference ${reference}`);
-        return;
+        return null;
       }
       await tx.update(paymentEvents).set({ orderId: order.id }).where(eq(paymentEvents.id, inserted[0].id));
 
@@ -69,12 +71,15 @@ export async function POST(req: NextRequest) {
         console.error(
           `Paystack webhook: amount mismatch for ${order.orderNumber}. Expected ${orderAmountKobo(order)} NGN kobo, got ${amount} ${currency}`
         );
-        return;
+        return null;
       }
 
       const { changed } = await markOrderPaid(tx, order.id, { reference, transactionId: id });
-      if (changed) console.log(`Order ${order.orderNumber} paid (Paystack ${reference})`);
+      if (!changed) return null;
+      console.log(`Order ${order.orderNumber} paid (Paystack ${reference})`);
+      return order.id;
     });
+    if (paidOrderId) afterResponse(() => notifyNewOrder(paidOrderId));
     return NextResponse.json({ received: true });
   } catch (err) {
     console.error("Paystack webhook processing failed:", err);

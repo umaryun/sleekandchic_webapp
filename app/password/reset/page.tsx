@@ -20,8 +20,7 @@ export default function ForgotPasswordPage() {
     setIsSubmitting(true);
 
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const res = await (authClient as any).forgetPassword({
+      const res = await authClient.requestPasswordReset({
         email,
         redirectTo: "/password/new",
       });

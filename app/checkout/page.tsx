@@ -74,6 +74,8 @@ interface PlacedOrder {
   orderNumber: string;
   totalAmount: number;
   paymentMethod: PaymentMethod;
+  /** Set when a confirmation email is being sent. */
+  confirmationEmail: string | null;
 }
 
 function guestToken() {
@@ -244,6 +246,7 @@ export default function CheckoutPage() {
         orderNumber: json.data.orderNumber,
         totalAmount: json.data.totalAmount,
         paymentMethod: json.data.paymentMethod,
+        confirmationEmail: json.data.confirmationEmail ?? null,
       });
       setStep("Order Placed");
       await refresh();
@@ -592,8 +595,13 @@ export default function CheckoutPage() {
                     <Check size={36} color="#28a745" />
                   </div>
                   <h2 className="text-xl sm:text-2xl font-extrabold text-[#1a1a1a] mb-2">Order placed</h2>
-                  <p className="text-sm sm:text-base text-[#666] mb-7">
+                  <p className="text-sm sm:text-base text-[#666] mb-1">
                     Thank you, {shipping.firstName}. We&apos;ll call {shipping.phone} to confirm delivery.
+                  </p>
+                  <p className="text-xs sm:text-sm text-[#888] mb-7">
+                    {placed.confirmationEmail
+                      ? <>A confirmation is on its way to <strong className="text-[#1a1a1a]">{placed.confirmationEmail}</strong>.</>
+                      : <>Keep your order number to track this order.</>}
                   </p>
 
                   <div className="bg-[#f9f9f9] rounded-lg p-4 sm:p-6 mb-8 text-left inline-block w-full max-w-md border border-[#eee] text-[13px]">

@@ -5,6 +5,8 @@ import { koboToNaira } from "@/lib/money";
 import { isPaystackConfigured } from "@/lib/paystack";
 import { CheckoutError, expireStaleOrders, placeOrder } from "@/lib/services/orders";
 import { startCardPayment } from "@/lib/services/payments";
+import { afterResponse, isEmailConfigured } from "@/lib/email/send";
+import { notifyNewOrder } from "@/lib/email/notify";
 
 const checkoutSchema = z.object({
   guestToken: z.string().optional(),
@@ -65,7 +67,9 @@ export async function POST(req: NextRequest) {
     };
 
     if (data!.paymentMethod === "cod") {
-      return apiSuccess(summary);
+      // Card orders are announced once paid (webhook / return page).
+      afterResponse(() => notifyNewOrder(order.id));
+      return apiSuccess({ ...summary, confirmationEmail: isEmailConfigured() ? contactEmail : null });
     }
 
     try {

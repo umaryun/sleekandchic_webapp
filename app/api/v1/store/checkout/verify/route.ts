@@ -6,6 +6,8 @@ import { apiSuccess, apiError } from "@/lib/api-utils";
 import { koboToNaira, toKobo } from "@/lib/money";
 import { PaystackError, verifyTransaction } from "@/lib/paystack";
 import { findOrderForReference, markOrderPaid, orderAmountKobo } from "@/lib/services/orders";
+import { afterResponse } from "@/lib/email/send";
+import { notifyNewOrder } from "@/lib/email/notify";
 
 /**
  * GET /api/v1/store/checkout/verify?reference=…
@@ -38,9 +40,10 @@ export async function GET(req: NextRequest) {
           );
           return apiError("The amount paid doesn't match this order. Please contact us with your order number.", 409);
         }
-        current = (
-          await db.transaction((t) => markOrderPaid(t, order.id, { reference, transactionId: tx.id }))
-        ).order;
+        const result = await db.transaction((t) => markOrderPaid(t, order.id, { reference, transactionId: tx.id }));
+        current = result.order;
+        // Whichever of this page and the webhook marks it paid sends the emails.
+        if (result.changed) afterResponse(() => notifyNewOrder(order.id));
       }
     }
 

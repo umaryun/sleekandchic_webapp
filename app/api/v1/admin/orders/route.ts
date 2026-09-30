@@ -13,6 +13,8 @@ import {
   paginationMeta,
 } from "@/lib/api-utils";
 import { cancelOrder } from "@/lib/services/orders";
+import { afterResponse } from "@/lib/email/send";
+import { notifyStatusChange } from "@/lib/email/notify";
 
 // ──────────────────────────────────────────────
 // GET — List orders with filters
@@ -155,6 +157,12 @@ export async function PUT(req: NextRequest) {
       const [row] = await tx.update(orders).set(updates).where(eq(orders.id, data!.orderId)).returning();
       return row;
     });
+
+    if (data!.status && data!.status !== existing.status) {
+      const orderId = existing.id;
+      const status = data!.status;
+      afterResponse(() => notifyStatusChange(orderId, status));
+    }
 
     await auditLog(session.user.id, "update", "order", {
       orderId: data!.orderId,

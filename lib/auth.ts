@@ -6,6 +6,8 @@ import { createAccessControl } from "better-auth/plugins/access";
 import { defaultStatements } from "better-auth/plugins/admin/access";
 import { db } from "@/lib/db";
 import { env, adminAppOrigins } from "@/lib/env";
+import { sendEmail } from "@/lib/email/send";
+import { passwordResetEmail } from "@/lib/email/templates";
 import { eq } from "drizzle-orm";
 import * as schema from "@/lib/db/schema";
 
@@ -39,9 +41,10 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     sendResetPassword: async ({ user, url }) => {
-      // TODO: Replace with actual email sending (e.g., Resend, SendGrid)
-      console.log(`[Password Reset] Send to: ${user.email}, URL: ${url}`);
+      await sendEmail(passwordResetEmail(user.email, user.name, url));
     },
+    // A reset signs the account out everywhere else.
+    revokeSessionsOnPasswordReset: true,
   },
 
   // Custom user fields

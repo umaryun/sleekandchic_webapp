@@ -13,9 +13,15 @@ export const STORE = {
   returnsWindowHours: 48,
 } as const;
 
-/** WhatsApp chat link, optionally with a prefilled message. */
+/** WhatsApp chat link to the store, optionally with a prefilled message. */
 export function whatsappLink(message?: string) {
-  const base = `https://wa.me/${STORE.whatsappNumber}`;
+  return whatsappTo(STORE.whatsappNumber, message);
+}
+
+/** WhatsApp chat link to any Nigerian number ("0803…", "+234 803…" or "234803…"). */
+export function whatsappTo(phone: string, message?: string) {
+  const digits = phone.replace(/\D/g, "").replace(/^0/, "234");
+  const base = `https://wa.me/${digits}`;
   return message ? `${base}?text=${encodeURIComponent(message)}` : base;
 }
 
