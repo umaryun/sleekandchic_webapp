@@ -548,7 +548,7 @@ export default function ProfilePage() {
                           </span>
 
                           <Link
-                            href={`/orders/tracking?orderNumber=${ord.orderNumber}`}
+                            href={`/orders/tracking?order=${encodeURIComponent(ord.orderNumber)}`}
                             className="text-[#f57224] font-semibold no-underline hover:underline flex items-center gap-1"
                           >
                             Track Status <ExternalLink size={12} />
