@@ -22,6 +22,13 @@ export interface Product {
   colors?: string[];
   sizes?: string[];
   inStock?: boolean;
+  // From the listing endpoint
+  /** Every size is sold out, or the product is switched off. */
+  soldOut?: boolean;
+  /** More than one size/colour, so the shopper must choose on the product page. */
+  hasOptions?: boolean;
+  /** The only variant, when there is exactly one; lets a card add it directly. */
+  singleVariantId?: string | null;
   // From API detail endpoint
   images?: ProductImage[];
   variants?: ProductVariant[];
@@ -164,6 +171,10 @@ export interface CartItem {
   quantity: number;
   unitPrice: number;
   total: number;
+  /** Units left in this size and colour; null when stock isn't tracked. */
+  stockAvailable: number | null;
+  /** Why this line can't be bought right now (sold out, size missing …). */
+  problem: string | null;
 }
 
 export interface CartData {

@@ -2,62 +2,54 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Minus, Plus, Trash2, ShoppingCart, ArrowRight, Tag } from "lucide-react";
+import { Minus, Plus, Trash2, ShoppingCart, ArrowRight, AlertCircle, Loader2 } from "lucide-react";
 import ShopLayout from "@/components/ShopLayout";
 import PageBreadcrumb from "@/components/PageBreadcrumb";
 import { formatNGN } from "@/lib/utils";
-import { useCart } from "@/context/CartContext";
+import { useCart, type CartResult } from "@/context/CartContext";
 
 export default function CartPage() {
-  const { items, subtotal, updateQuantity, removeItem } = useCart();
-  const [coupon, setCoupon] = useState("");
-  const [discount, setDiscount] = useState(0);
+  const { items, subtotal, loading, updateQuantity, removeItem } = useCart();
+  const [error, setError] = useState<string | null>(null);
 
-  const applyCoupon = () => {
-    if (coupon.toUpperCase() === "SAVE10") {
-      setDiscount(10);
-    } else {
-      alert("Invalid coupon code");
-    }
+  const itemCount = items.reduce((sum, i) => sum + i.quantity, 0);
+  const hasProblems = items.some((i) => i.problem);
+
+  const run = async (action: Promise<CartResult>) => {
+    setError(null);
+    const result = await action;
+    if (!result.ok) setError(result.error);
   };
-
-  const shipping = subtotal > 100 ? 0 : 9.99;
-  const total = Math.max(0, subtotal - discount + (items.length > 0 ? shipping : 0));
 
   return (
     <ShopLayout>
       <PageBreadcrumb title="Shopping Cart" crumbs={[]} />
       <div style={{ maxWidth: "1280px", margin: "36px auto", padding: "0 16px" }}>
-        {items.length === 0 ? (
+        {loading ? (
+          <div className="flex justify-center py-20 text-[#888]">
+            <Loader2 className="animate-spin" size={28} />
+          </div>
+        ) : items.length === 0 ? (
           <div style={{ textAlign: "center", padding: "80px 20px" }}>
             <ShoppingCart size={64} color="#e0e0e0" style={{ margin: "0 auto 20px" }} />
-            <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#1a1a1a", marginBottom: "10px" }}>
-              Your cart is empty
-            </h2>
-            <p style={{ color: "#888", marginBottom: "28px" }}>
-              Looks like you haven&apos;t added anything to your cart yet.
-            </p>
+            <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#1a1a1a", marginBottom: "10px" }}>Your cart is empty</h2>
+            <p style={{ color: "#888", marginBottom: "28px" }}>Looks like you haven&apos;t added anything to your cart yet.</p>
             <Link
               href="/products"
-              style={{
-                padding: "12px 32px",
-                background: "#f57224",
-                color: "#fff",
-                textDecoration: "none",
-                borderRadius: "3px",
-                fontWeight: 700,
-                fontSize: "14px",
-              }}
+              style={{ padding: "12px 32px", background: "#1a1a1a", color: "#fff", textDecoration: "none", borderRadius: "3px", fontWeight: 700, fontSize: "14px" }}
             >
               Continue Shopping
             </Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-7 items-start">
-            {/* Cart Table */}
             <div>
-              <div style={{ background: "#fff", border: "1px solid #f0f0f0", borderRadius: "4px", overflow: "hidden" }}>
-                {/* Header */}
+              {error && (
+                <div role="alert" className="mb-4 flex items-center gap-2.5 rounded-md border border-[#f8b4b4] bg-[#fdf2f2] px-4 py-3 text-sm text-[#981b1b]">
+                  <AlertCircle size={18} className="shrink-0" /> {error}
+                </div>
+              )}
+              <div className="bg-white border border-[#f0f0f0] rounded overflow-hidden">
                 <div className="hidden md:grid grid-cols-[2fr_1fr_1fr_1fr_40px] gap-3 px-5 py-3.5 bg-[#f8f8f8] border-b border-[#f0f0f0] text-xs font-bold text-[#888] tracking-wider uppercase">
                   <span>Product</span>
                   <span className="text-center">Price</span>
@@ -65,101 +57,82 @@ export default function CartPage() {
                   <span className="text-center">Total</span>
                   <span />
                 </div>
-                {items.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex flex-col md:grid md:grid-cols-[2fr_1fr_1fr_1fr_40px] gap-4 p-5 items-start md:items-center border-b border-[#f5f5f5] last:border-b-0 relative w-full"
-                  >
-                    <div className="flex items-center gap-3.5 w-full">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={item.image || "/placeholder-product.svg"}
-                        alt={item.productName || "Product"}
-                        className="w-16 h-16 object-cover rounded border border-[#f0f0f0] shrink-0"
-                      />
-                      <div>
-                        <Link
-                          href={`/products/${item.productSlug || item.productId}`}
-                          className="text-sm font-semibold text-[#1a1a1a] no-underline hover:text-[#b88d7a] transition-colors"
-                        >
-                          {item.productName}
-                        </Link>
-                        {(item.color || item.size) && (
-                          <p className="text-xs text-[#888] mt-1">
-                            {[item.color && `Color: ${item.color}`, item.size && `Size: ${item.size}`]
-                              .filter(Boolean)
-                              .join(" · ")}
-                          </p>
-                        )}
-                        {/* Mobile price indicator */}
-                        <p className="text-xs text-[#555] font-semibold mt-1 md:hidden">
-                          Price: {formatNGN(item.unitPrice)}
-                        </p>
-                      </div>
-                    </div>
-                    <span className="hidden md:block text-center text-sm font-semibold text-[#555] w-full">
-                      {formatNGN(item.unitPrice)}
-                    </span>
-                    <div className="flex items-center md:justify-center w-full md:w-auto">
-                      <span className="text-xs font-semibold text-[#888] mr-3 md:hidden">Qty:</span>
-                      <div className="flex border border-[#e5e5e5] rounded overflow-hidden">
-                        <button
-                          onClick={() => updateQuantity(item.productId, item.variantId, Math.max(1, item.quantity - 1))}
-                          className="w-8 h-9 bg-[#f5f5f5] border-none cursor-pointer flex items-center justify-center"
-                        >
-                          <Minus size={12} />
-                        </button>
-                        <span className="w-10 flex items-center justify-center text-sm font-bold">
-                          {item.quantity}
-                        </span>
-                        <button
-                          onClick={() => updateQuantity(item.productId, item.variantId, item.quantity + 1)}
-                          className="w-8 h-9 bg-[#f5f5f5] border-none cursor-pointer flex items-center justify-center"
-                        >
-                          <Plus size={12} />
-                        </button>
-                      </div>
-                    </div>
-                    <div className="flex md:justify-center items-center w-full border-t border-[#f5f5f5] pt-3 md:pt-0 md:border-t-0 md:w-auto">
-                      <span className="text-xs font-bold text-[#888] mr-3 md:hidden">Subtotal:</span>
-                      <span className="text-sm font-bold text-[#1a1a1a]">{formatNGN(item.total)}</span>
-                    </div>
-                    <button
-                      onClick={() => removeItem(item.productId, item.variantId)}
-                      className="absolute top-5 right-5 md:static bg-none border-none cursor-pointer text-[#ccc] hover:text-red-500 transition-colors flex items-center justify-center"
-                      aria-label="Remove item"
+                {items.map((item) => {
+                  const atStockLimit = item.stockAvailable !== null && item.quantity >= item.stockAvailable;
+                  return (
+                    <div
+                      key={item.id}
+                      className="flex flex-col md:grid md:grid-cols-[2fr_1fr_1fr_1fr_40px] gap-4 p-5 items-start md:items-center border-b border-[#f5f5f5] last:border-b-0 relative w-full"
                     >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                ))}
+                      <div className="flex items-center gap-3.5 w-full pr-8 md:pr-0">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={item.image || "/placeholder-product.svg"}
+                          alt={item.productName || "Product"}
+                          className="w-16 h-16 object-cover rounded border border-[#f0f0f0] shrink-0"
+                        />
+                        <div className="min-w-0">
+                          <Link
+                            href={`/products/${item.productSlug || item.productId}`}
+                            className="text-sm font-semibold text-[#1a1a1a] no-underline hover:text-[#8a6452] transition-colors"
+                          >
+                            {item.productName}
+                          </Link>
+                          {(item.color || item.size) && (
+                            <p className="text-xs text-[#777] mt-1">
+                              {[item.color && `Colour: ${item.color}`, item.size && `Size: ${item.size}`].filter(Boolean).join(" · ")}
+                            </p>
+                          )}
+                          {item.problem && <p className="text-xs font-semibold text-[#b42318] mt-1">{item.problem}</p>}
+                          <p className="text-xs text-[#555] font-semibold mt-1 md:hidden">Price: {formatNGN(item.unitPrice)}</p>
+                        </div>
+                      </div>
+                      <span className="hidden md:block text-center text-sm font-semibold text-[#555] w-full">{formatNGN(item.unitPrice)}</span>
+                      <div className="flex items-center md:justify-center w-full md:w-auto">
+                        <span className="text-xs font-semibold text-[#888] mr-3 md:hidden">Qty:</span>
+                        <div className="flex border border-[#e5e5e5] rounded overflow-hidden">
+                          <button
+                            type="button"
+                            onClick={() => run(updateQuantity(item.productId, item.variantId, Math.max(1, item.quantity - 1)))}
+                            disabled={item.quantity <= 1}
+                            className="w-8 h-9 bg-[#f5f5f5] border-none cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 flex items-center justify-center"
+                            aria-label={`Decrease quantity of ${item.productName}`}
+                          >
+                            <Minus size={12} />
+                          </button>
+                          <span className="w-10 flex items-center justify-center text-sm font-bold" aria-live="polite">{item.quantity}</span>
+                          <button
+                            type="button"
+                            onClick={() => run(updateQuantity(item.productId, item.variantId, item.quantity + 1))}
+                            disabled={atStockLimit}
+                            className="w-8 h-9 bg-[#f5f5f5] border-none cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 flex items-center justify-center"
+                            aria-label={`Increase quantity of ${item.productName}`}
+                          >
+                            <Plus size={12} />
+                          </button>
+                        </div>
+                      </div>
+                      <div className="flex md:justify-center items-center w-full border-t border-[#f5f5f5] pt-3 md:pt-0 md:border-t-0 md:w-auto">
+                        <span className="text-xs font-bold text-[#888] mr-3 md:hidden">Subtotal:</span>
+                        <span className="text-sm font-bold text-[#1a1a1a]">{formatNGN(item.total)}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => run(removeItem(item.productId, item.variantId))}
+                        className="absolute top-5 right-5 md:static bg-transparent border-none cursor-pointer text-[#999] hover:text-red-600 transition-colors flex items-center justify-center"
+                        aria-label={`Remove ${item.productName}`}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
 
-              {/* Actions */}
-              <div style={{ display: "flex", justifyContent: "space-between", marginTop: "16px", flexWrap: "wrap", gap: "12px" }}>
+              <div className="mt-4">
                 <Link
                   href="/products"
-                  style={{
-                    padding: "10px 20px",
-                    border: "1px solid #1a1a1a",
-                    color: "#1a1a1a",
-                    textDecoration: "none",
-                    borderRadius: "3px",
-                    fontSize: "13px",
-                    fontWeight: 600,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "6px",
-                    transition: "all 0.2s",
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLAnchorElement).style.background = "#1a1a1a";
-                    (e.currentTarget as HTMLAnchorElement).style.color = "#fff";
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLAnchorElement).style.background = "transparent";
-                    (e.currentTarget as HTMLAnchorElement).style.color = "#1a1a1a";
-                  }}
+                  className="inline-flex items-center gap-1.5 px-5 py-2.5 border border-[#1a1a1a] text-[#1a1a1a] no-underline rounded-[3px] text-[13px] font-semibold hover:bg-[#1a1a1a] hover:text-white transition-colors"
                 >
                   ← Continue Shopping
                 </Link>
@@ -167,70 +140,31 @@ export default function CartPage() {
             </div>
 
             {/* Summary */}
-            <div style={{ background: "#fff", border: "1px solid #f0f0f0", borderRadius: "4px", padding: "24px", position: "sticky", top: "90px" }}>
-              <h3 style={{ fontSize: "16px", fontWeight: 700, color: "#1a1a1a", marginBottom: "20px", paddingBottom: "16px", borderBottom: "1px solid #f0f0f0" }}>
-                Order Summary
-              </h3>
-
-              <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "20px" }}>
-                {[
-                  { label: "Subtotal", value: formatNGN(subtotal) },
-                  { label: "Shipping", value: shipping === 0 ? "Free" : formatNGN(shipping) },
-                  ...(discount ? [{ label: "Coupon Discount", value: `-${formatNGN(discount)}` }] : []),
-                ].map(({ label, value }) => (
-                  <div key={label} style={{ display: "flex", justifyContent: "space-between", fontSize: "13px" }}>
-                    <span style={{ color: "#666" }}>{label}</span>
-                    <span style={{ fontWeight: 600, color: label === "Coupon Discount" ? "#28a745" : "#1a1a1a" }}>
-                      {value}
-                    </span>
-                  </div>
-                ))}
+            <div className="bg-white border border-[#f0f0f0] rounded p-6 lg:sticky lg:top-[90px]">
+              <h3 className="text-base font-bold text-[#1a1a1a] mb-5 pb-4 border-b border-[#f0f0f0]">Order Summary</h3>
+              <div className="flex justify-between text-[13px] mb-3">
+                <span className="text-[#666]">Subtotal ({itemCount} {itemCount === 1 ? "item" : "items"})</span>
+                <span className="font-semibold text-[#1a1a1a]">{formatNGN(subtotal)}</span>
               </div>
+              <p className="text-xs text-[#777] mb-5 pb-5 border-b border-[#f0f0f0]">
+                Delivery is calculated at checkout from your state. You can add a promo code there too.
+              </p>
 
-              {/* Coupon */}
-              <div style={{ marginBottom: "20px", paddingBottom: "20px", borderBottom: "1px solid #f0f0f0" }}>
-                <label style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "12px", fontWeight: 700, color: "#888", letterSpacing: "0.5px", textTransform: "uppercase", marginBottom: "8px" }}>
-                  <Tag size={12} /> Coupon Code
-                </label>
-                <div style={{ display: "flex", gap: "0" }}>
-                  <input
-                    type="text"
-                    placeholder="Enter code (SAVE10)"
-                    value={coupon}
-                    onChange={(e) => setCoupon(e.target.value)}
-                    style={{ flex: 1, padding: "9px 12px", border: "1px solid #ddd", borderRight: "none", borderRadius: "3px 0 0 3px", fontSize: "13px", outline: "none" }}
-                    onFocus={(e) => (e.currentTarget.style.borderColor = "#f57224")}
-                    onBlur={(e) => (e.currentTarget.style.borderColor = "#ddd")}
-                  />
-                  <button
-                    onClick={applyCoupon}
-                    style={{ padding: "9px 14px", background: "#1a1a1a", color: "#fff", border: "none", borderRadius: "0 3px 3px 0", cursor: "pointer", fontSize: "13px", fontWeight: 600, transition: "background 0.2s" }}
-                    onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.background = "#f57224")}
-                    onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.background = "#1a1a1a")}
-                  >
-                    Apply
-                  </button>
-                </div>
-              </div>
-
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "20px" }}>
-                <span style={{ fontSize: "16px", fontWeight: 700 }}>Total</span>
-                <span style={{ fontSize: "20px", fontWeight: 800, color: "#1a1a1a" }}>
-                  {formatNGN(total)}
-                </span>
-              </div>
-
+              {hasProblems ? (
+                <p className="rounded bg-[#fffaeb] border border-[#f3d38b] px-3 py-2.5 text-xs text-[#7a5200] mb-3">
+                  Update the items marked above before checking out.
+                </p>
+              ) : null}
               <Link
                 href="/checkout"
-                style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", padding: "14px", background: "#f57224", color: "#fff", textDecoration: "none", borderRadius: "3px", fontWeight: 700, fontSize: "15px", transition: "background 0.2s" }}
-                onMouseEnter={(e) => ((e.currentTarget as HTMLAnchorElement).style.background = "#e06010")}
-                onMouseLeave={(e) => ((e.currentTarget as HTMLAnchorElement).style.background = "#f57224")}
+                aria-disabled={hasProblems}
+                className={`flex items-center justify-center gap-2 p-3.5 rounded-[3px] font-bold text-[15px] no-underline transition-colors ${
+                  hasProblems ? "bg-[#d0d0d0] text-white pointer-events-none" : "bg-[#1a1a1a] text-white hover:bg-[#333]"
+                }`}
               >
                 Proceed to Checkout <ArrowRight size={16} />
               </Link>
-              <p style={{ fontSize: "12px", color: "#aaa", textAlign: "center", marginTop: "12px" }}>
-                🔒 Secure checkout powered by Stripe
-              </p>
+              <p className="text-xs text-[#888] text-center mt-3">Pay by card, bank transfer or USSD with Paystack, or pay on delivery.</p>
             </div>
           </div>
         )}
