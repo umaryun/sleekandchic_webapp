@@ -10,7 +10,7 @@ import {
 } from "@/lib/db/schema";
 import { generateOrderNumber } from "@/lib/api-utils";
 import { koboToDecimal, toKobo } from "@/lib/money";
-import { getShippingQuotesAsync, type ShippingQuote } from "@/lib/shipping";
+import { getDbShippingRates, getShippingQuotes, type ShippingQuote, type ShippingZone } from "@/lib/shipping";
 import { findCart, loadCartLines, type CartLine, type DbOrTx } from "@/lib/services/cart";
 import {
   claimDiscount,
@@ -52,7 +52,10 @@ export interface Quote {
 export async function quoteLines(
   lines: CartLine[],
   input: { state: string; shippingMethod: ShippingMethod; discountCode?: string | null },
-  tx: DbOrTx = db
+  tx: DbOrTx = db,
+  // Pass rates loaded beforehand when quoting inside a transaction: loading
+  // them there would need a second connection while this one is held.
+  ratesMap?: Record<string, ShippingZone>
 ): Promise<Quote> {
   const subtotalKobo = lines.reduce((sum, l) => sum + l.unitPriceKobo * l.quantity, 0);
   const itemCount = lines.reduce((sum, l) => sum + l.quantity, 0);
@@ -70,10 +73,12 @@ export async function quoteLines(
     }
   }
 
-  const shippingOptions = await getShippingQuotesAsync(
+  const rates = ratesMap ?? (await getDbShippingRates());
+  const shippingOptions = getShippingQuotes(
     input.state,
     (subtotalKobo - discountKobo) / 100,
-    Math.max(itemCount, 1)
+    Math.max(itemCount, 1),
+    rates
   );
   const shipping = shippingOptions[input.shippingMethod];
   const shippingKobo = toKobo(shipping.fee);
@@ -123,6 +128,7 @@ export interface PlaceOrderInput {
  * clear the bag now; card orders keep it until payment succeeds.
  */
 export async function placeOrder(input: PlaceOrderInput) {
+  const ratesMap = await getDbShippingRates();
   return db.transaction(async (tx) => {
     const cart = await findCart(input.userId, input.guestToken, tx);
     if (!cart) throw new CheckoutError("Your bag is empty");
@@ -154,7 +160,8 @@ export async function placeOrder(input: PlaceOrderInput) {
         shippingMethod: input.shippingMethod,
         discountCode: input.discountCode,
       },
-      tx
+      tx,
+      ratesMap
     );
     if (quote.problems.length > 0) throw new CheckoutError(quote.problems.join(". "), 409);
     if (input.discountCode?.trim() && quote.discountError) throw new CheckoutError(quote.discountError);

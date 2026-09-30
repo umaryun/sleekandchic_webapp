@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 import { eq } from "drizzle-orm";
 import { db } from "./test-db";
 import { discounts, productVariants, products, shippingRates } from "../../lib/db/schema";
+import { invalidateShippingCache } from "@/lib/shipping";
 
 export async function createProduct(input: {
   name?: string;
@@ -59,6 +60,9 @@ export async function seedKadunaRate() {
     expressBase: 3500,
     freeShippingThreshold: 30000,
   });
+  // Start every test with a cold rates cache, as after a deploy. A warm cache
+  // once hid a checkout that queried rates outside its transaction.
+  invalidateShippingCache();
 }
 
 export function jsonRequest(url: string, body?: unknown, headers: Record<string, string> = {}) {
