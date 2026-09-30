@@ -5,6 +5,7 @@ import { anonymous } from "better-auth/plugins";
 import { createAccessControl } from "better-auth/plugins/access";
 import { defaultStatements } from "better-auth/plugins/admin/access";
 import { db } from "@/lib/db";
+import { env, adminAppOrigins } from "@/lib/env";
 import { eq } from "drizzle-orm";
 import * as schema from "@/lib/db/schema";
 
@@ -30,9 +31,9 @@ export const auth = betterAuth({
     },
   }),
 
-  // Base URL for auth endpoints
-  baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
-  secret: process.env.BETTER_AUTH_SECRET || "default_development_secret_min_32_chars_long",
+  // The secret comes from BETTER_AUTH_SECRET; better-auth refuses to start in
+  // production without one.
+  baseURL: env.BETTER_AUTH_URL,
 
   // Email/Password authentication
   emailAndPassword: {
@@ -153,10 +154,8 @@ export const auth = betterAuth({
     }),
   ],
 
-  // Trusted origins for CORS
-  trustedOrigins: [
-    process.env.ADMIN_APP_URL || "http://localhost:3001",
-  ],
+  // The admin console signs in cross-origin.
+  trustedOrigins: adminAppOrigins,
 });
 
 // Export auth types

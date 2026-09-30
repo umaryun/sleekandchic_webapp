@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
-import { supabaseAdmin } from "@/lib/supabase";
+import { getSupabaseAdmin, isStorageConfigured } from "@/lib/supabase";
 import { apiSuccess, apiError, requireAdmin, withCors, parseBody } from "@/lib/api-utils";
 
 const uploadSchema = z.object({
@@ -14,6 +14,11 @@ const uploadSchema = z.object({
 export async function POST(req: NextRequest) {
   try {
     await requireAdmin(req);
+
+    if (!isStorageConfigured()) {
+      return withCors(apiError("Image uploads are not configured on the server", 503), req);
+    }
+    const supabaseAdmin = getSupabaseAdmin();
 
     const { data, error } = await parseBody(req, uploadSchema);
     if (error) return error;

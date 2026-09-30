@@ -1,6 +1,7 @@
-import { supabaseAdmin } from "../supabase";
+import { getSupabaseAdmin } from "../supabase";
 
 export async function setupStorageBuckets() {
+  const supabaseAdmin = getSupabaseAdmin();
   const buckets = ["products", "categories", "banners"];
 
   for (const bucketName of buckets) {

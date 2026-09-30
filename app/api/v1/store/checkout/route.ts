@@ -19,6 +19,7 @@ import {
   generateOrderNumber,
 } from "@/lib/api-utils";
 import { calculateShippingAsync } from "@/lib/shipping";
+import { env } from "@/lib/env";
 
 const checkoutSchema = z.object({
   guestToken: z.string().optional(),
@@ -239,7 +240,7 @@ export async function POST(req: NextRequest) {
     await db.delete(cartItems).where(eq(cartItems.cartId, cart.id));
 
     // If Cash on Delivery or no Paystack key configured, complete order directly
-    if (paymentMethod === "cod" || !process.env.PAYSTACK_SECRET_KEY) {
+    if (paymentMethod === "cod" || !env.PAYSTACK_SECRET_KEY) {
       return apiSuccess({
         orderNumber,
         orderId: order.id,
@@ -258,7 +259,7 @@ export async function POST(req: NextRequest) {
         {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+            Authorization: `Bearer ${env.PAYSTACK_SECRET_KEY}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
@@ -266,7 +267,7 @@ export async function POST(req: NextRequest) {
             amount: Math.round(totalAmount * 100), // Paystack uses kobo
             currency: "NGN",
             reference: orderNumber,
-            callback_url: `${process.env.BETTER_AUTH_URL || ""}/orders/tracking?ref=${orderNumber}`,
+            callback_url: `${env.BETTER_AUTH_URL}/orders/tracking?ref=${orderNumber}`,
             metadata: {
               orderId: order.id,
               orderNumber,

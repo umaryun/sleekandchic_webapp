@@ -4,6 +4,7 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { auditLogs } from "@/lib/db/schema";
+import { adminAppOrigins } from "@/lib/env";
 // import { headers } from "next/headers";
 
 // ──────────────────────────────────────────────
@@ -124,13 +125,9 @@ export function getAdminRole(session: { user: { role?: string } } | null): "supe
 // CORS Helper
 // ──────────────────────────────────────────────
 
-const ADMIN_ORIGINS = (process.env.ADMIN_APP_URL || "http://localhost:3001")
-  .split(",")
-  .map((s) => s.trim());
-
 export function withCors(response: NextResponse, req: NextRequest) {
   const origin = req.headers.get("origin");
-  if (origin && ADMIN_ORIGINS.includes(origin)) {
+  if (origin && adminAppOrigins.includes(origin)) {
     response.headers.set("Access-Control-Allow-Origin", origin);
     response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
     response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");

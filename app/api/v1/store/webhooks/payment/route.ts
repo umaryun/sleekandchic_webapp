@@ -3,13 +3,19 @@ import crypto from "crypto";
 import { db } from "@/lib/db";
 import { orders, orderItems, carts, cartItems, productVariants } from "@/lib/db/schema";
 import { eq, sql } from "drizzle-orm";
+import { env } from "@/lib/env";
 
 export async function POST(req: NextRequest) {
   try {
+    if (!env.PAYSTACK_SECRET_KEY) {
+      console.error("Paystack webhook received but PAYSTACK_SECRET_KEY is not set");
+      return NextResponse.json({ error: "Payments are not configured" }, { status: 500 });
+    }
+
     // Verify Paystack webhook signature
     const body = await req.text();
     const hash = crypto
-      .createHmac("sha512", process.env.PAYSTACK_SECRET_KEY || "")
+      .createHmac("sha512", env.PAYSTACK_SECRET_KEY)
       .update(body)
       .digest("hex");
 
