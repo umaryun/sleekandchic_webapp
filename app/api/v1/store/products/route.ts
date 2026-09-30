@@ -1,8 +1,8 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { products, productImages, categories } from "@/lib/db/schema";
-import { eq, ilike, and, gte, lte, sql, desc, asc, count } from "drizzle-orm";
+import { products, productImages, productVariants, categories } from "@/lib/db/schema";
+import { eq, ilike, and, gte, lte, sql, desc, asc, count, inArray } from "drizzle-orm";
 import { apiSuccess, apiError, paginationMeta } from "@/lib/api-utils";
 
 const querySchema = z.object({
@@ -126,22 +126,49 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const data = rows.map((p) => ({
-      id: p.id,
-      name: p.name,
-      slug: p.slug,
-      price: Number(p.price),
-      originalPrice: p.originalPrice ? Number(p.originalPrice) : null,
-      badge: p.badge,
-      discount: p.discount,
-      rating: p.rating,
-      reviewCount: p.reviewCount,
-      inStock: p.inStock,
-      brand: p.brand,
-      category: p.categoryName || null,
-      categorySlug: p.categorySlug || null,
-      image: imageMap.get(p.id) || null,
-    }));
+    // Enough about sizes for a card to add straight to the bag only when
+    // there is nothing to choose.
+    const variantRows =
+      productIds.length > 0
+        ? await db
+            .select({
+              productId: productVariants.productId,
+              id: productVariants.id,
+              stock: productVariants.stockQuantity,
+            })
+            .from(productVariants)
+            .where(inArray(productVariants.productId, productIds))
+        : [];
+    const variantsByProduct = new Map<string, { id: string; stock: number }[]>();
+    for (const v of variantRows) {
+      const list = variantsByProduct.get(v.productId) ?? [];
+      list.push(v);
+      variantsByProduct.set(v.productId, list);
+    }
+
+    const data = rows.map((p) => {
+      const variants = variantsByProduct.get(p.id) ?? [];
+      const soldOut = !p.inStock || (variants.length > 0 && variants.every((v) => v.stock <= 0));
+      return {
+        id: p.id,
+        name: p.name,
+        slug: p.slug,
+        price: Number(p.price),
+        originalPrice: p.originalPrice ? Number(p.originalPrice) : null,
+        badge: p.badge,
+        discount: p.discount,
+        rating: p.rating,
+        reviewCount: p.reviewCount,
+        inStock: p.inStock,
+        brand: p.brand,
+        category: p.categoryName || null,
+        categorySlug: p.categorySlug || null,
+        image: imageMap.get(p.id) || null,
+        soldOut,
+        hasOptions: variants.length > 1,
+        singleVariantId: variants.length === 1 ? variants[0].id : null,
+      };
+    });
 
     const response = apiSuccess({
       products: data,

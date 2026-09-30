@@ -35,6 +35,9 @@ export default function ProductDetailPage() {
   const [qty, setQty] = useState(1);
   const [activeTab, setActiveTab] = useState("description");
   const [addedToCart, setAddedToCart] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
+  const { addItem } = useCart();
 
   const [reviewForm, setReviewForm] = useState({ name: "", email: "", rating: 5, comment: "" });
 
@@ -115,30 +118,22 @@ export default function ProductDetailPage() {
     ? product.images.map((img) => img.imageUrl)
     : product.image
       ? [product.image]
-      : ["/placeholder-product.png"];
+      : ["/placeholder-product.svg"];
 
-  const { addItem } = useCart();
-
-  const handleAddToCart = () => {
-    if (!product) return;
+  const handleAddToCart = async () => {
     const matchingVariant = product.variants?.find(
       (v) =>
         (v.size || null) === (selectedSize || null) &&
         (v.color || null) === (selectedColor || null)
     );
-    const unitPrice = matchingVariant?.priceOverride
-      ? Number(matchingVariant.priceOverride)
-      : Number(product.price);
-    const mainImage = product.images?.[0]?.imageUrl || product.image || null;
-
-    addItem(product.id, matchingVariant?.id || null, qty, {
-      productName: product.name,
-      unitPrice,
-      image: mainImage,
-      size: selectedSize || undefined,
-      color: selectedColor || undefined,
-      productSlug: product.slug,
-    });
+    setAddError(null);
+    setAdding(true);
+    const result = await addItem(product.id, matchingVariant?.id || null, qty);
+    setAdding(false);
+    if (!result.ok) {
+      setAddError(result.error);
+      return;
+    }
     setAddedToCart(true);
     setTimeout(() => setAddedToCart(false), 2000);
   };
@@ -277,16 +272,19 @@ export default function ProductDetailPage() {
                   </button>
                 </div>
 
-                <button onClick={handleAddToCart}
-                  className={`flex-1 sm:w-auto px-5 h-11 sm:h-12 ${addedToCart ? "bg-[#28a745]" : "bg-[#1a1a1a]"} text-white border-none rounded-[3px] cursor-pointer flex items-center justify-center gap-2 font-bold text-xs sm:text-sm transition-colors duration-200`}>
-                  {addedToCart ? <><Check size={16} /> Added to Cart</> : <><ShoppingCart size={16} /> Add To Cart</>}
+                <button onClick={handleAddToCart} disabled={adding || product.inStock === false}
+                  className={`flex-1 sm:w-auto px-5 h-11 sm:h-12 ${addedToCart ? "bg-[#28a745]" : "bg-[#1a1a1a]"} text-white border-none rounded-[3px] cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 flex items-center justify-center gap-2 font-bold text-xs sm:text-sm transition-colors duration-200`}>
+                  {addedToCart ? <><Check size={16} /> Added to Cart</> : <><ShoppingCart size={16} /> {adding ? "Adding…" : "Add To Cart"}</>}
                 </button>
               </div>
 
               <button className="w-full sm:w-auto flex-1 h-11 sm:h-12 px-6 bg-[#f57224] text-white border-none rounded-[3px] cursor-pointer flex items-center justify-center gap-2 font-bold text-xs sm:text-sm">
-                <Zap size={16} /> Buy Now             
+                <Zap size={16} /> Buy Now
               </button>
             </div>
+            {addError && (
+              <p role="alert" className="text-sm text-[#c45b5b] mb-4">{addError}</p>
+            )}
 
 
 
