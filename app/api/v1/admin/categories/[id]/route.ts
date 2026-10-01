@@ -11,6 +11,7 @@ import {
   withCors,
   parseBody,
   auditLog,
+  internalError,
 } from "@/lib/api-utils";
 
 export async function PUT(
@@ -55,7 +56,7 @@ export async function PUT(
     return withCors(response, req);
   } catch (err) {
     if (err instanceof Response) return err;
-    return apiError("Internal server error", 500);
+    return internalError("PUT /api/v1/admin/categories/[id]", err);
   }
 }
 
@@ -86,6 +87,6 @@ export async function DELETE(
     return withCors(response, req);
   } catch (err) {
     if (err instanceof Response) return err;
-    return apiError("Internal server error", 500);
+    return internalError("DELETE /api/v1/admin/categories/[id]", err);
   }
 }

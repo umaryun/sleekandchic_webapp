@@ -19,6 +19,12 @@ export function apiError(message: string, status = 400) {
   return NextResponse.json({ success: false, error: message }, { status });
 }
 
+/** Logs an unexpected failure with where it happened, then answers 500. */
+export function internalError(where: string, err: unknown) {
+  console.error(`${where} failed:`, err);
+  return apiError("Internal server error", 500);
+}
+
 // ──────────────────────────────────────────────
 // Zod Parsing
 // ──────────────────────────────────────────────

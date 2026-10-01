@@ -12,6 +12,7 @@ import {
   withCors,
   parseBody,
   auditLog,
+  internalError,
 } from "@/lib/api-utils";
 
 const updateSchema = discountFieldsSchema.partial();
@@ -121,6 +122,6 @@ export async function DELETE(
     return withCors(response, req);
   } catch (err) {
     if (err instanceof Response) return err;
-    return apiError("Internal server error", 500);
+    return internalError("DELETE /api/v1/admin/discounts/[id]", err);
   }
 }

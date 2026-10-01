@@ -11,6 +11,7 @@ import {
   parseBody,
   auditLog,
   paginationMeta,
+  internalError,
 } from "@/lib/api-utils";
 import { cancelOrder } from "@/lib/services/orders";
 import { recordOrderEvent, transitionError } from "@/lib/services/order-status";
@@ -129,7 +130,7 @@ export async function GET(req: NextRequest) {
     return withCors(response, req);
   } catch (err) {
     if (err instanceof Response) return err;
-    return apiError("Internal server error", 500);
+    return internalError("GET /api/v1/admin/orders", err);
   }
 }
 

@@ -10,6 +10,7 @@ import {
   withCors,
   parseBody,
   auditLog,
+  internalError,
 } from "@/lib/api-utils";
 
 export async function GET(req: NextRequest) {
@@ -25,7 +26,7 @@ export async function GET(req: NextRequest) {
     return withCors(response, req);
   } catch (err) {
     if (err instanceof Response) return err;
-    return apiError("Internal server error", 500);
+    return internalError("GET /api/v1/admin/hero-slides", err);
   }
 }
 
@@ -58,6 +59,6 @@ export async function POST(req: NextRequest) {
     return withCors(response, req);
   } catch (err) {
     if (err instanceof Response) return err;
-    return apiError("Internal server error", 500);
+    return internalError("POST /api/v1/admin/hero-slides", err);
   }
 }
