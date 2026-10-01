@@ -22,6 +22,8 @@ interface VerifiedOrder {
   discountAmount: number;
   shippingFee: number;
   totalAmount: number;
+  payNow: number;
+  payOnArrival: number;
   items: { name: string; quantity: number; size: string | null; color: string | null; price: number }[];
 }
 
@@ -149,7 +151,7 @@ function CompleteContent() {
               disabled={retrying}
               className="rounded-md bg-[#1a1a1a] px-6 py-3 text-sm font-bold text-white disabled:opacity-60"
             >
-              {retrying ? "Opening Paystack…" : `Try payment again — ${formatNGN(order.totalAmount)}`}
+              {retrying ? "Opening Paystack…" : `Try payment again — ${formatNGN(order.payNow)}`}
             </button>
           ) : (
             <Link href="/cart" className="rounded-md bg-[#1a1a1a] px-6 py-3 text-sm font-bold text-white no-underline">
@@ -195,13 +197,27 @@ function CompleteContent() {
           <span className="text-[#777]">
             Delivery{order.deliveryCity ? ` to ${order.deliveryCity}, ${order.deliveryState}` : ""}
           </span>
-          <span>{order.shippingFee === 0 ? "Free" : formatNGN(order.shippingFee)}</span>
+          <span>
+            {order.shippingFee === 0 ? "Free" : order.payOnArrival > 0 ? "Pay at the park" : formatNGN(order.shippingFee)}
+          </span>
         </div>
         <div className="flex justify-between pt-3 mt-2 border-t border-[#e5e5e5]">
           <span className="text-sm font-bold">Paid</span>
-          <span className="text-base font-extrabold text-[#1a1a1a]">{formatNGN(order.totalAmount)}</span>
+          <span className="text-base font-extrabold text-[#1a1a1a]">{formatNGN(order.payNow)}</span>
         </div>
+        {order.payOnArrival > 0 && (
+          <div className="flex justify-between mt-1.5">
+            <span className="text-sm font-bold">To pay at the park</span>
+            <span className="text-base font-extrabold text-[#1a1a1a]">{formatNGN(order.payOnArrival)}</span>
+          </div>
+        )}
       </div>
+      {order.shippingMethod === "standard" && (
+        <p className="mx-auto -mt-4 mb-8 max-w-md text-left text-[13px] text-[#555]">
+          Your order travels by public transport to the motor park in {order.deliveryState ?? "your state"}, where you
+          collect it.{order.payOnArrival > 0 ? ` Pay the ${formatNGN(order.payOnArrival)} delivery fee at the park.` : ""}
+        </p>
+      )}
 
       <div className="flex flex-col sm:flex-row justify-center gap-3">
         <Link

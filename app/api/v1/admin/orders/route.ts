@@ -87,6 +87,7 @@ export async function GET(req: NextRequest) {
         paymentStatus: orders.paymentStatus,
         paymentMethod: orders.paymentMethod,
         shippingMethod: orders.shippingMethod,
+        deliveryPayment: orders.deliveryPayment,
         shippingAddress: orders.shippingAddress,
         createdAt: orders.createdAt,
       })

@@ -40,7 +40,6 @@ async function checkout(guestToken: string, overrides: Record<string, unknown> =
           guestEmail: "aisha@example.com",
           shippingAddress: ADDRESS,
           shippingMethod: "standard",
-          paymentMethod: "cod",
           ...overrides,
         },
         { "x-guest-token": guestToken }
@@ -76,6 +75,8 @@ async function webhook(event: unknown, signature?: string) {
 beforeEach(async () => {
   await resetTestDb();
   await seedKadunaRate();
+  // Every order is paid online; tests that need Paystack to fail stub it again.
+  vi.stubGlobal("fetch", paystackFetch({ initialize: okInit }));
 });
 
 afterEach(() => {
@@ -156,8 +157,8 @@ describe("quote", () => {
 
 // ── C3/C4/C9: placing an order ────────────────────────────
 
-describe("pay on delivery", () => {
-  it("charges catalogue prices, takes stock, uses the code and clears the bag", async () => {
+describe("placing an order", () => {
+  it("charges catalogue prices, takes stock and uses the code", async () => {
     const { product, variants } = await createProduct({ price: 20000, variants: [{ stock: 5 }] });
     const added = await addToBag(product.id, variants[0].id, 2);
     const token = added.body.data.guestToken;
@@ -166,17 +167,26 @@ describe("pay on delivery", () => {
 
     const res = await checkout(token, { discountCode: "welcome" });
     expect(res.status).toBe(200);
-    expect(res.body.data).toMatchObject({ subtotal: 42000, discountAmount: 1000, shippingFee: 0, totalAmount: 41000, paymentMethod: "cod" });
+    expect(res.body.data).toMatchObject({ subtotal: 42000, discountAmount: 1000, shippingFee: 0, totalAmount: 41000, paymentMethod: "paystack", payNow: 41000 });
 
     const [order] = await db.select().from(orders);
-    expect(order).toMatchObject({ paymentMethod: "cod", shippingMethod: "standard", totalAmount: "41000.00", subtotal: "42000.00", discountCode: "WELCOME" });
+    expect(order).toMatchObject({ paymentMethod: "paystack", shippingMethod: "standard", totalAmount: "41000.00", subtotal: "42000.00", discountCode: "WELCOME" });
     expect(await stockOf(variants[0].id)).toBe(3);
     const moves = await db.select().from(stockMovements);
     expect(moves).toHaveLength(1);
     expect(moves[0]).toMatchObject({ delta: -2, reason: "order", orderId: order.id });
     const [d] = await db.select().from(discounts).where(eq(discounts.id, code.id));
     expect(d.usedCount).toBe(1);
-    expect(await db.select().from(cartItems)).toHaveLength(0);
+  });
+
+  it("won't take an order to pay for items on delivery", async () => {
+    const { product, variants } = await createProduct({ price: 20000, variants: [{ stock: 5 }] });
+    const added = await addToBag(product.id, variants[0].id);
+    const res = await checkout(added.body.data.guestToken, { paymentMethod: "cod" });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/Pay on delivery isn't available/);
+    expect(await db.select().from(orders)).toHaveLength(0);
+    expect(await stockOf(variants[0].id)).toBe(5);
   });
 
   it("refuses when stock ran out after adding to the bag and leaves nothing behind", async () => {
@@ -337,11 +347,75 @@ describe("card payment", () => {
   it("replaces an unpaid card order when the same bag checks out again", async () => {
     const { token, variantId } = await cardOrder(5, 2);
     expect(await stockOf(variantId)).toBe(3);
-    const again = await checkout(token, { paymentMethod: "cod" });
+    const again = await checkout(token);
     expect(again.status).toBe(200);
     const all = await db.select().from(orders);
     expect(all.map((o) => o.status).sort()).toEqual(["cancelled", "pending"]);
     expect(await stockOf(variantId)).toBe(3);
+  });
+});
+
+// ── Delivery: public transport can be paid at the park, GIG online ──
+
+describe("paying for delivery", () => {
+  /** Records what Paystack was asked to charge. */
+  function capturePaystack() {
+    const charged: number[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string | URL, init?: RequestInit) => {
+        if (String(url).includes("/transaction/initialize")) {
+          charged.push(JSON.parse(String(init?.body)).amount);
+          return okInit();
+        }
+        throw new Error(`Unexpected fetch ${url}`);
+      })
+    );
+    return charged;
+  }
+
+  it("by public transport, charges the items online and leaves the fee for the park", async () => {
+    const { product, variants } = await createProduct({ price: 10000, variants: [{ stock: 5 }] });
+    const added = await addToBag(product.id, variants[0].id);
+    const charged = capturePaystack();
+
+    const res = await checkout(added.body.data.guestToken, { deliveryPayment: "on_arrival" });
+    expect(res.status).toBe(200);
+    expect(res.body.data).toMatchObject({ totalAmount: 11500, shippingFee: 1500, deliveryPayment: "on_arrival", payNow: 10000, payOnArrival: 1500 });
+    expect(charged).toEqual([1000000]);
+
+    const [order] = await db.select().from(orders);
+    expect(order).toMatchObject({ deliveryPayment: "on_arrival", totalAmount: "11500.00", shippingFee: "1500.00" });
+    await webhook({ event: "charge.success", data: { id: 9, reference: "REF", amount: 1000000, currency: "NGN", metadata: { orderId: order.id } } });
+    const [paid] = await db.select().from(orders);
+    expect(paid).toMatchObject({ paymentStatus: "paid", status: "processing" });
+  });
+
+  it("charges everything online by default", async () => {
+    const { product, variants } = await createProduct({ price: 10000, variants: [{ stock: 5 }] });
+    const added = await addToBag(product.id, variants[0].id);
+    const charged = capturePaystack();
+    const res = await checkout(added.body.data.guestToken);
+    expect(res.body.data).toMatchObject({ deliveryPayment: "online", payNow: 11500, payOnArrival: 0 });
+    expect(charged).toEqual([1150000]);
+  });
+
+  it("won't let GIG Logistics delivery be paid at the park", async () => {
+    const { product, variants } = await createProduct({ price: 10000, variants: [{ stock: 5 }] });
+    const added = await addToBag(product.id, variants[0].id);
+    const res = await checkout(added.body.data.guestToken, { shippingMethod: "express", deliveryPayment: "on_arrival" });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/GIG Logistics delivery is paid online/);
+    expect(await db.select().from(orders)).toHaveLength(0);
+  });
+
+  it("has nothing to pay at the park when delivery is free", async () => {
+    const { product, variants } = await createProduct({ price: 40000, variants: [{ stock: 5 }] });
+    const added = await addToBag(product.id, variants[0].id);
+    const charged = capturePaystack();
+    const res = await checkout(added.body.data.guestToken, { deliveryPayment: "on_arrival" });
+    expect(res.body.data).toMatchObject({ shippingFee: 0, deliveryPayment: "online", payNow: 40000 });
+    expect(charged).toEqual([4000000]);
   });
 });
 
@@ -353,7 +427,7 @@ describe("buy now", () => {
       await checkoutPost(
         jsonRequest(
           "/api/v1/store/checkout",
-          { guestEmail: "aisha@example.com", shippingAddress: ADDRESS, shippingMethod: "standard", paymentMethod: "cod", buyNow: buy, ...overrides },
+          { guestEmail: "aisha@example.com", shippingAddress: ADDRESS, shippingMethod: "standard", buyNow: buy, ...overrides },
           headers
         )
       )

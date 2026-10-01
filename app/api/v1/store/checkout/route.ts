@@ -6,11 +6,9 @@ import { apiSuccess, apiError, parseBody, getSession } from "@/lib/api-utils";
 import { rateLimit } from "@/lib/rate-limit";
 import { koboToNaira } from "@/lib/money";
 import { isPaystackConfigured } from "@/lib/paystack";
-import { CheckoutError, expireStaleOrders, placeOrder } from "@/lib/services/orders";
+import { CheckoutError, expireStaleOrders, orderAmountKobo, placeOrder } from "@/lib/services/orders";
 import { startCardPayment } from "@/lib/services/payments";
 import { buyNowSchema } from "@/lib/services/cart";
-import { afterResponse, isEmailConfigured } from "@/lib/email/send";
-import { notifyNewOrder } from "@/lib/email/notify";
 
 const checkoutSchema = z.object({
   guestToken: z.string().optional(),
@@ -28,7 +26,10 @@ const checkoutSchema = z.object({
     lastName: z.string().trim().min(1, "Enter your last name"),
   }),
   shippingMethod: z.enum(["standard", "express"]).default("standard"),
+  // Kept so an old page sending "cod" gets a clear answer rather than a validation error.
   paymentMethod: z.enum(["paystack", "cod"]).default("paystack"),
+  // Public transport only: pay the delivery fee at the park when collecting.
+  deliveryPayment: z.enum(["online", "on_arrival"]).default("online"),
   discountCode: z.string().optional(),
   /** Order just this item (the product page's Buy now) instead of the bag. */
   buyNow: buyNowSchema.optional(),
@@ -50,8 +51,15 @@ export async function POST(req: NextRequest) {
     if (!contactEmail) {
       return apiError("Enter your email address so we can send your order confirmation", 400);
     }
-    if (data!.paymentMethod === "paystack" && !isPaystackConfigured()) {
-      return apiError("Card payments are unavailable right now. Choose Pay on Delivery or try again later.", 503);
+    // Items are always paid for before they're shipped.
+    if (data!.paymentMethod === "cod") {
+      return apiError(
+        "Pay on delivery isn't available. Pay for your items online; with public transport you can pay the delivery fee at the park.",
+        400
+      );
+    }
+    if (!isPaystackConfigured()) {
+      return apiError("Online payment is unavailable right now. Please try again shortly, or contact us to order.", 503);
     }
 
     // Free stock held by card orders that were never paid.
@@ -63,7 +71,8 @@ export async function POST(req: NextRequest) {
       guestEmail: data!.guestEmail ?? null,
       shippingAddress: data!.shippingAddress,
       shippingMethod: data!.shippingMethod,
-      paymentMethod: data!.paymentMethod,
+      paymentMethod: "paystack",
+      deliveryPayment: data!.deliveryPayment,
       discountCode: data!.discountCode,
       buyNow: data!.buyNow ?? null,
     });
@@ -76,14 +85,12 @@ export async function POST(req: NextRequest) {
       discountAmount: koboToNaira(quote.discountKobo),
       shippingFee: koboToNaira(quote.shippingKobo),
       totalAmount: koboToNaira(quote.totalKobo),
+      deliveryPayment: order.deliveryPayment,
+      payNow: koboToNaira(orderAmountKobo(order)),
+      payOnArrival: koboToNaira(quote.totalKobo - orderAmountKobo(order)),
     };
 
-    if (data!.paymentMethod === "cod") {
-      // Card orders are announced once paid (webhook / return page).
-      afterResponse(() => notifyNewOrder(order.id));
-      return apiSuccess({ ...summary, confirmationEmail: isEmailConfigured() ? contactEmail : null });
-    }
-
+    // Orders are announced to the customer and shop once paid (webhook / return page).
     try {
       const payment = await startCardPayment(order, contactEmail);
       return apiSuccess({ ...summary, payment });

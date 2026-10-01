@@ -168,7 +168,7 @@ export default function CartPage() {
               >
                 Proceed to Checkout <ArrowRight size={16} />
               </Link>
-              <p className="text-xs text-[#6b6b6b] text-center mt-3">Pay by card, bank transfer or USSD with Paystack, or pay on delivery.</p>
+              <p className="text-xs text-[#6b6b6b] text-center mt-3">Pay online by card, bank transfer or USSD with Paystack.</p>
             </div>
           </div>
         )}

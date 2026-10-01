@@ -31,17 +31,27 @@ function mockNetwork() {
   return sent;
 }
 
-async function placeOrder(paymentMethod: "cod" | "paystack", firstName = ADDRESS.firstName) {
+async function placeOrder(deliveryPayment: "online" | "on_arrival" = "online", firstName = ADDRESS.firstName) {
   const { product, variants } = await createProduct({ name: "Emerald Abaya", price: 20000, variants: [{ stock: 5, size: "M", color: "Green" }] });
   const added = await json(await cartPost(jsonRequest("/api/v1/store/cart", { action: "add", productId: product.id, variantId: variants[0].id })));
   return json(
     await checkoutPost(
       jsonRequest(
         "/api/v1/store/checkout",
-        { guestEmail: "aisha@example.com", shippingAddress: { ...ADDRESS, firstName }, paymentMethod },
+        { guestEmail: "aisha@example.com", shippingAddress: { ...ADDRESS, firstName }, deliveryPayment },
         { "x-guest-token": added.body.data.guestToken }
       )
     )
+  );
+}
+
+/** Paystack confirms the order's payment (₦20,000 item + ₦1,500 delivery unless that's paid at the park). */
+async function pay(amountKobo = 2150000) {
+  const [order] = await db.select().from(orders);
+  const body = JSON.stringify({ event: "charge.success", data: { id: 1, reference: "REF", amount: amountKobo, currency: "NGN", metadata: { orderId: order.id } } });
+  const { NextRequest } = await import("next/server");
+  return webhookPost(
+    new NextRequest("http://localhost:3000/api/v1/store/webhooks/payment", { method: "POST", body, headers: { "x-paystack-signature": signPaystack(body) } })
   );
 }
 
@@ -59,35 +69,33 @@ afterEach(() => {
 });
 
 describe("order emails", () => {
-  it("emails the customer and the shop when a pay-on-delivery order is placed", async () => {
+  it("tells the customer and the shop what's left to pay at the park", async () => {
     const sent = mockNetwork();
-    const res = await placeOrder("cod");
-    expect(res.body.data.confirmationEmail).toBe("aisha@example.com");
+    await placeOrder("on_arrival");
+    await pay(2000000);
 
     await vi.waitFor(() => expect(sent).toHaveLength(2));
     const customer = sent.find((e) => e.to[0] === "aisha@example.com")!;
     const shop = sent.find((e) => e.to[0] === "sleekandchic5@gmail.com")!;
-    expect(customer.subject).toMatch(/^Order received: SC-/);
+    expect(customer.subject).toMatch(/^Payment received: SC-/);
     expect(customer.html).toContain("Emerald Abaya");
-    expect(customer.html).toContain("in cash or by POS");
+    expect(customer.html).toContain("motor park in Kaduna");
+    expect(customer.html).toContain("delivery fee at the park");
     expect(customer.reply_to).toBe("sleekandchic5@gmail.com");
-    expect(shop.subject).toMatch(/pay on delivery/);
+    expect(shop.subject).toMatch(/\(paid\)/);
+    expect(shop.html).toContain("delivery fee at the park");
+    expect(shop.html).toContain("Public transport");
     expect(shop.html).toContain("wa.me/2348030000000");
   });
 
   it("waits for payment before announcing a card order, then sends once", async () => {
     const sent = mockNetwork();
-    await placeOrder("paystack");
+    await placeOrder();
     await new Promise((r) => setTimeout(r, 50));
     expect(sent).toHaveLength(0);
 
-    const [order] = await db.select().from(orders);
-    const body = JSON.stringify({ event: "charge.success", data: { id: 1, reference: "REF", amount: 2150000, currency: "NGN", metadata: { orderId: order.id } } });
-    const { NextRequest } = await import("next/server");
-    const hook = () =>
-      webhookPost(new NextRequest("http://localhost:3000/api/v1/store/webhooks/payment", { method: "POST", body, headers: { "x-paystack-signature": signPaystack(body) } }));
-    await hook();
-    await hook(); // Paystack retry
+    await pay();
+    await pay(); // Paystack retry
     await vi.waitFor(() => expect(sent).toHaveLength(2));
     await new Promise((r) => setTimeout(r, 50));
     expect(sent).toHaveLength(2);
@@ -96,17 +104,18 @@ describe("order emails", () => {
 
   it("escapes customer-entered text", async () => {
     const sent = mockNetwork();
-    await placeOrder("cod", `<img src=x onerror=alert(1)>`);
+    await placeOrder("online", `<img src=x onerror=alert(1)>`);
+    await pay();
     await vi.waitFor(() => expect(sent).toHaveLength(2));
     for (const email of sent) expect(email.html).not.toContain("<img src=x");
     expect(escapeHtml(`<a href="x">`)).toBe("&lt;a href=&quot;x&quot;&gt;");
   });
 
-  it("logs instead of sending, and makes no claim, when email isn't configured", async () => {
+  it("logs instead of sending when email isn't configured", async () => {
     env.RESEND_API_KEY = undefined;
     const sent = mockNetwork();
-    const res = await placeOrder("cod");
-    expect(res.body.data.confirmationEmail).toBeNull();
+    await placeOrder();
+    await pay();
     await new Promise((r) => setTimeout(r, 50));
     expect(sent).toHaveLength(0);
   });

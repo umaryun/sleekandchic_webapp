@@ -32,22 +32,8 @@ import type { CartItem } from "@/types";
 const STEPS = ["Shipping & Delivery", "Payment Method", "Order Placed"] as const;
 type Step = (typeof STEPS)[number];
 type ShippingMethod = "standard" | "express";
-type PaymentMethod = "paystack" | "cod";
-
-const PAYMENT_METHODS: { id: PaymentMethod; label: string; sub: string; badge: string }[] = [
-  {
-    id: "paystack",
-    label: "Paystack (Cards, Bank Transfer, USSD)",
-    sub: "Pay securely via your card, bank app, or USSD code",
-    badge: "Instant",
-  },
-  {
-    id: "cod",
-    label: "Pay on Delivery (Cash / POS)",
-    sub: "Pay with Cash or Card POS when your item arrives",
-    badge: "Local",
-  },
-];
+/** Items are always paid online; public-transport delivery can be paid at the park. */
+type DeliveryPayment = "online" | "on_arrival";
 
 interface ShippingOption {
   fee: number;
@@ -79,14 +65,6 @@ interface SavedAddress {
   city: string;
   state: string;
   isDefault: boolean;
-}
-
-interface PlacedOrder {
-  orderNumber: string;
-  totalAmount: number;
-  paymentMethod: PaymentMethod;
-  /** Set when a confirmation email is being sent. */
-  confirmationEmail: string | null;
 }
 
 function guestToken() {
@@ -233,7 +211,7 @@ function CheckoutContent() {
     state: "",
   });
   const [shippingMethod, setShippingMethod] = useState<ShippingMethod>("standard");
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("paystack");
+  const [deliveryChoice, setDeliveryChoice] = useState<DeliveryPayment>("online");
 
   const [couponInput, setCouponInput] = useState("");
   const [appliedCode, setAppliedCode] = useState<string | null>(null);
@@ -244,7 +222,6 @@ function CheckoutContent() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [retryOrderNumber, setRetryOrderNumber] = useState<string | null>(null);
-  const [placed, setPlaced] = useState<PlacedOrder | null>(null);
 
   // Signed-in customers start from their default saved address.
   const { data: session } = useSession();
@@ -312,6 +289,11 @@ function CheckoutContent() {
   const activeOption = quote?.shippingOptions[shippingMethod];
   const problems = quote?.problems ?? [];
   const totalItemsCount = items.reduce((s, i) => s + i.quantity, 0);
+  // Paying for delivery at the park is only for public transport with a fee.
+  const canPayAtPark = shippingMethod === "standard" && Boolean(quote && quote.shippingFee > 0);
+  const deliveryPayment: DeliveryPayment = canPayAtPark ? deliveryChoice : "online";
+  const payAtPark = deliveryPayment === "on_arrival" && quote ? quote.shippingFee : 0;
+  const payNow = quote ? quote.totalAmount - payAtPark : null;
   const stepIndex = STEPS.indexOf(step);
 
   const applyCoupon = async () => {
@@ -367,7 +349,7 @@ function CheckoutContent() {
             country: "Nigeria",
           },
           shippingMethod,
-          paymentMethod,
+          deliveryPayment,
           discountCode: appliedCode ?? undefined,
           buyNow: buyNow ?? undefined,
         }),
@@ -389,15 +371,7 @@ function CheckoutContent() {
         goToPaystack(json.data.payment.authorization_url);
         return;
       }
-
-      setPlaced({
-        orderNumber: json.data.orderNumber,
-        totalAmount: json.data.totalAmount,
-        paymentMethod: json.data.paymentMethod,
-        confirmationEmail: json.data.confirmationEmail ?? null,
-      });
-      setStep("Order Placed");
-      await refresh();
+      setErrorMessage("We couldn't open the payment page. Please try again.");
     } catch {
       setErrorMessage("We couldn't reach the store. Check your connection and try again.");
     } finally {
@@ -451,11 +425,11 @@ function CheckoutContent() {
       <PageBreadcrumb title="Checkout" crumbs={[{ label: "Cart", href: "/cart" }]} />
 
       <div style={{ width: "100%", maxWidth: "1280px", margin: "36px auto", padding: "0 16px" }}>
-        {bagLoading && !placed ? (
+        {bagLoading ? (
           <div className="flex justify-center py-20 text-[#6b6b6b]">
             <Loader2 className="animate-spin" size={28} />
           </div>
-        ) : items.length === 0 && !placed ? (
+        ) : items.length === 0 ? (
           <div style={{ textAlign: "center", padding: "80px 20px" }}>
             <ShoppingBag size={56} color="#ccc" style={{ margin: "0 auto 16px" }} />
             <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#1a1a1a", marginBottom: "10px" }}>
@@ -481,8 +455,8 @@ function CheckoutContent() {
                   <div key={s} className={`flex items-center ${i < STEPS.length - 1 ? "flex-1" : "flex-initial"}`}>
                     <button
                       type="button"
-                      onClick={() => i < stepIndex && !placed && setStep(s)}
-                      className={`flex items-center gap-1.5 sm:gap-2 bg-transparent border-0 p-0 ${i < stepIndex && !placed ? "cursor-pointer" : "cursor-default"}`}
+                      onClick={() => i < stepIndex && setStep(s)}
+                      className={`flex items-center gap-1.5 sm:gap-2 bg-transparent border-0 p-0 ${i < stepIndex ? "cursor-pointer" : "cursor-default"}`}
                     >
                       <div
                         className="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 transition-colors"
@@ -633,8 +607,8 @@ function CheckoutContent() {
                       <Truck size={18} color="#1a1a1a" /> Choose Delivery Option
                     </h3>
                     <p className="text-xs text-[#666] mb-3.5">
-                      {DELIVERY.courier} delivers in {DELIVERY.transitTime}. We send out deliveries on{" "}
-                      <strong className="text-[#1a1a1a]">{DELIVERY.dispatchDays} only</strong>.
+                      We send out deliveries on <strong className="text-[#1a1a1a]">{DELIVERY.dispatchDays} only</strong>.
+                      Your items are paid for online before we ship them.
                     </p>
                     {!shipping.state ? (
                       <p className="text-sm text-[#777]">Choose your state to see delivery options and prices.</p>
@@ -665,15 +639,14 @@ function CheckoutContent() {
                                   className="accent-[#1a1a1a] w-4 h-4 mt-0.5 shrink-0"
                                 />
                                 <div>
-                                  <p className="text-sm font-bold text-[#1a1a1a]">
-                                    {id === "standard" ? "Standard Delivery" : "Express Delivery"}
-                                  </p>
-                                  <p className="text-xs text-[#777]">
+                                  <p className="text-sm font-bold text-[#1a1a1a]">{DELIVERY.methods[id].name}</p>
+                                  <p className="text-xs text-[#555]">{DELIVERY.methods[id].detail}</p>
+                                  <p className="text-xs text-[#777] mt-0.5">
                                     Est. {option.estimatedDays} to {shipping.state}
                                   </p>
                                   {id === "standard" && !option.isFree && (
                                     <p className="text-[11px] text-[#6b6b6b] mt-0.5">
-                                      Free standard delivery on orders over {formatNGN(option.freeThreshold)}
+                                      Free on orders over {formatNGN(option.freeThreshold)}
                                     </p>
                                   )}
                                 </div>
@@ -709,51 +682,62 @@ function CheckoutContent() {
                 <div className="bg-white border border-[#f0f0f0] rounded-lg p-4 sm:p-7 shadow-xs">
                   <div className="flex items-center gap-2.5 mb-6 pb-3.5 border-b border-[#f0f0f0]">
                     <CreditCard size={20} color="#1a1a1a" className="shrink-0" />
-                    <h2 className="text-base sm:text-lg font-bold text-[#1a1a1a]">Select Payment Method</h2>
+                    <h2 className="text-base sm:text-lg font-bold text-[#1a1a1a]">Payment</h2>
                   </div>
 
-                  <div className="flex flex-col gap-3 mb-7">
-                    {PAYMENT_METHODS.map(({ id, label, sub, badge }) => (
-                      <label
-                        key={id}
-                        className={`flex items-start gap-3 p-3.5 sm:p-4 border-2 rounded-md cursor-pointer transition-all ${
-                          paymentMethod === id ? "border-[#1a1a1a] bg-[#faf9f8]" : "border-[#e8e8e8] bg-white"
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="payment"
-                          value={id}
-                          checked={paymentMethod === id}
-                          onChange={() => setPaymentMethod(id)}
-                          className="accent-[#1a1a1a] w-4 h-4 mt-0.5 shrink-0"
-                        />
-                        <div>
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <p className="text-sm font-bold text-[#1a1a1a]">{label}</p>
-                            <span className="text-[10px] font-bold bg-[#f0f0f0] text-[#555] px-1.5 py-0.5 rounded">{badge}</span>
-                          </div>
-                          <p className="text-xs text-[#777] mt-0.5">{sub}</p>
-                        </div>
-                      </label>
-                    ))}
-                  </div>
+                  {canPayAtPark && quote ? (
+                    <fieldset className="mb-6">
+                      <legend className="mb-3 text-sm font-bold text-[#1a1a1a]">How would you like to pay for delivery?</legend>
+                      <div className="flex flex-col gap-3">
+                        {(
+                          [
+                            {
+                              id: "online",
+                              label: "Pay everything online now",
+                              sub: `${formatNGN(quote.totalAmount)} now for your items and delivery.`,
+                            },
+                            {
+                              id: "on_arrival",
+                              label: "Pay for delivery at the park",
+                              sub: `${formatNGN(quote.totalAmount - quote.shippingFee)} now for your items, then ${formatNGN(quote.shippingFee)} at the park when you collect.`,
+                            },
+                          ] as const
+                        ).map(({ id, label, sub }) => (
+                          <label
+                            key={id}
+                            className={`flex items-start gap-3 p-3.5 sm:p-4 border-2 rounded-md cursor-pointer transition-all ${
+                              deliveryChoice === id ? "border-[#1a1a1a] bg-[#faf9f8]" : "border-[#e8e8e8] bg-white"
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="delivery-payment"
+                              value={id}
+                              checked={deliveryChoice === id}
+                              onChange={() => setDeliveryChoice(id)}
+                              className="accent-[#1a1a1a] w-4 h-4 mt-0.5 shrink-0"
+                            />
+                            <div>
+                              <p className="text-sm font-bold text-[#1a1a1a]">{label}</p>
+                              <p className="text-xs text-[#777] mt-0.5">{sub}</p>
+                            </div>
+                          </label>
+                        ))}
+                      </div>
+                    </fieldset>
+                  ) : shippingMethod === "express" ? (
+                    <p className="mb-5 text-sm text-[#555]">
+                      {DELIVERY.methods.express.name} delivery is paid online together with your items.
+                    </p>
+                  ) : null}
 
-                  {paymentMethod === "paystack" && (
-                    <div className="p-4 bg-[#f8fafc] rounded-md border border-[#e2e8f0] mb-7 flex items-center gap-3">
-                      <ShieldCheck size={24} color="#2563eb" className="shrink-0" />
-                      <p className="text-xs sm:text-sm text-[#334155] m-0">
-                        You&apos;ll pay on Paystack&apos;s secure page, then come back here for your confirmation.
-                      </p>
-                    </div>
-                  )}
-                  {paymentMethod === "cod" && (
-                    <div className="p-4 bg-[#faf9f8] rounded-md border border-[#e8e1dc] mb-7">
-                      <p className="text-xs sm:text-sm text-[#5a4a42] font-semibold m-0">
-                        Pay with cash or card POS when your order arrives. We&apos;ll call {shipping.phone || "you"} to arrange delivery.
-                      </p>
-                    </div>
-                  )}
+                  <div className="p-4 bg-[#f8fafc] rounded-md border border-[#e2e8f0] mb-7 flex items-center gap-3">
+                    <ShieldCheck size={24} color="#2563eb" className="shrink-0" />
+                    <p className="text-xs sm:text-sm text-[#334155] m-0">
+                      You&apos;ll pay on Paystack&apos;s secure page by card, bank transfer or USSD, then come back here for
+                      your confirmation.
+                    </p>
+                  </div>
 
                   <div className="flex flex-col-reverse sm:flex-row gap-3">
                     <button
@@ -770,72 +754,16 @@ function CheckoutContent() {
                       className="flex-1 w-full py-3.5 bg-[#1a1a1a] disabled:bg-[#6b6b6b] text-white font-bold text-sm sm:text-base rounded-md flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed transition-colors"
                     >
                       <Lock size={16} />{" "}
-                      {isSubmitting
-                        ? "Placing your order…"
-                        : quote
-                          ? `${paymentMethod === "paystack" ? "Pay" : "Place Order"} — ${formatNGN(quote.totalAmount)}`
-                          : "Place Order"}
+                      {isSubmitting ? "Opening payment…" : payNow !== null ? `Pay ${formatNGN(payNow)}` : "Pay"}
                     </button>
                   </div>
                 </div>
               )}
 
-              {/* ── STEP 3: Order Confirmation (pay on delivery) ── */}
-              {step === "Order Placed" && placed && (
-                <div className="bg-white border border-[#f0f0f0] rounded-lg p-6 sm:p-12 text-center shadow-xs">
-                  <div className="w-16 h-16 rounded-full bg-[#dcf5e7] flex items-center justify-center mx-auto mb-5">
-                    <Check size={36} color="#28a745" />
-                  </div>
-                  <h2 className="text-xl sm:text-2xl font-extrabold text-[#1a1a1a] mb-2">Order placed</h2>
-                  <p className="text-sm sm:text-base text-[#666] mb-1">
-                    Thank you, {shipping.firstName}. We&apos;ll call {shipping.phone} to confirm delivery.
-                  </p>
-                  <p className="text-xs sm:text-sm text-[#6b6b6b] mb-7">
-                    {placed.confirmationEmail
-                      ? <>A confirmation is on its way to <strong className="text-[#1a1a1a]">{placed.confirmationEmail}</strong>.</>
-                      : <>Keep your order number to track this order.</>}
-                  </p>
-
-                  <div className="bg-[#f9f9f9] rounded-lg p-4 sm:p-6 mb-8 text-left inline-block w-full max-w-md border border-[#eee] text-[13px]">
-                    <div className="flex justify-between mb-2.5">
-                      <span className="text-[#777]">Order Number</span>
-                      <span className="text-sm font-extrabold text-[#1a1a1a]">{placed.orderNumber}</span>
-                    </div>
-                    <div className="flex justify-between mb-2.5">
-                      <span className="text-[#777]">Delivery to</span>
-                      <span className="font-semibold text-[#333]">{shipping.city}, {shipping.state}</span>
-                    </div>
-                    <div className="flex justify-between mb-2.5">
-                      <span className="text-[#777]">Payment</span>
-                      <span className="font-semibold text-[#333]">Pay on Delivery</span>
-                    </div>
-                    <div className="flex justify-between pt-3 border-t border-[#e5e5e5]">
-                      <span className="text-sm font-bold">Amount due on delivery</span>
-                      <span className="text-base font-extrabold text-[#1a1a1a]">{formatNGN(placed.totalAmount)}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col sm:flex-row justify-center gap-3 w-full sm:w-auto">
-                    <Link
-                      href={`/orders/tracking?order=${encodeURIComponent(placed.orderNumber)}`}
-                      className="px-6 py-3.5 bg-[#1a1a1a] text-white no-underline rounded-md font-bold text-sm flex items-center justify-center gap-2"
-                    >
-                      <Package size={16} /> Track this order
-                    </Link>
-                    <Link
-                      href="/products"
-                      className="px-6 py-3.5 border-2 border-[#1a1a1a] text-[#1a1a1a] no-underline rounded-md font-bold text-sm flex items-center justify-center"
-                    >
-                      Continue Shopping
-                    </Link>
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Right Column — Order Summary */}
-            {!placed && (
-              <div className="order-1 lg:order-2 bg-white border border-[#f0f0f0] rounded-lg p-4 sm:p-6 lg:sticky lg:top-[90px] shadow-xs h-fit">
+            <div className="order-1 lg:order-2 bg-white border border-[#f0f0f0] rounded-lg p-4 sm:p-6 lg:sticky lg:top-[90px] shadow-xs h-fit">
                 {/* On phones the summary folds to one line so the form comes first. */}
                 <button
                   type="button"
@@ -932,11 +860,17 @@ function CheckoutContent() {
                   )}
                   <div className="flex justify-between">
                     <span className="text-[#666] flex flex-col">
-                      <span>Delivery ({shippingMethod === "express" ? "Express" : "Standard"})</span>
+                      <span>Delivery ({DELIVERY.methods[shippingMethod].name})</span>
                       {activeOption && <span className="text-[10px] text-[#767676]">{activeOption.estimatedDays}</span>}
                     </span>
-                    <span className="font-semibold text-[#1a1a1a]">
-                      {!quote ? "Choose your state" : quote.shippingFee === 0 ? "Free" : formatNGN(quote.shippingFee)}
+                    <span className="font-semibold text-[#1a1a1a] text-right">
+                      {!quote
+                        ? "Choose your state"
+                        : quote.shippingFee === 0
+                          ? "Free"
+                          : payAtPark > 0
+                            ? `${formatNGN(quote.shippingFee)} at the park`
+                            : formatNGN(quote.shippingFee)}
                     </span>
                   </div>
                 </div>
@@ -947,13 +881,24 @@ function CheckoutContent() {
                     {quote ? formatNGN(quote.totalAmount) : "—"}
                   </span>
                 </div>
+                {payAtPark > 0 && payNow !== null && (
+                  <div className="-mt-1 mb-4 flex flex-col gap-1.5 text-[13px]">
+                    <div className="flex justify-between">
+                      <span className="font-bold text-[#1a1a1a]">Pay now</span>
+                      <span className="font-extrabold text-[#1a1a1a]">{formatNGN(payNow)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-[#666]">Pay at the park</span>
+                      <span className="font-semibold text-[#1a1a1a]">{formatNGN(payAtPark)}</span>
+                    </div>
+                  </div>
+                )}
 
                 <div className="flex items-center justify-center gap-1.5 text-xs text-[#6b6b6b]">
-                  <Lock size={12} /> <span>Card payments are processed by Paystack</span>
+                  <Lock size={12} /> <span>Payments are processed by Paystack</span>
                 </div>
                 </div>
-              </div>
-            )}
+            </div>
           </div>
         )}
       </div>

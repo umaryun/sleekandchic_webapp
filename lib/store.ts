@@ -19,6 +19,20 @@ export const DELIVERY = {
   courier: "GIG Logistics",
   transitTime: "5 to 7 days",
   dispatchDays: "Wednesdays and Fridays",
+  /**
+   * The two shipping methods. Items are always paid online; GIG delivery is
+   * too, while public-transport delivery can be paid at the park.
+   */
+  methods: {
+    standard: {
+      name: "Public transport",
+      detail: "To the motor park in your state, where you collect it. Not door to door.",
+    },
+    express: {
+      name: "GIG Logistics",
+      detail: "Door to door, usually in 5 to 7 days. Paid online with your order.",
+    },
+  },
 } as const;
 
 /** WhatsApp chat link to the store, optionally with a prefilled message. */

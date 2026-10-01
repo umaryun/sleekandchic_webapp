@@ -22,8 +22,9 @@ export default function AboutPage() {
       <section>
         <h2>How we deliver</h2>
         <p>
-          We&apos;re based in {STORE.city} and deliver to every state in Nigeria. Pay by card, transfer or USSD through
-          Paystack, or pay on delivery. <Link href="/help">Delivery and payment details</Link>.
+          We&apos;re based in {STORE.city} and deliver to every state in Nigeria, by public transport to your state&apos;s
+          motor park or door to door with GIG Logistics. Pay online by card, transfer or USSD through Paystack.{" "}
+          <Link href="/help">Delivery and payment details</Link>.
         </p>
       </section>
 

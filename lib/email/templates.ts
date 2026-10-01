@@ -1,5 +1,5 @@
 import { env } from "@/lib/env";
-import { STORE, whatsappLink, whatsappTo } from "@/lib/store";
+import { DELIVERY, STORE, whatsappLink, whatsappTo } from "@/lib/store";
 import type { Email } from "@/lib/email/send";
 
 export function escapeHtml(value: string) {
@@ -97,6 +97,8 @@ export interface OrderEmailData {
   paymentMethod: "paystack" | "cod" | null;
   paymentStatus: string;
   shippingMethod: "standard" | "express" | null;
+  /** "on_arrival": the customer pays the delivery fee at the park. */
+  deliveryPayment: "online" | "on_arrival";
   subtotal: number;
   discountAmount: number;
   discountCode: string | null;
@@ -107,6 +109,17 @@ export interface OrderEmailData {
 
 export const trackingUrl = (orderNumber: string) =>
   `${env.BETTER_AUTH_URL}/orders/tracking?order=${encodeURIComponent(orderNumber)}`;
+
+const atPark = (o: OrderEmailData) => (o.deliveryPayment === "on_arrival" ? o.shippingFee : 0);
+const paidOnline = (o: OrderEmailData) => o.totalAmount - atPark(o);
+const methodName = (o: OrderEmailData) => DELIVERY.methods[o.shippingMethod ?? "standard"].name;
+
+/** Where the order goes and, for public transport, what's still to pay at the park. */
+function deliveryNote(o: OrderEmailData) {
+  if (o.shippingMethod === "express") return `${DELIVERY.methods.express.name} will deliver it to your door.`;
+  const fee = atPark(o) > 0 ? ` Please pay the ${naira(atPark(o))} delivery fee at the park when you collect it.` : "";
+  return `It travels by public transport to the motor park in ${o.state || "your state"}, where you collect it.${fee}`;
+}
 
 function itemsTable(order: OrderEmailData) {
   const rows = order.items
@@ -121,8 +134,9 @@ function itemsTable(order: OrderEmailData) {
 ${rows}
 ${line("Subtotal", naira(order.subtotal))}
 ${order.discountAmount > 0 ? line(`Discount${order.discountCode ? ` (${escapeHtml(order.discountCode)})` : ""}`, `-${naira(order.discountAmount)}`) : ""}
-${line(`${order.shippingMethod === "express" ? "Express" : "Standard"} delivery`, order.shippingFee === 0 ? "Free" : naira(order.shippingFee))}
+${line(`Delivery (${methodName(order)})`, order.shippingFee === 0 ? "Free" : `${naira(order.shippingFee)}${atPark(order) > 0 ? " at the park" : ""}`)}
 ${line("Total", naira(order.totalAmount), true)}
+${atPark(order) > 0 ? `${line("Paid online", naira(paidOnline(order)))}${line("To pay at the park", naira(atPark(order)))}` : ""}
 </table>`;
 }
 
@@ -135,12 +149,12 @@ function itemsText(order: OrderEmailData) {
 const deliveryHtml = (o: OrderEmailData) =>
   `<p><strong>Delivery to</strong><br>${escapeHtml(`${o.firstName} ${o.lastName}`)}<br>${escapeHtml(o.street)}<br>${escapeHtml(`${o.city}, ${o.state}`)}<br>${escapeHtml(o.phone)}</p>`;
 
-/** To the customer: pay-on-delivery order placed, or card payment received. */
+/** To the customer once their payment is received (or an older pay-on-delivery order is placed). */
 export function orderConfirmationEmail(order: OrderEmailData): Email {
   const paid = order.paymentStatus === "paid";
   const heading = paid ? "Payment received. Thank you!" : "We've got your order";
   const paymentLine = paid
-    ? `<p>We've received your payment of <strong>${naira(order.totalAmount)}</strong>.</p>`
+    ? `<p>We've received your payment of <strong>${naira(paidOnline(order))}</strong>. ${escapeHtml(deliveryNote(order))}</p>`
     : `<p>You'll pay <strong>${naira(order.totalAmount)}</strong> in cash or by POS when your order arrives. We'll call ${escapeHtml(order.phone)} to confirm delivery.</p>`;
   return {
     to: order.email,
@@ -155,7 +169,7 @@ ${deliveryHtml(order)}
 ${button(trackingUrl(order.orderNumber), "Track your order")}`
     ),
     text: `${heading}\n\nOrder ${order.orderNumber}\n${itemsText(order)}\nTotal: ${naira(order.totalAmount)}\n\n${
-      paid ? "Paid." : `Pay on delivery. We'll call ${order.phone} to confirm delivery.`
+      paid ? `Paid ${naira(paidOnline(order))}. ${deliveryNote(order)}` : `Pay on delivery. We'll call ${order.phone} to confirm delivery.`
     }\n\nTrack your order: ${trackingUrl(order.orderNumber)}`,
   };
 }
@@ -164,7 +178,7 @@ const statusCopy: Record<string, { subject: string; heading: string; body: strin
   shipped: {
     subject: "Your order is on its way",
     heading: "Your order is on its way",
-    body: "Your order has left us and is on its way to you. The courier will call before delivery.",
+    body: "Your order has left us and is on its way to you.",
   },
   delivered: {
     subject: "Your order was delivered",
@@ -190,7 +204,7 @@ export function orderStatusEmail(order: OrderEmailData, status: keyof typeof sta
     subject: `${copy.subject}: ${order.orderNumber}`,
     html: layout(
       copy.heading,
-      `<p>Hi ${escapeHtml(order.firstName)},</p><p>${escapeHtml(copy.body)}</p>
+      `<p>Hi ${escapeHtml(order.firstName)},</p><p>${escapeHtml(status === "shipped" ? `${copy.body} ${deliveryNote(order)}` : copy.body)}</p>
 <p>Order <strong>${order.orderNumber}</strong> · ${naira(order.totalAmount)}${
         order.paymentMethod === "cod" && order.paymentStatus !== "paid" && status !== "cancelled"
           ? " · pay on delivery"
@@ -198,7 +212,7 @@ export function orderStatusEmail(order: OrderEmailData, status: keyof typeof sta
       }</p>
 ${status === "cancelled" ? "" : button(trackingUrl(order.orderNumber), "Track your order")}`
     ),
-    text: `${copy.body}\n\nOrder ${order.orderNumber}\nTrack: ${trackingUrl(order.orderNumber)}`,
+    text: `${status === "shipped" ? `${copy.body} ${deliveryNote(order)}` : copy.body}\n\nOrder ${order.orderNumber}\nTrack: ${trackingUrl(order.orderNumber)}`,
   };
 }
 
@@ -208,8 +222,10 @@ export function ownerNewOrderEmail(order: OrderEmailData, to: string): Email {
     order.paymentMethod === "cod"
       ? "Pay on delivery: call the customer to confirm."
       : order.paymentStatus === "paid"
-        ? "Paid by card/transfer (Paystack)."
-        : "Card payment pending.";
+        ? atPark(order) > 0
+          ? `Paid ${naira(paidOnline(order))} online (Paystack). The customer pays the ${naira(atPark(order))} delivery fee at the park.`
+          : "Paid in full online (Paystack)."
+        : "Online payment pending.";
   const wa = whatsappTo(order.phone, `Hello ${order.firstName}, this is ${STORE.name} about your order ${order.orderNumber}.`);
   return {
     to,
@@ -217,10 +233,11 @@ export function ownerNewOrderEmail(order: OrderEmailData, to: string): Email {
     html: layout(
       `New order ${order.orderNumber}`,
       `<p><strong>${escapeHtml(payment)}</strong></p>
+<p>Delivery: <strong>${escapeHtml(methodName(order))}</strong></p>
 <p>${escapeHtml(`${order.firstName} ${order.lastName}`)} · <a href="tel:${escapeHtml(order.phone)}" style="color:#8a6452">${escapeHtml(order.phone)}</a> · <a href="${wa}" style="color:#8a6452">WhatsApp</a> · ${escapeHtml(order.email)}</p>
 ${itemsTable(order)}
 ${deliveryHtml(order)}`
     ),
-    text: `New order ${order.orderNumber}\n${payment}\n${order.firstName} ${order.lastName} ${order.phone} ${order.email}\n${itemsText(order)}\nTotal: ${naira(order.totalAmount)}\nDeliver to: ${order.street}, ${order.city}, ${order.state}`,
+    text: `New order ${order.orderNumber}\n${payment}\nDelivery: ${methodName(order)}\n${order.firstName} ${order.lastName} ${order.phone} ${order.email}\n${itemsText(order)}\nTotal: ${naira(order.totalAmount)}\nDeliver to: ${order.street}, ${order.city}, ${order.state}`,
   };
 }

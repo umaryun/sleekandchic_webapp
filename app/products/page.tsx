@@ -22,7 +22,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
     if (category) {
       return {
         title: `${category.name} | ${STORE.name}`,
-        description: `Shop ${category.name.toLowerCase()} at ${STORE.name}. Delivered across Nigeria, with pay on delivery available.`,
+        description: `Shop ${category.name.toLowerCase()} at ${STORE.name}. Delivered across Nigeria.`,
         alternates: { canonical: `/products?category=${category.slug}` },
         robots: filtered ? { index: false, follow: true } : undefined,
       };

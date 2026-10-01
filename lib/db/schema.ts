@@ -62,10 +62,16 @@ export const discountTypeEnum = pgEnum("discount_type", [
 
 export const paymentMethodEnum = pgEnum("payment_method", ["paystack", "cod"]);
 
+// standard = public transport to the motor park in the customer's state;
+// express = GIG Logistics, door to door.
 export const shippingMethodEnum = pgEnum("shipping_method", [
   "standard",
   "express",
 ]);
+
+// Items are always paid online. The delivery fee is too, unless the customer
+// chose public transport and pays the fee at the park when they collect.
+export const deliveryPaymentEnum = pgEnum("delivery_payment", ["online", "on_arrival"]);
 
 // ──────────────────────────────────────────────
 // Auth Tables (better-auth managed)
@@ -345,6 +351,7 @@ export const orders = pgTable(
     // Null only on orders placed before these were recorded.
     paymentMethod: paymentMethodEnum("payment_method"),
     shippingMethod: shippingMethodEnum("shipping_method"),
+    deliveryPayment: deliveryPaymentEnum("delivery_payment").notNull().default("online"),
     paymentIntentId: text("payment_intent_id"),
     paymentReference: text("payment_reference"),
     paidAt: timestamp("paid_at"),

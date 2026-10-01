@@ -38,6 +38,7 @@ async function loadOrder(orderId: string): Promise<OrderEmailData | null> {
     paymentMethod: order.paymentMethod,
     paymentStatus: order.paymentStatus,
     shippingMethod: order.shippingMethod,
+    deliveryPayment: order.deliveryPayment,
     subtotal: order.subtotal !== null ? naira(order.subtotal) : items.reduce((s, i) => s + naira(i.price) * i.quantity, 0),
     discountAmount: naira(order.discountAmount),
     discountCode: order.discountCode,

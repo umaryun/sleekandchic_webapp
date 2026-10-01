@@ -7,6 +7,7 @@ import { Package, Truck, CheckCircle, Search, CreditCard, XCircle, Loader2, MapP
 import ShopLayout from "@/components/ShopLayout";
 import PageBreadcrumb from "@/components/PageBreadcrumb";
 import { formatNGN } from "@/lib/utils";
+import { DELIVERY } from "@/lib/store";
 
 interface TrackedOrder {
   orderNumber: string;
@@ -14,6 +15,7 @@ interface TrackedOrder {
   paymentStatus: "unpaid" | "paid" | "refunded";
   paymentMethod: "paystack" | "cod" | null;
   shippingMethod: "standard" | "express" | null;
+  deliveryPayment: "online" | "on_arrival";
   subtotal: number | null;
   totalAmount: number;
   discountAmount: number;
@@ -254,6 +256,14 @@ function TrackingContent() {
                   {order.firstName ? `${order.firstName}, ` : ""}
                   {[order.deliveryCity, order.deliveryState].filter(Boolean).join(", ")}
                 </p>
+                {order.shippingMethod && (
+                  <p className="mt-1.5">
+                    <strong className="text-[#1a1a1a]">{DELIVERY.methods[order.shippingMethod].name}</strong>
+                    {order.shippingMethod === "standard"
+                      ? `: collect it at the motor park in ${order.deliveryState ?? "your state"}.`
+                      : ": delivered to your door."}
+                  </p>
+                )}
               </div>
               <div className="bg-white border border-[#f0f0f0] rounded-lg p-6 text-[13px] text-[#555]">
                 <h2 className="text-[15px] font-bold text-[#1a1a1a] mb-2.5 flex items-center gap-2">
@@ -261,7 +271,11 @@ function TrackingContent() {
                 </h2>
                 <p>
                   {order.paymentStatus === "paid"
-                    ? `Paid${order.paidAt ? ` on ${dateFmt(order.paidAt)}` : ""}`
+                    ? `Paid${order.paidAt ? ` on ${dateFmt(order.paidAt)}` : ""}${
+                        order.deliveryPayment === "on_arrival" && order.shippingFee > 0
+                          ? `. Pay the ${formatNGN(order.shippingFee)} delivery fee at the park.`
+                          : ""
+                      }`
                     : order.paymentStatus === "refunded"
                       ? "Refunded"
                       : order.paymentMethod === "cod"

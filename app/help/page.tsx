@@ -5,7 +5,7 @@ import { DELIVERY, STORE, whatsappLink } from "@/lib/store";
 
 export const metadata: Metadata = {
   title: `Help & FAQs | ${STORE.name}`,
-  description: "Delivery with GIG Logistics, store pickup, paying by card or on delivery, tracking orders and returns.",
+  description: "Delivery by public transport or GIG Logistics, store pickup, paying online, tracking orders and returns.",
 };
 
 export default function HelpPage() {
@@ -20,20 +20,22 @@ export default function HelpPage() {
       }
     >
       <section>
-        <h2>How much is delivery, and how long does it take?</h2>
-        <p>
-          We deliver to every state in Nigeria from {STORE.city} with {DELIVERY.courier}. Delivery takes{" "}
-          {DELIVERY.transitTime} to your state of residence.
-        </p>
+        <h2>How do you deliver, and how long does it take?</h2>
+        <p>We deliver to every state in Nigeria from {STORE.city}, in one of two ways. You choose at checkout.</p>
         <ul>
+          <li>
+            <strong>{DELIVERY.methods.standard.name}</strong> takes your order from {STORE.city} to the motor park in your
+            state, where you collect it. It isn&apos;t door to door. You can pay the delivery fee online with your order, or
+            at the park when you collect.
+          </li>
+          <li>
+            <strong>{DELIVERY.methods.express.name}</strong> delivers to your door, usually in {DELIVERY.transitTime}. Its
+            delivery fee is paid online with your order.
+          </li>
           <li>
             <strong>We send out deliveries on {DELIVERY.dispatchDays} only.</strong>
           </li>
-          <li>
-            You pay the delivery fee to us, based on the weight of your order, before we hand it to {DELIVERY.courier}.
-            You&apos;ll see the fee at checkout as soon as you choose your state, before you pay.
-          </li>
-          <li>Standard delivery is free when your order is over the amount shown for your state at checkout.</li>
+          <li>You&apos;ll see the delivery fees at checkout as soon as you choose your state, before you pay.</li>
           <li>Delivery times are estimates and start once your order is sent out.</li>
         </ul>
       </section>
@@ -50,12 +52,15 @@ export default function HelpPage() {
         <h2>How can I pay?</h2>
         <ul>
           <li>
-            <strong>Card, bank transfer or USSD</strong> through Paystack. You pay on Paystack&apos;s secure page and
-            come back to us for your confirmation. We hold your items for 60 minutes while you pay.
+            Online by <strong>card, bank transfer or USSD</strong> through Paystack. You pay on Paystack&apos;s secure page
+            and come back to us for your confirmation. We hold your items for 60 minutes while you pay.
           </li>
           <li>
-            <strong>Pay on delivery</strong> with cash or POS when your order arrives. We&apos;ll call the number you
-            give at checkout to confirm delivery.
+            Your items are always paid for before we ship them; we don&apos;t take payment for items on delivery.
+          </li>
+          <li>
+            With {DELIVERY.methods.standard.name.toLowerCase()}, you can choose to pay just the delivery fee at the park
+            when you collect your order.
           </li>
         </ul>
       </section>

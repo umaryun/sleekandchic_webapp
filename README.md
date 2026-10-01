@@ -32,7 +32,7 @@ Every setting is described in `.env.example`; `lib/env.ts` checks them at start-
 | `DATABASE_URL` | Everything. Supabase transaction pooler (port 6543). |
 | `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL` | Accounts. The URL is the shop's public address; it's also used in emails, payment returns and the sitemap. |
 | `ADMIN_APP_URL` | The admin console's address (comma-separated if more than one). Needed for staff invitations and to let the console call the API. |
-| `PAYSTACK_SECRET_KEY` | Card payments. Without it, only pay on delivery is offered. |
+| `PAYSTACK_SECRET_KEY` | Payments. Every order is paid online, so without it checkout can't take orders. |
 | `RESEND_API_KEY`, `EMAIL_FROM` | Emails (password resets, order confirmations, new-order alerts, staff invites). `EMAIL_FROM` must be on a domain verified in Resend; a Gmail address can't send. Without these, emails are written to the log instead. |
 | `OWNER_NOTIFICATION_EMAIL` | Where new-order alerts go (defaults to the shop's contact email in `lib/store.ts`). |
 | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Image uploads from the admin console. |

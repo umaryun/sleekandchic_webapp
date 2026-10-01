@@ -1,16 +1,31 @@
 import Link from "next/link";
-import { Truck, CalendarDays, Wallet, Store, RotateCcw } from "lucide-react";
+import { Bus, Truck, CalendarDays, CreditCard, Store, RotateCcw } from "lucide-react";
 import { DELIVERY, STORE } from "@/lib/store";
 
-/** Delivery, pickup and returns at a glance, next to the buy buttons. */
+/** Delivery, payment, pickup and returns at a glance, next to the buy buttons. */
 export default function DeliveryInfo() {
+  const { standard, express } = DELIVERY.methods;
   const rows = [
-    { Icon: Truck, text: <>{DELIVERY.courier} delivers to your state in {DELIVERY.transitTime}.</> },
-    { Icon: CalendarDays, text: <>We send out deliveries on {DELIVERY.dispatchDays} only.</> },
     {
-      Icon: Wallet,
-      text: <>You pay the delivery fee to us, based on the weight of your order, before we hand it to {DELIVERY.courier}.</>,
+      Icon: Bus,
+      text: (
+        <>
+          <strong className="text-[#1a1a1a]">{standard.name}:</strong> to the motor park in your state, where you
+          collect it (not door to door). Pay the delivery fee online, or at the park when you collect.
+        </>
+      ),
     },
+    {
+      Icon: Truck,
+      text: (
+        <>
+          <strong className="text-[#1a1a1a]">{express.name}:</strong> door to door in {DELIVERY.transitTime}, paid
+          online with your order.
+        </>
+      ),
+    },
+    { Icon: CreditCard, text: <>Items are paid for online before we ship them.</> },
+    { Icon: CalendarDays, text: <>We send out deliveries on {DELIVERY.dispatchDays} only.</> },
     { Icon: Store, text: <>Prefer to pick up? Collect your order from our store at {STORE.address}.</> },
     {
       Icon: RotateCcw,

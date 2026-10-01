@@ -21,7 +21,10 @@ import {
 
 export type Order = typeof orders.$inferSelect;
 export type ShippingMethod = "standard" | "express";
+/** "cod" is only on older orders; new orders are paid online. */
 export type PaymentMethod = "paystack" | "cod";
+/** Whether the delivery fee is paid online with the items, or at the park on collection. */
+export type DeliveryPayment = "online" | "on_arrival";
 
 /** How long an unpaid card order holds its stock before it is cancelled. */
 export const CARD_PAYMENT_WINDOW_MS = 60 * 60 * 1000;
@@ -125,6 +128,24 @@ export interface PlaceOrderInput {
   discountCode?: string | null;
   /** Order just this item instead of the bag; the bag is left as it is. */
   buyNow?: BuyNowItem | null;
+  /** Public transport only: pay the delivery fee at the park instead of online. */
+  deliveryPayment?: DeliveryPayment;
+}
+
+/**
+ * How a quote splits between what's paid online now and what's paid at the
+ * park. Paying at the park is only for public transport (standard), and only
+ * when there's a fee to pay.
+ */
+export function paymentSplit(
+  quote: Pick<Quote, "totalKobo" | "shippingKobo">,
+  shippingMethod: ShippingMethod,
+  requested: DeliveryPayment = "online"
+) {
+  const deliveryPayment: DeliveryPayment =
+    requested === "on_arrival" && shippingMethod === "standard" && quote.shippingKobo > 0 ? "on_arrival" : "online";
+  const payOnArrivalKobo = deliveryPayment === "on_arrival" ? quote.shippingKobo : 0;
+  return { deliveryPayment, payNowKobo: quote.totalKobo - payOnArrivalKobo, payOnArrivalKobo };
 }
 
 /**
@@ -184,6 +205,10 @@ export async function placeOrder(input: PlaceOrderInput) {
       ratesMap
     );
     if (quote.problems.length > 0) throw new CheckoutError(quote.problems.join(". "), 409);
+    if (input.deliveryPayment === "on_arrival" && input.shippingMethod !== "standard") {
+      throw new CheckoutError("GIG Logistics delivery is paid online with your order");
+    }
+    const { deliveryPayment } = paymentSplit(quote, input.shippingMethod, input.deliveryPayment);
     if (input.discountCode?.trim() && quote.discountError) throw new CheckoutError(quote.discountError);
     if (quote.discount && !(await claimDiscount(tx, quote.discount.id))) {
       throw new CheckoutError(`The code ${quote.discount.code} has been fully used`, 409);
@@ -201,6 +226,7 @@ export async function placeOrder(input: PlaceOrderInput) {
         shippingAddress: input.shippingAddress,
         shippingMethod: input.shippingMethod,
         paymentMethod: input.paymentMethod,
+        deliveryPayment,
         discountCode: quote.discount?.code ?? null,
         status: "pending",
         paymentStatus: "unpaid",
@@ -416,9 +442,13 @@ export async function markOrderPaid(
   return { order: updated, changed: true };
 }
 
-/** Kobo Paystack should charge for an order. */
-export function orderAmountKobo(order: Pick<Order, "totalAmount">) {
-  return toKobo(order.totalAmount);
+/**
+ * Kobo Paystack should charge for an order: the whole total, less the
+ * delivery fee when the customer pays that at the park.
+ */
+export function orderAmountKobo(order: Pick<Order, "totalAmount" | "shippingFee" | "deliveryPayment">) {
+  const atPark = order.deliveryPayment === "on_arrival" ? toKobo(order.shippingFee) : 0;
+  return toKobo(order.totalAmount) - atPark;
 }
 
 /**
