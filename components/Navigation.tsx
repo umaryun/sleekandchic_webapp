@@ -6,15 +6,10 @@ import { usePathname } from "next/navigation";
 import { ChevronDown, Grid3x3 } from "lucide-react";
 import { fetchCategories } from "@/lib/api";
 import type { Category } from "@/types";
+import { SHOP_LINKS } from "@/lib/nav";
 
-const LINKS = [
-  { label: "Home", href: "/" },
-  { label: "Shop", href: "/products" },
-  { label: "Sale", href: "/products?sale=1" },
-  { label: "Track order", href: "/orders/tracking" },
-  { label: "Help", href: "/help" },
-  { label: "Contact", href: "/contact" },
-];
+// Desktop has room for Home; About lives in the footer.
+const LINKS = [{ label: "Home", href: "/" }, ...SHOP_LINKS.filter((l) => l.label !== "About")];
 
 export default function Navigation() {
   const pathname = usePathname();

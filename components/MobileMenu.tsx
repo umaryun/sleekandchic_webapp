@@ -8,16 +8,9 @@ import { fetchCategories } from "@/lib/api";
 import type { Category } from "@/types";
 import { useSession, signOut } from "@/lib/auth-client";
 import { useDialog } from "@/lib/hooks/use-dialog";
+import { SHOP_LINKS } from "@/lib/nav";
 import Image from "next/image";
 
-const LINKS = [
-  { label: "Shop all", href: "/products" },
-  { label: "Sale", href: "/products?sale=1" },
-  { label: "Track order", href: "/orders/tracking" },
-  { label: "Help & FAQs", href: "/help" },
-  { label: "About", href: "/about" },
-  { label: "Contact", href: "/contact" },
-];
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -172,7 +165,7 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
       {/* Links */}
       <nav aria-label="Menu" style={{ flex: 1 }}>
         <ul>
-          {LINKS.map((item) => (
+          {SHOP_LINKS.map((item) => (
             <li key={item.label} style={{ borderBottom: "1px solid #f0f0f0" }}>
               <Link
                 href={item.href}
