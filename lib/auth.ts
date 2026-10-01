@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { env, adminAppOrigins } from "@/lib/env";
 import { sendEmail } from "@/lib/email/send";
 import { passwordResetEmail } from "@/lib/email/templates";
+import { normalizeNigerianPhone } from "@/lib/phone";
 import * as schema from "@/lib/db/schema";
 
 // The admin plugin is kept only for its ban enforcement at sign-in. Team and role
@@ -80,6 +81,18 @@ export const auth = betterAuth({
     // Bearer token auth for external Admin app
     bearer(),
   ],
+
+  // Phone numbers given at sign-up are stored in +234 form, or not at all.
+  databaseHooks: {
+    user: {
+      create: {
+        before: async (user) => {
+          const raw = (user as { phone?: unknown }).phone;
+          return { data: { ...user, phone: typeof raw === "string" ? normalizeNigerianPhone(raw) : null } };
+        },
+      },
+    },
+  },
 
   // The admin console signs in cross-origin.
   trustedOrigins: adminAppOrigins,

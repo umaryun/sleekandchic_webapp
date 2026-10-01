@@ -67,6 +67,6 @@ describe("saved addresses", () => {
     const { headers } = await signUpCustomer();
     const res = await json(await addAddress(jsonRequest("/api/v1/store/addresses", { ...HOME, phone: "12" }, headers)));
     expect(res.status).toBe(422);
-    expect(res.body.error).toMatch(/phone number the courier can call/);
+    expect(res.body.error).toMatch(/Enter a Nigerian mobile number/);
   });
 });

@@ -1,15 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, AlertCircle, Loader2 } from "lucide-react";
 import ShopLayout from "@/components/ShopLayout";
 import PageBreadcrumb from "@/components/PageBreadcrumb";
 import { signUp, useSession } from "@/lib/auth-client";
+import { safeRedirect } from "@/lib/redirect";
+import { normalizeNigerianPhone, PHONE_MESSAGE } from "@/lib/phone";
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter();
+  const redirectTo = safeRedirect(useSearchParams().get("redirect"));
   const { data: session, isPending } = useSession();
   const [showPwd, setShowPwd] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -19,9 +22,9 @@ export default function RegisterPage() {
 
   useEffect(() => {
     if (!isPending && session?.user) {
-      router.replace("/");
+      router.replace(redirectTo);
     }
-  }, [session, isPending, router]);
+  }, [session, isPending, router, redirectTo]);
 
   if (isPending || session?.user) {
     return null;
@@ -33,6 +36,13 @@ export default function RegisterPage() {
 
     if (form.password !== form.confirm) {
       setErrorMessage("Passwords do not match. Please verify your password.");
+      return;
+    }
+
+    // Optional, but if given it must be a number the courier can call.
+    const phone = form.phone.trim() ? normalizeNigerianPhone(form.phone) : null;
+    if (form.phone.trim() && !phone) {
+      setErrorMessage(PHONE_MESSAGE);
       return;
     }
 
@@ -48,12 +58,13 @@ export default function RegisterPage() {
         email: form.email,
         password: form.password,
         name: form.name,
+        ...(phone ? { phone } : {}),
       });
 
       if (res.error) {
         setErrorMessage(res.error.message || "Failed to create account. Please try again.");
       } else {
-        router.push("/");
+        router.replace(redirectTo);
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Registration failed. Please try again.";
@@ -261,7 +272,7 @@ export default function RegisterPage() {
 
             <p className="mt-4 text-xs sm:text-sm text-[#6b6b6b] text-center">
               Already have an account?{" "}
-              <Link href="/login" className="text-[#8a6452] font-semibold no-underline hover:underline">
+              <Link href={redirectTo === "/" ? "/login" : `/login?redirect=${encodeURIComponent(redirectTo)}`} className="text-[#8a6452] font-semibold no-underline hover:underline">
                 Login
               </Link>
             </p>
@@ -269,5 +280,14 @@ export default function RegisterPage() {
         </section>
       </div>
     </ShopLayout>
+  );
+}
+
+// useSearchParams needs a Suspense boundary on a prerendered page.
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={null}>
+      <RegisterForm />
+    </Suspense>
   );
 }

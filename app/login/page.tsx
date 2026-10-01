@@ -1,26 +1,30 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, AlertCircle, Loader2 } from "lucide-react";
 import ShopLayout from "@/components/ShopLayout";
 import PageBreadcrumb from "@/components/PageBreadcrumb";
 import { signIn, useSession } from "@/lib/auth-client";
+import { safeRedirect } from "@/lib/redirect";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const params = useSearchParams();
+  // Back to where they were (e.g. checkout), never to another site.
+  const redirectTo = safeRedirect(params.get("redirect"));
   const { data: session, isPending } = useSession();
   const [showPwd, setShowPwd] = useState(false);
-  const [form, setForm] = useState({ email: "", password: "", remember: false });
+  const [form, setForm] = useState({ email: "", password: "", remember: true });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     if (!isPending && session?.user) {
-      router.replace("/");
+      router.replace(redirectTo);
     }
-  }, [session, isPending, router]);
+  }, [session, isPending, router, redirectTo]);
 
   if (isPending || session?.user) {
     return null;
@@ -35,12 +39,14 @@ export default function LoginPage() {
       const res = await signIn.email({
         email: form.email,
         password: form.password,
+        // Off: signed out when the browser closes.
+        rememberMe: form.remember,
       });
 
       if (res.error) {
         setErrorMessage(res.error.message || "Invalid email or password. Please try again.");
       } else {
-        router.push("/");
+        router.replace(redirectTo);
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to sign in. Please try again.";
@@ -66,7 +72,7 @@ export default function LoginPage() {
                   width: size,
                   height: size,
                   borderRadius: "50%",
-                  border: `${30 - i * 8}px solid rgba(245,114,36,${0.06 + i * 0.02})`,
+                  border: `${30 - i * 8}px solid rgba(138,100,82,${0.06 + i * 0.02})`,
                   right: -size / 3,
                   top: -size / 3,
                 }}
@@ -167,7 +173,7 @@ export default function LoginPage() {
                     onChange={(e) => setForm({ ...form, remember: e.target.checked })}
                     className="accent-[#8a6452] w-4 h-4"
                   />
-                  Remember me
+                  Keep me signed in
                 </label>
                 <Link href="/password/reset" className="text-[#8a6452] no-underline font-medium hover:underline">
                   Forgot password?
@@ -192,7 +198,7 @@ export default function LoginPage() {
 
             <p className="mt-5 text-xs sm:text-sm text-[#6b6b6b] text-center">
               Don&apos;t have an account?{" "}
-              <Link href="/register" className="text-[#8a6452] font-semibold no-underline hover:underline">
+              <Link href={redirectTo === "/" ? "/register" : `/register?redirect=${encodeURIComponent(redirectTo)}`} className="text-[#8a6452] font-semibold no-underline hover:underline">
                 Register now
               </Link>
             </p>
@@ -200,5 +206,14 @@ export default function LoginPage() {
         </section>
       </div>
     </ShopLayout>
+  );
+}
+
+// useSearchParams needs a Suspense boundary on a prerendered page.
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
   );
 }

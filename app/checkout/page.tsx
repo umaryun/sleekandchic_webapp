@@ -447,6 +447,16 @@ export default function CheckoutPage() {
                     <h2 className="text-base sm:text-lg font-bold text-[#1a1a1a]">Delivery Address (Nigeria)</h2>
                   </div>
 
+                  {!sessionUser && (
+                    <p className="mb-5 text-sm text-[#555]">
+                      Shopped with us before?{" "}
+                      <Link href="/login?redirect=/checkout" className="font-semibold text-[#8a6452] hover:underline">
+                        Sign in
+                      </Link>{" "}
+                      to use your saved address. Or just carry on as a guest.
+                    </p>
+                  )}
+
                   {savedAddresses.length > 1 && (
                     <div className="mb-5">
                       <label htmlFor="co-saved" style={labelStyle}>Saved addresses</label>

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { isNigerianState } from "@/lib/nigeria";
+import { normalizeNigerianPhone, PHONE_MESSAGE } from "@/lib/phone";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { userAddresses } from "@/lib/db/schema";
@@ -10,7 +11,9 @@ export const addressSchema = z.object({
   label: z.string().trim().max(50).optional(),
   firstName: z.string().trim().min(1, "Enter the recipient's first name").max(100),
   lastName: z.string().trim().min(1, "Enter the recipient's last name").max(100),
-  phone: z.string().trim().min(7, "Enter a phone number the courier can call").max(30),
+  phone: z
+    .string()
+    .transform((v, ctx) => normalizeNigerianPhone(v) ?? (ctx.addIssue({ code: "custom", message: PHONE_MESSAGE }), z.NEVER)),
   street: z.string().trim().min(1, "Enter the street address"),
   city: z.string().trim().min(1, "Enter the city or town").max(100),
   state: z.string().trim().refine(isNigerianState, "Choose your state from the list"),

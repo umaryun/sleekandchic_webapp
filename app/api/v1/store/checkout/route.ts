@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import { isNigerianState } from "@/lib/nigeria";
+import { normalizeNigerianPhone, PHONE_MESSAGE } from "@/lib/phone";
 import { apiSuccess, apiError, parseBody, getSession } from "@/lib/api-utils";
 import { rateLimit } from "@/lib/rate-limit";
 import { koboToNaira } from "@/lib/money";
@@ -19,7 +20,9 @@ const checkoutSchema = z.object({
     state: z.string().trim().refine(isNigerianState, "Choose your state from the list"),
     country: z.string().default("Nigeria"),
     postalCode: z.string().optional(),
-    phone: z.string().trim().min(7, "Enter a phone number the courier can call"),
+    phone: z
+      .string()
+      .transform((v, ctx) => normalizeNigerianPhone(v) ?? (ctx.addIssue({ code: "custom", message: PHONE_MESSAGE }), z.NEVER)),
     firstName: z.string().trim().min(1, "Enter your first name"),
     lastName: z.string().trim().min(1, "Enter your last name"),
   }),
