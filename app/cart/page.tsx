@@ -8,6 +8,7 @@ import PageBreadcrumb from "@/components/PageBreadcrumb";
 import { formatNGN } from "@/lib/utils";
 import { useCart, type CartResult } from "@/context/CartContext";
 import ShopImage from "@/components/ShopImage";
+import { MAX_PER_ITEM } from "@/lib/variants";
 
 export default function CartPage() {
   const { items, subtotal, loading, updateQuantity, removeItem } = useCart();
@@ -59,7 +60,8 @@ export default function CartPage() {
                   <span />
                 </div>
                 {items.map((item) => {
-                  const atStockLimit = item.stockAvailable !== null && item.quantity >= item.stockAvailable;
+                  const atLimit =
+                    item.quantity >= MAX_PER_ITEM || (item.stockAvailable !== null && item.quantity >= item.stockAvailable);
                   return (
                     <div
                       key={item.id}
@@ -97,7 +99,7 @@ export default function CartPage() {
                             type="button"
                             onClick={() => run(updateQuantity(item.productId, item.variantId, Math.max(1, item.quantity - 1)))}
                             disabled={item.quantity <= 1}
-                            className="w-8 h-9 bg-[#f5f5f5] border-none cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 flex items-center justify-center"
+                            className="w-10 h-10 bg-[#f5f5f5] border-none cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 flex items-center justify-center"
                             aria-label={`Decrease quantity of ${item.productName}`}
                           >
                             <Minus size={12} />
@@ -106,8 +108,8 @@ export default function CartPage() {
                           <button
                             type="button"
                             onClick={() => run(updateQuantity(item.productId, item.variantId, item.quantity + 1))}
-                            disabled={atStockLimit}
-                            className="w-8 h-9 bg-[#f5f5f5] border-none cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 flex items-center justify-center"
+                            disabled={atLimit}
+                            className="w-10 h-10 bg-[#f5f5f5] border-none cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 flex items-center justify-center"
                             aria-label={`Increase quantity of ${item.productName}`}
                           >
                             <Plus size={12} />
@@ -121,7 +123,7 @@ export default function CartPage() {
                       <button
                         type="button"
                         onClick={() => run(removeItem(item.productId, item.variantId))}
-                        className="absolute top-5 right-5 md:static bg-transparent border-none cursor-pointer text-[#767676] hover:text-red-600 transition-colors flex items-center justify-center"
+                        className="absolute top-3 right-3 md:static w-10 h-10 rounded bg-transparent border-none cursor-pointer text-[#767676] hover:text-red-600 hover:bg-[#fdf2f2] transition-colors flex items-center justify-center"
                         aria-label={`Remove ${item.productName}`}
                       >
                         <Trash2 size={16} />

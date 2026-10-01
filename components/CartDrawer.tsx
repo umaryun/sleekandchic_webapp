@@ -1,10 +1,11 @@
 "use client";
 
-import { useRef } from "react";
-import { X, ShoppingBag, Trash2 } from "lucide-react";
+import { useRef, useState } from "react";
+import { X, ShoppingBag, Trash2, Minus, Plus } from "lucide-react";
 import Link from "next/link";
-import { useCart } from "@/context/CartContext";
+import { useCart, type CartResult } from "@/context/CartContext";
 import { formatNGN } from "@/lib/utils";
+import { MAX_PER_ITEM } from "@/lib/variants";
 import ShopImage from "@/components/ShopImage";
 import { useDialog } from "@/lib/hooks/use-dialog";
 
@@ -14,9 +15,16 @@ interface CartDrawerProps {
 }
 
 export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
-  const { items, subtotal, removeItem } = useCart();
+  const { items, subtotal, removeItem, updateQuantity } = useCart();
   const panelRef = useRef<HTMLElement>(null);
+  const [error, setError] = useState<string | null>(null);
   useDialog(isOpen, onClose, panelRef);
+
+  const run = async (action: Promise<CartResult>) => {
+    setError(null);
+    const result = await action;
+    if (!result.ok) setError(result.error);
+  };
 
   return (
     <aside
@@ -79,6 +87,11 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
 
       {/* Items */}
       <div style={{ flex: 1, overflowY: "auto", padding: "16px 24px" }}>
+        {error && (
+          <p role="alert" className="mb-2 rounded border border-[#f8b4b4] bg-[#fdf2f2] px-3 py-2 text-xs text-[#981b1b]">
+            {error}
+          </p>
+        )}
         {items.length === 0 ? (
           <div style={{ textAlign: "center", padding: "40px 0", color: "#6b6b6b" }}>
             <ShoppingBag size={40} color="#e0e0e0" style={{ marginBottom: "12px" }} />
@@ -119,36 +132,53 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                     {[item.color, item.size].filter(Boolean).join(" · ")}
                   </p>
                 )}
-                <p style={{ fontSize: "12px", color: "#6b6b6b", marginBottom: "8px" }}>
-                  Qty: {item.quantity}
-                </p>
+                {item.problem && <p className="mb-1 text-[11px] font-semibold text-[#b42318]">{item.problem}</p>}
                 <p
                   style={{
                     fontSize: "14px",
                     fontWeight: 700,
                     color: "#1a1a1a",
+                    marginBottom: "8px",
                   }}
                 >
                   {formatNGN(item.total)}
                 </p>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center overflow-hidden rounded border border-[#e5e5e5]">
+                    <button
+                      type="button"
+                      onClick={() => run(updateQuantity(item.productId, item.variantId, item.quantity - 1))}
+                      disabled={item.quantity <= 1}
+                      aria-label={`One fewer ${item.productName}`}
+                      className="flex h-9 w-9 items-center justify-center bg-[#f5f5f5] text-[#444] disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <Minus size={13} />
+                    </button>
+                    <span className="w-9 text-center text-sm font-bold" aria-live="polite" aria-label={`Quantity ${item.quantity}`}>
+                      {item.quantity}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => run(updateQuantity(item.productId, item.variantId, item.quantity + 1))}
+                      disabled={
+                        item.quantity >= MAX_PER_ITEM || (item.stockAvailable !== null && item.quantity >= item.stockAvailable)
+                      }
+                      aria-label={`One more ${item.productName}`}
+                      className="flex h-9 w-9 items-center justify-center bg-[#f5f5f5] text-[#444] disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <Plus size={13} />
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => run(removeItem(item.productId, item.variantId))}
+                    aria-label={`Remove ${item.productName}`}
+                    className="flex h-9 items-center gap-1.5 rounded px-2 text-xs font-semibold text-[#767676] transition-colors hover:bg-[#fdf2f2] hover:text-[#b42318]"
+                  >
+                    <Trash2 size={14} /> Remove
+                  </button>
+                </div>
               </div>
-              <button
-                onClick={() => removeItem(item.productId, item.variantId)}
-                style={{
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  color: "#ccc",
-                  alignSelf: "flex-start",
-                  padding: "4px",
-                  transition: "color 0.2s",
-                }}
-                onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.color = "#e53935")}
-                onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.color = "#ccc")}
-                aria-label="Remove item"
-              >
-                <Trash2 size={14} />
-              </button>
             </div>
           ))
         )}
