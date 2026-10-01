@@ -106,29 +106,6 @@ export interface SeedHeroSlide {
 }
 
 // ──────────────────────────────────────────────
-// Nav / UI Types
-// ──────────────────────────────────────────────
-
-export interface NavItem {
-  label: string;
-  href: string;
-  children?: NavDropdownItem[];
-}
-
-export interface NavDropdownItem {
-  label: string;
-  href: string;
-}
-
-export interface Announcement {
-  id: number;
-  text: string;
-  bold: string;
-  linkText: string;
-  href: string;
-}
-
-// ──────────────────────────────────────────────
 // Hero Slides (matches DB shape)
 // ──────────────────────────────────────────────
 
@@ -141,17 +118,6 @@ export interface HeroSlide {
   imageUrl: string;
   displayOrder: number;
   isActive: boolean;
-}
-
-// Legacy hero slide shape (for static fallback)
-export interface LegacyHeroSlide {
-  id: number;
-  category: string;
-  title: string;
-  highlight: string;
-  subtitle: string;
-  image: string;
-  href: string;
 }
 
 // ──────────────────────────────────────────────
