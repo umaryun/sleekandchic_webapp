@@ -63,7 +63,7 @@ export default function FeaturedProducts() {
           <p
             style={{
               fontSize: "12px",
-              color: "#b88d7a",
+              color: "#8a6452",
               fontWeight: 600,
               letterSpacing: "2px",
               textTransform: "uppercase",
@@ -129,7 +129,7 @@ export default function FeaturedProducts() {
           ))}
         </div>
       ) : products.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "48px 0", color: "#888" }}>
+        <div style={{ textAlign: "center", padding: "48px 0", color: "#6b6b6b" }}>
           <p style={{ fontSize: "16px" }}>No products found in this category.</p>
         </div>
       ) : (

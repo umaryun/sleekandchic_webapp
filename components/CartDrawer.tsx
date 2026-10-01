@@ -1,10 +1,12 @@
 "use client";
 
+import { useRef } from "react";
 import { X, ShoppingBag, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
 import { formatNGN } from "@/lib/utils";
 import ShopImage from "@/components/ShopImage";
+import { useDialog } from "@/lib/hooks/use-dialog";
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -13,9 +15,16 @@ interface CartDrawerProps {
 
 export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
   const { items, subtotal, removeItem } = useCart();
+  const panelRef = useRef<HTMLElement>(null);
+  useDialog(isOpen, onClose, panelRef);
 
   return (
     <aside
+      ref={panelRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Your bag"
+      inert={!isOpen}
       style={{
         position: "fixed",
         top: 0,
@@ -45,7 +54,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <ShoppingBag size={20} color="#1a1a1a" />
           <span style={{ fontWeight: 700, fontSize: "16px" }}>
-            My Cart ({items.length})
+            Your bag ({items.length})
           </span>
         </div>
         <button
@@ -62,7 +71,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
             justifyContent: "center",
             color: "#666",
           }}
-          aria-label="Close cart"
+          aria-label="Close bag"
         >
           <X size={16} />
         </button>
@@ -71,9 +80,9 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
       {/* Items */}
       <div style={{ flex: 1, overflowY: "auto", padding: "16px 24px" }}>
         {items.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "40px 0", color: "#888" }}>
+          <div style={{ textAlign: "center", padding: "40px 0", color: "#6b6b6b" }}>
             <ShoppingBag size={40} color="#e0e0e0" style={{ marginBottom: "12px" }} />
-            <p style={{ fontSize: "14px" }}>Your cart is empty</p>
+            <p style={{ fontSize: "14px" }}>Your bag is empty</p>
           </div>
         ) : (
           items.map((item) => (
@@ -106,11 +115,11 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                   {item.productName}
                 </h4>
                 {(item.size || item.color) && (
-                  <p style={{ fontSize: "11px", color: "#999", marginBottom: "4px" }}>
+                  <p style={{ fontSize: "11px", color: "#767676", marginBottom: "4px" }}>
                     {[item.color, item.size].filter(Boolean).join(" · ")}
                   </p>
                 )}
-                <p style={{ fontSize: "12px", color: "#888", marginBottom: "8px" }}>
+                <p style={{ fontSize: "12px", color: "#6b6b6b", marginBottom: "8px" }}>
                   Qty: {item.quantity}
                 </p>
                 <p

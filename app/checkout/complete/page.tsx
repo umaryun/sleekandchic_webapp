@@ -178,7 +178,7 @@ function CompleteContent() {
               <span className="text-[#333]">
                 {item.quantity} × {item.name}
                 {(item.size || item.color) && (
-                  <span className="text-[#888]"> ({[item.color, item.size].filter(Boolean).join(", ")})</span>
+                  <span className="text-[#6b6b6b]"> ({[item.color, item.size].filter(Boolean).join(", ")})</span>
                 )}
               </span>
               <span className="font-semibold shrink-0">{formatNGN(item.price * item.quantity)}</span>
@@ -228,7 +228,7 @@ export default function CheckoutCompletePage() {
       <div style={{ maxWidth: "1280px", margin: "36px auto", padding: "0 16px" }}>
         <Suspense
           fallback={
-            <div className="flex justify-center py-20 text-[#888]">
+            <div className="flex justify-center py-20 text-[#6b6b6b]">
               <Loader2 className="animate-spin" size={28} />
             </div>
           }

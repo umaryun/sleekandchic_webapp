@@ -123,7 +123,7 @@ export default function ProductView({ product }: { product: Product }) {
       selected
         ? "border-[#8a6452] bg-[#8a6452] text-white"
         : unavailable
-          ? "border-[#eee] bg-[#fafafa] text-[#aaa] line-through"
+          ? "border-[#eee] bg-[#fafafa] text-[#767676] line-through"
           : "border-[#e5e5e5] bg-white text-[#555] hover:border-[#8a6452]"
     }`;
 
@@ -195,7 +195,7 @@ export default function ProductView({ product }: { product: Product }) {
             <div className="mb-5 flex items-baseline gap-3 border-b border-[#f0f0f0] pb-5">
               <span className="text-2xl font-extrabold text-[#1a1a1a] sm:text-3xl">{formatNGN(price)}</span>
               {product.originalPrice && !variant?.priceOverride && (
-                <span className="text-lg text-[#aaa] line-through">{formatNGN(product.originalPrice)}</span>
+                <span className="text-lg text-[#767676] line-through">{formatNGN(product.originalPrice)}</span>
               )}
             </div>
 

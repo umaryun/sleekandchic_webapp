@@ -69,12 +69,12 @@ function ResetPasswordForm() {
         <h3 className="text-xl sm:text-2xl font-bold text-[#1a1a1a] mb-2">
           Invalid Reset Link
         </h3>
-        <p className="text-sm text-[#888] mb-6 max-w-[320px]">
+        <p className="text-sm text-[#6b6b6b] mb-6 max-w-[320px]">
           This password reset link is invalid or has expired. Please request a new one.
         </p>
         <Link
           href="/password/reset"
-          className="px-6 py-2.5 bg-[#1a1a1a] text-white no-underline rounded text-sm font-semibold hover:bg-[#b88d7a] transition-colors"
+          className="px-6 py-2.5 bg-[#1a1a1a] text-white no-underline rounded text-sm font-semibold hover:bg-[#8a6452] transition-colors"
         >
           Request New Link
         </Link>
@@ -89,12 +89,12 @@ function ResetPasswordForm() {
         <h3 className="text-xl sm:text-2xl font-bold text-[#1a1a1a] mb-2">
           Password Reset Successful!
         </h3>
-        <p className="text-sm text-[#888] mb-6 max-w-[320px]">
+        <p className="text-sm text-[#6b6b6b] mb-6 max-w-[320px]">
           Your password has been updated. Redirecting you to the login page...
         </p>
         <Link
           href="/login"
-          className="px-6 py-2.5 bg-[#1a1a1a] text-white no-underline rounded text-sm font-semibold hover:bg-[#b88d7a] transition-colors"
+          className="px-6 py-2.5 bg-[#1a1a1a] text-white no-underline rounded text-sm font-semibold hover:bg-[#8a6452] transition-colors"
         >
           Go to Login
         </Link>
@@ -107,7 +107,7 @@ function ResetPasswordForm() {
       <h3 className="text-xl sm:text-2xl font-bold text-[#1a1a1a] mb-1.5">
         Set a new password
       </h3>
-      <p className="text-xs sm:text-sm text-[#888] mb-6 leading-relaxed">
+      <p className="text-xs sm:text-sm text-[#6b6b6b] mb-6 leading-relaxed">
         Enter your new password below. Make sure it&apos;s at least 8 characters.
       </p>
 
@@ -121,7 +121,7 @@ function ResetPasswordForm() {
       <form onSubmit={handleSubmit} className="flex flex-col gap-4 sm:gap-5">
         <div>
           <label className="block text-xs sm:text-sm font-semibold text-[#1a1a1a] mb-1.5">
-            New Password <span className="text-[#f57224]">*</span>
+            New Password <span className="text-[#8a6452]">*</span>
           </label>
           <div className="relative">
             <input
@@ -130,12 +130,12 @@ function ResetPasswordForm() {
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full pl-3.5 pr-11 py-2.5 border border-[#ddd] rounded text-sm outline-none focus:border-[#f57224] transition-colors"
+              className="w-full pl-3.5 pr-11 py-2.5 border border-[#ddd] rounded text-sm outline-none focus:border-[#8a6452] transition-colors"
             />
             <button
               type="button"
               onClick={() => setShowPwd(!showPwd)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-0 cursor-pointer text-[#aaa]"
+              className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-0 cursor-pointer text-[#767676]"
             >
               {showPwd ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
@@ -144,7 +144,7 @@ function ResetPasswordForm() {
 
         <div>
           <label className="block text-xs sm:text-sm font-semibold text-[#1a1a1a] mb-1.5">
-            Confirm Password <span className="text-[#f57224]">*</span>
+            Confirm Password <span className="text-[#8a6452]">*</span>
           </label>
           <div className="relative">
             <input
@@ -153,12 +153,12 @@ function ResetPasswordForm() {
               placeholder="••••••••"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full pl-3.5 pr-11 py-2.5 border border-[#ddd] rounded text-sm outline-none focus:border-[#f57224] transition-colors"
+              className="w-full pl-3.5 pr-11 py-2.5 border border-[#ddd] rounded text-sm outline-none focus:border-[#8a6452] transition-colors"
             />
             <button
               type="button"
               onClick={() => setShowConfirmPwd(!showConfirmPwd)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-0 cursor-pointer text-[#aaa]"
+              className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-0 cursor-pointer text-[#767676]"
             >
               {showConfirmPwd ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
@@ -168,7 +168,7 @@ function ResetPasswordForm() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full py-3 bg-[#1a1a1a] hover:bg-[#b88d7a] disabled:bg-[#888] text-white border-0 rounded font-bold text-sm cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
+          className="w-full py-3 bg-[#1a1a1a] hover:bg-[#8a6452] disabled:bg-[#6b6b6b] text-white border-0 rounded font-bold text-sm cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
         >
           {isSubmitting ? (
             <>
@@ -223,7 +223,7 @@ export default function NewPasswordPage() {
             <h2 className="text-white text-2xl font-extrabold mb-3 text-center">
               Almost There!
             </h2>
-            <p className="text-[#888] text-sm text-center leading-relaxed max-w-[280px]">
+            <p className="text-[#6b6b6b] text-sm text-center leading-relaxed max-w-[280px]">
               Choose a strong password to keep your account secure.
             </p>
           </div>
@@ -232,7 +232,7 @@ export default function NewPasswordPage() {
           <Suspense
             fallback={
               <div className="bg-white p-12 flex items-center justify-center">
-                <Loader2 size={24} className="animate-spin text-[#888]" />
+                <Loader2 size={24} className="animate-spin text-[#6b6b6b]" />
               </div>
             }
           >

@@ -27,14 +27,14 @@ export default function CartPage() {
       <PageBreadcrumb title="Shopping Cart" crumbs={[]} />
       <div style={{ maxWidth: "1280px", margin: "36px auto", padding: "0 16px" }}>
         {loading ? (
-          <div className="flex justify-center py-20 text-[#888]">
+          <div className="flex justify-center py-20 text-[#6b6b6b]">
             <Loader2 className="animate-spin" size={28} />
           </div>
         ) : items.length === 0 ? (
           <div style={{ textAlign: "center", padding: "80px 20px" }}>
             <ShoppingCart size={64} color="#e0e0e0" style={{ margin: "0 auto 20px" }} />
             <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#1a1a1a", marginBottom: "10px" }}>Your cart is empty</h2>
-            <p style={{ color: "#888", marginBottom: "28px" }}>Looks like you haven&apos;t added anything to your cart yet.</p>
+            <p style={{ color: "#6b6b6b", marginBottom: "28px" }}>Looks like you haven&apos;t added anything to your cart yet.</p>
             <Link
               href="/products"
               style={{ padding: "12px 32px", background: "#1a1a1a", color: "#fff", textDecoration: "none", borderRadius: "3px", fontWeight: 700, fontSize: "14px" }}
@@ -51,7 +51,7 @@ export default function CartPage() {
                 </div>
               )}
               <div className="bg-white border border-[#f0f0f0] rounded overflow-hidden">
-                <div className="hidden md:grid grid-cols-[2fr_1fr_1fr_1fr_40px] gap-3 px-5 py-3.5 bg-[#f8f8f8] border-b border-[#f0f0f0] text-xs font-bold text-[#888] tracking-wider uppercase">
+                <div className="hidden md:grid grid-cols-[2fr_1fr_1fr_1fr_40px] gap-3 px-5 py-3.5 bg-[#f8f8f8] border-b border-[#f0f0f0] text-xs font-bold text-[#6b6b6b] tracking-wider uppercase">
                   <span>Product</span>
                   <span className="text-center">Price</span>
                   <span className="text-center">Quantity</span>
@@ -91,7 +91,7 @@ export default function CartPage() {
                       </div>
                       <span className="hidden md:block text-center text-sm font-semibold text-[#555] w-full">{formatNGN(item.unitPrice)}</span>
                       <div className="flex items-center md:justify-center w-full md:w-auto">
-                        <span className="text-xs font-semibold text-[#888] mr-3 md:hidden">Qty:</span>
+                        <span className="text-xs font-semibold text-[#6b6b6b] mr-3 md:hidden">Qty:</span>
                         <div className="flex border border-[#e5e5e5] rounded overflow-hidden">
                           <button
                             type="button"
@@ -115,13 +115,13 @@ export default function CartPage() {
                         </div>
                       </div>
                       <div className="flex md:justify-center items-center w-full border-t border-[#f5f5f5] pt-3 md:pt-0 md:border-t-0 md:w-auto">
-                        <span className="text-xs font-bold text-[#888] mr-3 md:hidden">Subtotal:</span>
+                        <span className="text-xs font-bold text-[#6b6b6b] mr-3 md:hidden">Subtotal:</span>
                         <span className="text-sm font-bold text-[#1a1a1a]">{formatNGN(item.total)}</span>
                       </div>
                       <button
                         type="button"
                         onClick={() => run(removeItem(item.productId, item.variantId))}
-                        className="absolute top-5 right-5 md:static bg-transparent border-none cursor-pointer text-[#999] hover:text-red-600 transition-colors flex items-center justify-center"
+                        className="absolute top-5 right-5 md:static bg-transparent border-none cursor-pointer text-[#767676] hover:text-red-600 transition-colors flex items-center justify-center"
                         aria-label={`Remove ${item.productName}`}
                       >
                         <Trash2 size={16} />
@@ -166,7 +166,7 @@ export default function CartPage() {
               >
                 Proceed to Checkout <ArrowRight size={16} />
               </Link>
-              <p className="text-xs text-[#888] text-center mt-3">Pay by card, bank transfer or USSD with Paystack, or pay on delivery.</p>
+              <p className="text-xs text-[#6b6b6b] text-center mt-3">Pay by card, bank transfer or USSD with Paystack, or pay on delivery.</p>
             </div>
           </div>
         )}

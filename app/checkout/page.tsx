@@ -352,7 +352,7 @@ export default function CheckoutPage() {
 
       <div style={{ width: "100%", maxWidth: "1280px", margin: "36px auto", padding: "0 16px" }}>
         {bagLoading && !placed ? (
-          <div className="flex justify-center py-20 text-[#888]">
+          <div className="flex justify-center py-20 text-[#6b6b6b]">
             <Loader2 className="animate-spin" size={28} />
           </div>
         ) : items.length === 0 && !placed ? (
@@ -384,15 +384,15 @@ export default function CheckoutPage() {
                         className="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 transition-colors"
                         style={{
                           background: i < stepIndex ? "#28a745" : i === stepIndex ? "#1a1a1a" : "#eee",
-                          color: i <= stepIndex ? "#fff" : "#999",
+                          color: i <= stepIndex ? "#fff" : "#767676",
                         }}
                       >
                         {i < stepIndex ? <Check size={14} /> : i + 1}
                       </div>
-                      <span className={`text-xs sm:text-sm font-medium ${i === stepIndex ? "font-bold text-[#1a1a1a]" : i < stepIndex ? "text-[#28a745]" : "text-[#999]"} hidden sm:inline`}>
+                      <span className={`text-xs sm:text-sm font-medium ${i === stepIndex ? "font-bold text-[#1a1a1a]" : i < stepIndex ? "text-[#28a745]" : "text-[#767676]"} hidden sm:inline`}>
                         {s}
                       </span>
-                      <span className={`text-[11px] font-medium ${i === stepIndex ? "font-bold text-[#1a1a1a]" : i < stepIndex ? "text-[#28a745]" : "text-[#999]"} sm:hidden inline`}>
+                      <span className={`text-[11px] font-medium ${i === stepIndex ? "font-bold text-[#1a1a1a]" : i < stepIndex ? "text-[#28a745]" : "text-[#767676]"} sm:hidden inline`}>
                         {s === "Shipping & Delivery" ? "Shipping" : s === "Payment Method" ? "Payment" : "Placed"}
                       </span>
                     </button>
@@ -549,7 +549,7 @@ export default function CheckoutPage() {
                                     Est. {option.estimatedDays} to {shipping.state}
                                   </p>
                                   {id === "standard" && !option.isFree && (
-                                    <p className="text-[11px] text-[#888] mt-0.5">
+                                    <p className="text-[11px] text-[#6b6b6b] mt-0.5">
                                       Free standard delivery on orders over {formatNGN(option.freeThreshold)}
                                     </p>
                                   )}
@@ -564,7 +564,7 @@ export default function CheckoutPage() {
                       </div>
                     )}
                     {totalItemsCount > 3 && quote && (
-                      <p className="text-[11px] text-[#888] mt-2 flex items-center gap-1">
+                      <p className="text-[11px] text-[#6b6b6b] mt-2 flex items-center gap-1">
                         <Package size={12} /> Delivery includes ₦200 handling for each item after the third.
                       </p>
                     )}
@@ -644,7 +644,7 @@ export default function CheckoutPage() {
                       type="button"
                       onClick={handlePlaceOrder}
                       disabled={isSubmitting || !quote || quoteLoading || problems.length > 0}
-                      className="flex-1 w-full py-3.5 bg-[#1a1a1a] disabled:bg-[#888] text-white font-bold text-sm sm:text-base rounded-md flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed transition-colors"
+                      className="flex-1 w-full py-3.5 bg-[#1a1a1a] disabled:bg-[#6b6b6b] text-white font-bold text-sm sm:text-base rounded-md flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed transition-colors"
                     >
                       <Lock size={16} />{" "}
                       {isSubmitting
@@ -667,7 +667,7 @@ export default function CheckoutPage() {
                   <p className="text-sm sm:text-base text-[#666] mb-1">
                     Thank you, {shipping.firstName}. We&apos;ll call {shipping.phone} to confirm delivery.
                   </p>
-                  <p className="text-xs sm:text-sm text-[#888] mb-7">
+                  <p className="text-xs sm:text-sm text-[#6b6b6b] mb-7">
                     {placed.confirmationEmail
                       ? <>A confirmation is on its way to <strong className="text-[#1a1a1a]">{placed.confirmationEmail}</strong>.</>
                       : <>Keep your order number to track this order.</>}
@@ -735,7 +735,7 @@ export default function CheckoutPage() {
                       <div className="flex-1 min-w-0">
                         <p className="text-[13px] font-semibold text-[#1a1a1a] leading-tight">{item.productName}</p>
                         {(item.color || item.size) && (
-                          <p className="text-[11px] text-[#888] mt-0.5">{[item.color, item.size].filter(Boolean).join(" · ")}</p>
+                          <p className="text-[11px] text-[#6b6b6b] mt-0.5">{[item.color, item.size].filter(Boolean).join(" · ")}</p>
                         )}
                       </div>
                       <span className="text-[13px] font-bold text-[#1a1a1a] shrink-0">{formatNGN(item.total)}</span>
@@ -745,7 +745,7 @@ export default function CheckoutPage() {
 
                 {/* Promo code, checked by the server */}
                 <div className="pb-4 mb-4 border-b border-[#f0f0f0]">
-                  <label htmlFor="co-promo" className="flex items-center gap-1.5 text-[11px] font-bold text-[#888] uppercase mb-2">
+                  <label htmlFor="co-promo" className="flex items-center gap-1.5 text-[11px] font-bold text-[#6b6b6b] uppercase mb-2">
                     <Tag size={12} /> Promo Code
                   </label>
                   {appliedCode ? (
@@ -796,7 +796,7 @@ export default function CheckoutPage() {
                   <div className="flex justify-between">
                     <span className="text-[#666] flex flex-col">
                       <span>Delivery ({shippingMethod === "express" ? "Express" : "Standard"})</span>
-                      {activeOption && <span className="text-[10px] text-[#999]">{activeOption.estimatedDays}</span>}
+                      {activeOption && <span className="text-[10px] text-[#767676]">{activeOption.estimatedDays}</span>}
                     </span>
                     <span className="font-semibold text-[#1a1a1a]">
                       {!quote ? "Choose your state" : quote.shippingFee === 0 ? "Free" : formatNGN(quote.shippingFee)}
@@ -811,7 +811,7 @@ export default function CheckoutPage() {
                   </span>
                 </div>
 
-                <div className="flex items-center justify-center gap-1.5 text-xs text-[#888]">
+                <div className="flex items-center justify-center gap-1.5 text-xs text-[#6b6b6b]">
                   <Lock size={12} /> <span>Card payments are processed by Paystack</span>
                 </div>
               </div>

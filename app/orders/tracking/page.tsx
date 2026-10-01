@@ -168,7 +168,7 @@ function TrackingContent() {
         <div className="flex flex-col gap-5">
           <div className="bg-white border border-[#f0f0f0] rounded-lg p-6 flex flex-wrap items-center justify-between gap-4">
             <div>
-              <p className="text-xs text-[#888] mb-1">Order {order.orderNumber}</p>
+              <p className="text-xs text-[#6b6b6b] mb-1">Order {order.orderNumber}</p>
               <p className="text-lg font-extrabold text-[#1a1a1a]">{headline(order)}</p>
             </div>
             <div className="text-sm text-[#555]">
@@ -197,12 +197,12 @@ function TrackingContent() {
                     <li key={key} className="flex flex-col items-center gap-2.5 relative z-[1] flex-1" aria-current={i === step ? "step" : undefined}>
                       <div
                         className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                          done ? "bg-[#1a1a1a] text-white" : "bg-[#f0f0f0] text-[#aaa] border-2 border-[#ddd]"
+                          done ? "bg-[#1a1a1a] text-white" : "bg-[#f0f0f0] text-[#767676] border-2 border-[#ddd]"
                         } ${i === step ? "ring-4 ring-[#1a1a1a]/10" : ""}`}
                       >
                         <Icon size={18} />
                       </div>
-                      <span className={`text-xs text-center ${done ? "font-bold text-[#1a1a1a]" : "text-[#999]"}`}>{label}</span>
+                      <span className={`text-xs text-center ${done ? "font-bold text-[#1a1a1a]" : "text-[#767676]"}`}>{label}</span>
                     </li>
                   );
                 })}
@@ -218,7 +218,7 @@ function TrackingContent() {
                   <li key={i} className="flex justify-between gap-3 text-[13px]">
                     <span>
                       <span className="font-semibold text-[#1a1a1a]">{item.name}</span>
-                      <span className="block text-xs text-[#888]">
+                      <span className="block text-xs text-[#6b6b6b]">
                         Qty {item.quantity}
                         {(item.color || item.size) && ` · ${[item.color, item.size].filter(Boolean).join(", ")}`}
                       </span>
@@ -289,7 +289,7 @@ export default function OrderTrackingPage() {
       <PageBreadcrumb title="Order Tracking" crumbs={[]} />
       <Suspense
         fallback={
-          <div className="flex justify-center py-20 text-[#888]">
+          <div className="flex justify-center py-20 text-[#6b6b6b]">
             <Loader2 className="animate-spin" size={28} />
           </div>
         }

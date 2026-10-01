@@ -69,7 +69,7 @@ export default function RegisterPage() {
       <div className="w-full max-w-[1280px] my-6 sm:my-12 mx-auto px-4">
         <section className="grid grid-cols-1 lg:grid-cols-2 rounded-xl overflow-hidden border border-[#f0f0f0] shadow-md min-h-[560px]">
           {/* Left: Banner (Hidden on Mobile) */}
-          <div className="hidden lg:flex flex-col items-center justify-center p-12 relative overflow-hidden bg-gradient-to-br from-[#f57224] to-[#e06010]">
+          <div className="hidden lg:flex flex-col items-center justify-center p-12 relative overflow-hidden bg-gradient-to-br from-[#8a6452] to-[#6f4f40]">
             {[240, 180, 120].map((size, i) => (
               <div
                 key={i}
@@ -119,7 +119,7 @@ export default function RegisterPage() {
             <h3 className="text-xl sm:text-2xl font-bold text-[#1a1a1a] mb-1.5">
               Create your account
             </h3>
-            <p className="text-xs sm:text-sm text-[#888] mb-6">
+            <p className="text-xs sm:text-sm text-[#6b6b6b] mb-6">
               Fill in the form below to get started with Sleekandchic.
             </p>
 
@@ -134,7 +134,7 @@ export default function RegisterPage() {
               {/* Full Name */}
               <div>
                 <label className="block text-xs sm:text-sm font-semibold text-[#1a1a1a] mb-1.5">
-                  Full Name <span className="text-[#f57224]">*</span>
+                  Full Name <span className="text-[#8a6452]">*</span>
                 </label>
                 <input
                   type="text"
@@ -142,14 +142,14 @@ export default function RegisterPage() {
                   placeholder="John Doe"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className="w-full px-3.5 py-2.5 border border-[#ddd] rounded text-sm outline-none focus:border-[#f57224] transition-colors"
+                  className="w-full px-3.5 py-2.5 border border-[#ddd] rounded text-sm outline-none focus:border-[#8a6452] transition-colors"
                 />
               </div>
 
               {/* Email */}
               <div>
                 <label className="block text-xs sm:text-sm font-semibold text-[#1a1a1a] mb-1.5">
-                  Email Address <span className="text-[#f57224]">*</span>
+                  Email Address <span className="text-[#8a6452]">*</span>
                 </label>
                 <input
                   type="email"
@@ -157,7 +157,7 @@ export default function RegisterPage() {
                   placeholder="your@email.com"
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  className="w-full px-3.5 py-2.5 border border-[#ddd] rounded text-sm outline-none focus:border-[#f57224] transition-colors"
+                  className="w-full px-3.5 py-2.5 border border-[#ddd] rounded text-sm outline-none focus:border-[#8a6452] transition-colors"
                 />
               </div>
 
@@ -171,14 +171,14 @@ export default function RegisterPage() {
                   placeholder="+234 801 234 5678"
                   value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  className="w-full px-3.5 py-2.5 border border-[#ddd] rounded text-sm outline-none focus:border-[#f57224] transition-colors"
+                  className="w-full px-3.5 py-2.5 border border-[#ddd] rounded text-sm outline-none focus:border-[#8a6452] transition-colors"
                 />
               </div>
 
               {/* Password */}
               <div>
                 <label className="block text-xs sm:text-sm font-semibold text-[#1a1a1a] mb-1.5">
-                  Password <span className="text-[#f57224]">*</span>
+                  Password <span className="text-[#8a6452]">*</span>
                 </label>
                 <div className="relative">
                   <input
@@ -187,12 +187,12 @@ export default function RegisterPage() {
                     placeholder="Min. 8 characters"
                     value={form.password}
                     onChange={(e) => setForm({ ...form, password: e.target.value })}
-                    className="w-full pl-3.5 pr-11 py-2.5 border border-[#ddd] rounded text-sm outline-none focus:border-[#f57224] transition-colors"
+                    className="w-full pl-3.5 pr-11 py-2.5 border border-[#ddd] rounded text-sm outline-none focus:border-[#8a6452] transition-colors"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPwd(!showPwd)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-0 cursor-pointer text-[#aaa]"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-0 cursor-pointer text-[#767676]"
                   >
                     {showPwd ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
@@ -202,7 +202,7 @@ export default function RegisterPage() {
               {/* Confirm Password */}
               <div>
                 <label className="block text-xs sm:text-sm font-semibold text-[#1a1a1a] mb-1.5">
-                  Confirm Password <span className="text-[#f57224]">*</span>
+                  Confirm Password <span className="text-[#8a6452]">*</span>
                 </label>
                 <div className="relative">
                   <input
@@ -211,12 +211,12 @@ export default function RegisterPage() {
                     placeholder="Re-enter password"
                     value={form.confirm}
                     onChange={(e) => setForm({ ...form, confirm: e.target.value })}
-                    className="w-full pl-3.5 pr-11 py-2.5 border border-[#ddd] rounded text-sm outline-none focus:border-[#f57224] transition-colors"
+                    className="w-full pl-3.5 pr-11 py-2.5 border border-[#ddd] rounded text-sm outline-none focus:border-[#8a6452] transition-colors"
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirm(!showConfirm)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-0 cursor-pointer text-[#aaa]"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-0 cursor-pointer text-[#767676]"
                   >
                     {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
@@ -230,15 +230,15 @@ export default function RegisterPage() {
                   required
                   checked={form.agree}
                   onChange={(e) => setForm({ ...form, agree: e.target.checked })}
-                  className="accent-[#f57224] w-4 h-4 mt-0.5 shrink-0"
+                  className="accent-[#8a6452] w-4 h-4 mt-0.5 shrink-0"
                 />
                 <span>
                   I agree to the{" "}
-                  <Link href="/terms" className="text-[#f57224] no-underline font-medium hover:underline">
+                  <Link href="/terms" className="text-[#8a6452] no-underline font-medium hover:underline">
                     Terms & Conditions
                   </Link>{" "}
                   and{" "}
-                  <Link href="/privacy-policy" className="text-[#f57224] no-underline font-medium hover:underline">
+                  <Link href="/privacy" className="text-[#8a6452] no-underline font-medium hover:underline">
                     Privacy Policy
                   </Link>
                 </span>
@@ -247,7 +247,7 @@ export default function RegisterPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-3 bg-[#f57224] hover:bg-[#e06010] disabled:bg-[#ffa876] text-white border-0 rounded font-bold text-sm cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors mt-2"
+                className="w-full py-3 bg-[#8a6452] hover:bg-[#6f4f40] disabled:bg-[#c4ad9f] text-white border-0 rounded font-bold text-sm cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors mt-2"
               >
                 {isSubmitting ? (
                   <>
@@ -259,9 +259,9 @@ export default function RegisterPage() {
               </button>
             </form>
 
-            <p className="mt-4 text-xs sm:text-sm text-[#888] text-center">
+            <p className="mt-4 text-xs sm:text-sm text-[#6b6b6b] text-center">
               Already have an account?{" "}
-              <Link href="/login" className="text-[#f57224] font-semibold no-underline hover:underline">
+              <Link href="/login" className="text-[#8a6452] font-semibold no-underline hover:underline">
                 Login
               </Link>
             </p>

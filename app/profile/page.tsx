@@ -309,7 +309,7 @@ export default function ProfilePage() {
                 )}
               </p>
               {profile?.createdAt && (
-                <p className="text-[11px] text-[#888] mt-1 flex items-center gap-1 justify-center sm:justify-start">
+                <p className="text-[11px] text-[#6b6b6b] mt-1 flex items-center gap-1 justify-center sm:justify-start">
                   <Calendar size={12} /> Member since{" "}
                   {new Date(profile.createdAt).toLocaleDateString("en-NG", { month: "long", year: "numeric" })}
                 </p>
@@ -348,7 +348,7 @@ export default function ProfilePage() {
                       isActive ? "bg-[#1a1a1a] text-white" : "text-[#555] hover:bg-[#f0f0f0] hover:text-[#1a1a1a]"
                     }`}
                   >
-                    <Icon size={16} className={isActive ? "text-white" : "text-[#888]"} />
+                    <Icon size={16} className={isActive ? "text-white" : "text-[#6b6b6b]"} />
                     <span className="flex-1">{label}</span>
                     <ChevronRight size={14} className="hidden lg:block opacity-40" />
                   </button>
@@ -362,7 +362,7 @@ export default function ProfilePage() {
               <div>
                 <div className="pb-4 mb-6 border-b border-[#f0f0f0]">
                   <h2 className="text-lg sm:text-xl font-bold text-[#1a1a1a]">My Details</h2>
-                  <p className="text-xs text-[#888]">Your name and phone number.</p>
+                  <p className="text-xs text-[#6b6b6b]">Your name and phone number.</p>
                 </div>
                 <Banner message={profileMsg} />
                 <form onSubmit={handleUpdateProfile} className="max-w-xl space-y-5">
@@ -372,21 +372,21 @@ export default function ProfilePage() {
                   </div>
                   <div>
                     <label htmlFor="pf-email" className="block text-xs sm:text-sm font-semibold text-[#1a1a1a] mb-1.5">
-                      Email <span className="text-[#888] font-normal">(can&apos;t be changed)</span>
+                      Email <span className="text-[#6b6b6b] font-normal">(can&apos;t be changed)</span>
                     </label>
                     <div className="relative">
                       <input id="pf-email" type="email" disabled value={profile?.email || session?.user?.email || ""} className="w-full px-3.5 py-2.5 border border-[#eee] bg-[#f9f9f9] rounded text-sm text-[#777] cursor-not-allowed" />
-                      <Mail size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#aaa]" />
+                      <Mail size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#767676]" />
                     </div>
                   </div>
                   <div>
                     <label htmlFor="pf-phone" className="block text-xs sm:text-sm font-semibold text-[#1a1a1a] mb-1.5">Phone</label>
                     <div className="relative">
                       <input id="pf-phone" type="tel" value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} className={inputClass} />
-                      <Phone size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#aaa]" />
+                      <Phone size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#767676]" />
                     </div>
                   </div>
-                  <button type="submit" disabled={isUpdatingProfile} className="px-6 py-2.5 bg-[#1a1a1a] hover:bg-[#333] disabled:bg-[#888] text-white font-bold text-xs sm:text-sm rounded cursor-pointer transition-colors flex items-center gap-2">
+                  <button type="submit" disabled={isUpdatingProfile} className="px-6 py-2.5 bg-[#1a1a1a] hover:bg-[#333] disabled:bg-[#6b6b6b] text-white font-bold text-xs sm:text-sm rounded cursor-pointer transition-colors flex items-center gap-2">
                     {isUpdatingProfile ? <><Loader2 size={16} className="animate-spin" /> Saving…</> : "Save Changes"}
                   </button>
                 </form>
@@ -397,13 +397,13 @@ export default function ProfilePage() {
               <div>
                 <div className="pb-4 mb-6 border-b border-[#f0f0f0]">
                   <h2 className="text-lg sm:text-xl font-bold text-[#1a1a1a]">My Orders</h2>
-                  <p className="text-xs text-[#888]">Every order you&apos;ve placed while signed in.</p>
+                  <p className="text-xs text-[#6b6b6b]">Every order you&apos;ve placed while signed in.</p>
                 </div>
                 {ordersList.length === 0 ? (
                   <div className="py-12 text-center flex flex-col items-center justify-center">
                     <Package size={48} className="text-[#ccc] mb-3" />
                     <h3 className="text-base font-bold text-[#1a1a1a] mb-1">No orders yet</h3>
-                    <p className="text-xs text-[#888] mb-5 max-w-sm">When you place an order, it will appear here.</p>
+                    <p className="text-xs text-[#6b6b6b] mb-5 max-w-sm">When you place an order, it will appear here.</p>
                     <Link href="/products" className="px-5 py-2.5 bg-[#1a1a1a] text-white font-bold text-xs rounded no-underline">Shop Now</Link>
                   </div>
                 ) : (
@@ -416,13 +416,13 @@ export default function ProfilePage() {
                               <span className="font-bold text-sm text-[#1a1a1a]">{ord.orderNumber}</span>
                               {getStatusBadge(ord.status)}
                             </div>
-                            <p className="text-xs text-[#888] mt-1 flex items-center gap-1">
+                            <p className="text-xs text-[#6b6b6b] mt-1 flex items-center gap-1">
                               <Clock size={13} /> Placed on {new Date(ord.createdAt).toLocaleDateString("en-NG", { month: "short", day: "numeric", year: "numeric" })}
                             </p>
                           </div>
                           <div className="flex items-center gap-3 sm:text-right justify-between sm:justify-end">
                             <div>
-                              <span className="text-xs text-[#888] block">{paymentLine(ord)}</span>
+                              <span className="text-xs text-[#6b6b6b] block">{paymentLine(ord)}</span>
                               <strong className="text-sm sm:text-base text-[#1a1a1a]">{formatNGN(ord.totalAmount)}</strong>
                             </div>
                             <button type="button" onClick={() => setSelectedOrder(ord)} className="px-3 py-1.5 bg-[#f5f5f5] hover:bg-[#1a1a1a] hover:text-white text-[#333] rounded text-xs font-semibold cursor-pointer transition-colors">
@@ -450,7 +450,7 @@ export default function ProfilePage() {
                 <div className="flex items-center justify-between pb-4 mb-6 border-b border-[#f0f0f0] gap-3">
                   <div>
                     <h2 className="text-lg sm:text-xl font-bold text-[#1a1a1a]">Addresses</h2>
-                    <p className="text-xs text-[#888]">Saved addresses appear at checkout so you don&apos;t retype them.</p>
+                    <p className="text-xs text-[#6b6b6b]">Saved addresses appear at checkout so you don&apos;t retype them.</p>
                   </div>
                   <button type="button" onClick={() => setShowAddressModal(true)} className="px-3.5 py-2 bg-[#1a1a1a] hover:bg-[#333] text-white font-bold text-xs rounded cursor-pointer transition-colors flex items-center gap-1.5 shrink-0">
                     <Plus size={14} /> Add Address
@@ -482,7 +482,7 @@ export default function ProfilePage() {
                           <p className="text-xs text-[#666] leading-relaxed">{addr.street}</p>
                           <p className="text-xs text-[#666] leading-relaxed mb-2">{addr.city}, {addr.state}</p>
                           {addr.phone && (
-                            <p className="text-xs text-[#888] font-medium flex items-center gap-1"><Phone size={12} /> {addr.phone}</p>
+                            <p className="text-xs text-[#6b6b6b] font-medium flex items-center gap-1"><Phone size={12} /> {addr.phone}</p>
                           )}
                         </div>
                         <div className="mt-4 pt-3 border-t border-[#f0f0f0] flex justify-end">
@@ -501,7 +501,7 @@ export default function ProfilePage() {
               <div>
                 <div className="pb-4 mb-6 border-b border-[#f0f0f0]">
                   <h2 className="text-lg sm:text-xl font-bold text-[#1a1a1a]">Change Password</h2>
-                  <p className="text-xs text-[#888]">Changing your password signs you out on your other devices.</p>
+                  <p className="text-xs text-[#6b6b6b]">Changing your password signs you out on your other devices.</p>
                 </div>
                 <Banner message={pwdMsg} />
                 <form onSubmit={handleUpdatePassword} className="max-w-xl space-y-5">
@@ -509,7 +509,7 @@ export default function ProfilePage() {
                     <label htmlFor="pw-current" className="block text-xs sm:text-sm font-semibold text-[#1a1a1a] mb-1.5">Current password</label>
                     <div className="relative">
                       <input id="pw-current" type={showCurrentPwd ? "text" : "password"} required autoComplete="current-password" value={pwdForm.current} onChange={(e) => setPwdForm({ ...pwdForm, current: e.target.value })} className={`${inputClass} pr-11`} />
-                      <button type="button" onClick={() => setShowCurrentPwd(!showCurrentPwd)} aria-label={showCurrentPwd ? "Hide password" : "Show password"} className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-[#888]">
+                      <button type="button" onClick={() => setShowCurrentPwd(!showCurrentPwd)} aria-label={showCurrentPwd ? "Hide password" : "Show password"} className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-[#6b6b6b]">
                         {showCurrentPwd ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
                     </div>
@@ -518,7 +518,7 @@ export default function ProfilePage() {
                     <label htmlFor="pw-new" className="block text-xs sm:text-sm font-semibold text-[#1a1a1a] mb-1.5">New password</label>
                     <div className="relative">
                       <input id="pw-new" type={showNewPwd ? "text" : "password"} required minLength={8} autoComplete="new-password" placeholder="At least 8 characters" value={pwdForm.newPwd} onChange={(e) => setPwdForm({ ...pwdForm, newPwd: e.target.value })} className={`${inputClass} pr-11`} />
-                      <button type="button" onClick={() => setShowNewPwd(!showNewPwd)} aria-label={showNewPwd ? "Hide password" : "Show password"} className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-[#888]">
+                      <button type="button" onClick={() => setShowNewPwd(!showNewPwd)} aria-label={showNewPwd ? "Hide password" : "Show password"} className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-[#6b6b6b]">
                         {showNewPwd ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
                     </div>
@@ -527,7 +527,7 @@ export default function ProfilePage() {
                     <label htmlFor="pw-confirm" className="block text-xs sm:text-sm font-semibold text-[#1a1a1a] mb-1.5">Confirm new password</label>
                     <input id="pw-confirm" type="password" required autoComplete="new-password" value={pwdForm.confirm} onChange={(e) => setPwdForm({ ...pwdForm, confirm: e.target.value })} className={inputClass} />
                   </div>
-                  <button type="submit" disabled={isUpdatingPwd} className="px-6 py-2.5 bg-[#1a1a1a] hover:bg-[#333] disabled:bg-[#888] text-white font-bold text-xs sm:text-sm rounded cursor-pointer transition-colors flex items-center gap-2">
+                  <button type="submit" disabled={isUpdatingPwd} className="px-6 py-2.5 bg-[#1a1a1a] hover:bg-[#333] disabled:bg-[#6b6b6b] text-white font-bold text-xs sm:text-sm rounded cursor-pointer transition-colors flex items-center gap-2">
                     {isUpdatingPwd ? <><Loader2 size={16} className="animate-spin" /> Changing…</> : "Change Password"}
                   </button>
                 </form>
@@ -594,7 +594,7 @@ export default function ProfilePage() {
             <div className="flex items-center justify-between pb-3 border-b border-[#f0f0f0] mb-4">
               <div>
                 <h3 id="order-title" className="text-base font-bold text-[#1a1a1a]">Order {selectedOrder.orderNumber}</h3>
-                <p className="text-xs text-[#888]">Placed on {new Date(selectedOrder.createdAt).toLocaleDateString("en-NG")}</p>
+                <p className="text-xs text-[#6b6b6b]">Placed on {new Date(selectedOrder.createdAt).toLocaleDateString("en-NG")}</p>
               </div>
               <button type="button" onClick={() => setSelectedOrder(null)} className="text-xs px-2.5 py-1 bg-[#f0f0f0] rounded cursor-pointer hover:bg-[#e0e0e0]">Close</button>
             </div>

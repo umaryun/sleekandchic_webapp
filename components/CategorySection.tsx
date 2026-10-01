@@ -50,7 +50,7 @@ export default function CategorySection() {
             }}
           >
             Top{" "}
-            <span style={{ color: "#b88d7a", fontStyle: "italic" }}>
+            <span style={{ color: "#8a6452", fontStyle: "italic" }}>
               Categories
             </span>
           </h2>
@@ -105,7 +105,7 @@ export default function CategorySection() {
           }}
         >
           Top{" "}
-          <span style={{ color: "#b88d7a", fontStyle: "italic" }}>
+          <span style={{ color: "#8a6452", fontStyle: "italic" }}>
             Categories
           </span>
         </h2>
@@ -131,7 +131,7 @@ export default function CategorySection() {
                 transition: "border-color 0.2s",
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = "#b88d7a";
+                e.currentTarget.style.borderColor = "#8a6452";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.borderColor = "#f0f0f0";
@@ -158,7 +158,7 @@ export default function CategorySection() {
                     width: "20px",
                     height: "20px",
                     borderRadius: "50%",
-                    background: "#b88d7a",
+                    background: "#8a6452",
                     color: "#fff",
                     fontSize: "10px",
                     fontWeight: 700,

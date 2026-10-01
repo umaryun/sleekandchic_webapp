@@ -13,7 +13,7 @@ interface ProductCardProps {
 }
 
 const badgeColors: Record<string, { bg: string; color: string }> = {
-  sale: { bg: "#b88d7a", color: "#fff" },
+  sale: { bg: "#8a6452", color: "#fff" },
   new: { bg: "#5a8a6a", color: "#fff" },
   hot: { bg: "#c45b5b", color: "#fff" },
 };
@@ -73,22 +73,22 @@ export default function ProductCard({ product }: ProductCardProps) {
 
       <div className="px-4 pt-2.5 pb-1.5 flex flex-col flex-1">
         <Link href={href} className="no-underline">
-          <h3 className="text-[15px] font-semibold text-[#1a1a1a] mb-2.5 leading-[1.45] line-clamp-2 hover:text-[#b88d7a] transition-colors">
+          <h3 className="text-[15px] font-semibold text-[#1a1a1a] mb-2.5 leading-[1.45] line-clamp-2 hover:text-[#8a6452] transition-colors">
             {product.name}
           </h3>
         </Link>
 
         <div className="flex items-center gap-2 mb-0.5">
-          <span className="text-[17px] font-bold text-[#b88d7a]">{formatNGN(product.price)}</span>
+          <span className="text-[17px] font-bold text-[#8a6452]">{formatNGN(product.price)}</span>
           {product.originalPrice && (
-            <span className="text-xs text-[#aaa] line-through">{formatNGN(product.originalPrice)}</span>
+            <span className="text-xs text-[#767676] line-through">{formatNGN(product.originalPrice)}</span>
           )}
         </div>
       </div>
 
       <div className="px-3.5 pt-2 pb-3.5 flex gap-2">
         {product.soldOut ? (
-          <span className={`${buttonClass} border-[#e0e0e0] text-[#999] cursor-not-allowed`}>Sold out</span>
+          <span className={`${buttonClass} border-[#e0e0e0] text-[#767676] cursor-not-allowed`}>Sold out</span>
         ) : product.hasOptions ? (
           <Link
             href={href}

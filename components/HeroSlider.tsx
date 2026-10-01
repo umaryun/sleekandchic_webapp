@@ -71,7 +71,7 @@ export default function HeroSlider() {
               <li key={cat.id}>
                 <Link
                   href={`/products?category=${cat.slug}`}
-                  className="flex items-center justify-between py-2.5 pl-[18px] pr-5 text-[13.5px] leading-snug text-[#333] transition-all hover:pl-[22px] hover:text-[#b88d7a] focus-visible:pl-[22px] focus-visible:text-[#b88d7a]"
+                  className="flex items-center justify-between py-2.5 pl-[18px] pr-5 text-[13.5px] leading-snug text-[#333] transition-all hover:pl-[22px] hover:text-[#8a6452] focus-visible:pl-[22px] focus-visible:text-[#8a6452]"
                 >
                   <span>{cat.name}</span>
                   {cat.children && cat.children.length > 0 && <ChevronRight size={12} className="text-[#bbb]" aria-hidden />}
@@ -152,7 +152,7 @@ export default function HeroSlider() {
                   key={s.id}
                   type="button"
                   onClick={() => setCurrent(i)}
-                  className={`h-1 rounded-sm transition-all ${i === current ? "w-6 bg-[#b88d7a]" : "w-2 bg-black/25 hover:bg-black/40"}`}
+                  className={`h-1 rounded-sm transition-all ${i === current ? "w-6 bg-[#8a6452]" : "w-2 bg-black/25 hover:bg-black/40"}`}
                   aria-label={`Show slide ${i + 1} of ${slides.length}`}
                   aria-current={i === current}
                 />

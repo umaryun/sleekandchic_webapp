@@ -3,10 +3,10 @@
 @theme {
   /* ─── Core Palette ─── */
   --color-primary: #1a1a1a;          /* Jet – headings, nav, primary buttons */
-  --color-accent: #b88d7a;           /* Warm Taupe – primary accent */
-  --color-accent-hover: #a07a68;     /* Deep Mocha – accent hover state */
+  --color-accent: #8a6452;           /* Taupe brown – accent; 5.2:1 on white, safe for text */
+  --color-accent-hover: #6f4f40;     /* Deep mocha – accent hover state */
   --color-secondary: #555555;        /* Graphite – body text */
-  --color-muted: #888888;            /* Muted – captions, subtle text */
+  --color-muted: #6b6b6b;            /* Muted – captions, subtle text (5.3:1) */
   --color-border: #e8e8e8;           /* Silver – borders, dividers */
   --color-surface: #f8f8f8;          /* Whisper – section backgrounds */
   --color-white: #ffffff;
@@ -134,4 +134,22 @@ body {
 .overlay {
   background: rgba(0,0,0,0.5);
   transition: opacity 0.3s ease;
+}
+
+/* Keyboard focus is always visible (zero specificity, so components can restyle it). */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* Respect "reduce motion": no slides, fades or smooth scrolling. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

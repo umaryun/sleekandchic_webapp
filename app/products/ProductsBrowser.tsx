@@ -153,7 +153,7 @@ function ProductsContent() {
                     className="accent-[#1a1a1a] w-3.5 h-3.5"
                   />
                   {cat.name}
-                  {cat.productCount !== undefined && <span className="ml-auto text-[11px] text-[#999]">{cat.productCount}</span>}
+                  {cat.productCount !== undefined && <span className="ml-auto text-[11px] text-[#767676]">{cat.productCount}</span>}
                 </label>
               ))}
         </div>
@@ -244,7 +244,7 @@ function ProductsContent() {
           ) : products.length === 0 ? (
             <div className="text-center py-16 px-5">
               <p className="text-lg font-semibold text-[#1a1a1a] mb-2">No products found</p>
-              <p className="text-sm text-[#888] mb-6">
+              <p className="text-sm text-[#6b6b6b] mb-6">
                 {filters.search ? `Nothing matches "${filters.search}".` : "Nothing matches these filters."} Try a different search or category.
               </p>
               {hasFilters && (

@@ -21,7 +21,7 @@ function layout(heading: string, bodyHtml: string) {
 <tr><td style="font-size:20px;font-weight:bold;letter-spacing:1px;color:#8a6452;padding-bottom:18px">${STORE.name.toUpperCase()}</td></tr>
 <tr><td style="font-size:20px;font-weight:bold;padding-bottom:12px">${escapeHtml(heading)}</td></tr>
 <tr><td style="font-size:14px;line-height:1.6;color:#333">${bodyHtml}</td></tr>
-<tr><td style="font-size:12px;color:#888;padding-top:24px;border-top:1px solid #eee">
+<tr><td style="font-size:12px;color:#6b6b6b;padding-top:24px;border-top:1px solid #eee">
 Questions? Reply to this email, WhatsApp <a href="${whatsappLink()}" style="color:#8a6452">${STORE.phoneDisplay}</a>, or email ${STORE.email}.<br>${escapeHtml(STORE.address)}
 </td></tr></table></td></tr></table></body></html>`;
 }
@@ -112,7 +112,7 @@ function itemsTable(order: OrderEmailData) {
   const rows = order.items
     .map((i) => {
       const options = [i.color, i.size].filter(Boolean).join(", ");
-      return `<tr><td style="padding:6px 0">${i.quantity} × ${escapeHtml(i.name)}${options ? `<br><span style="color:#888;font-size:12px">${escapeHtml(options)}</span>` : ""}</td><td align="right" style="padding:6px 0;white-space:nowrap">${naira(i.price * i.quantity)}</td></tr>`;
+      return `<tr><td style="padding:6px 0">${i.quantity} × ${escapeHtml(i.name)}${options ? `<br><span style="color:#6b6b6b;font-size:12px">${escapeHtml(options)}</span>` : ""}</td><td align="right" style="padding:6px 0;white-space:nowrap">${naira(i.price * i.quantity)}</td></tr>`;
     })
     .join("");
   const line = (label: string, value: string, bold = false) =>
