@@ -113,7 +113,7 @@ export async function POST(req: NextRequest) {
     const variants = await db
       .select()
       .from(productVariants)
-      .where(eq(productVariants.productId, productId));
+      .where(and(eq(productVariants.productId, productId), eq(productVariants.isActive, true)));
 
     let variant: (typeof variants)[number] | undefined;
     if (variants.length > 0) {

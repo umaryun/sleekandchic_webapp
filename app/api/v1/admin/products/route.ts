@@ -4,7 +4,6 @@ import { db } from "@/lib/db";
 import {
   products,
   productImages,
-  productVariants,
   categories,
 } from "@/lib/db/schema";
 import { eq, ilike, count, asc, desc, sql } from "drizzle-orm";
@@ -18,6 +17,7 @@ import {
   slugify,
   paginationMeta,
 } from "@/lib/api-utils";
+import { duplicateCombos, syncVariants } from "@/lib/services/catalog";
 
 // ──────────────────────────────────────────────
 // GET — List products (with search, pagination)
@@ -158,49 +158,46 @@ export async function POST(req: NextRequest) {
       variants,
     } = data!;
 
+    const dupes = duplicateCombos(variants ?? []);
+    if (dupes.length > 0) {
+      return withCors(apiError(`Each size and colour can be listed once. Repeated: ${dupes.join(", ")}`, 422), req);
+    }
+
     const slug = slugify(name) + "-" + Date.now().toString(36);
 
-    const [product] = await db
-      .insert(products)
-      .values({
-        name,
-        slug,
-        description,
-        price: String(price),
-        originalPrice: originalPrice ? String(originalPrice) : null,
-        sku,
-        brand,
-        badge: badge || null,
-        discount,
-        categoryId: categoryId || null,
-        inStock,
-      })
-      .returning();
+    const product = await db.transaction(async (tx) => {
+      const [row] = await tx
+        .insert(products)
+        .values({
+          name,
+          slug,
+          description,
+          price: String(price),
+          originalPrice: originalPrice ? String(originalPrice) : null,
+          sku,
+          brand,
+          badge: badge || null,
+          discount,
+          categoryId: categoryId || null,
+          inStock,
+        })
+        .returning();
 
-    // Insert images
-    if (images && images.length > 0) {
-      await db.insert(productImages).values(
-        images.map((img, i) => ({
-          productId: product.id,
-          imageUrl: img.imageUrl,
-          altText: img.altText || null,
-          displayOrder: i,
-        }))
-      );
-    }
+      if (images && images.length > 0) {
+        await tx.insert(productImages).values(
+          images.map((img, i) => ({
+            productId: row.id,
+            imageUrl: img.imageUrl,
+            altText: img.altText || null,
+            displayOrder: i,
+          }))
+        );
+      }
 
-    // Insert variants
-    if (variants && variants.length > 0) {
-      await db.insert(productVariants).values(
-        variants.map((v) => ({
-          productId: product.id,
-          size: v.size || null,
-          color: v.color || null,
-          stockQuantity: v.stockQuantity,
-          priceOverride: v.priceOverride ? String(v.priceOverride) : null,
-        }))
-      );
-    }
+      // Records opening stock in the stock history.
+      await syncVariants(tx, row.id, variants ?? [], session.user.id);
+      return row;
+    });
 
     await auditLog(session.user.id, "create", "product", {
       productId: product.id,

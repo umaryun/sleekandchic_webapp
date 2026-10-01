@@ -229,6 +229,8 @@ export const productVariants = pgTable(
     color: varchar("color", { length: 50 }),
     stockQuantity: integer("stock_quantity").notNull().default(0),
     priceOverride: decimal("price_override", { precision: 12, scale: 2 }),
+    // Removed from the product but kept because orders or bags refer to it.
+    isActive: boolean("is_active").notNull().default(true),
   },
   (table) => [index("product_variants_product_idx").on(table.productId)]
 );

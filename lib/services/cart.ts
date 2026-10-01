@@ -72,7 +72,9 @@ export async function loadCartLines(
   const variants = lockVariants ? await variantQuery.for("update") : await variantQuery;
 
   const variantById = new Map(variants.map((v) => [v.id, v]));
-  const productsWithVariants = new Set(variants.map((v) => v.productId));
+  // Archived variants still resolve (so the line can say what was removed) but
+  // don't make a product count as having sizes to choose from.
+  const productsWithVariants = new Set(variants.filter((v) => v.isActive).map((v) => v.productId));
 
   return items.map((item) => {
     const variant = item.variantId ? variantById.get(item.variantId) : undefined;
@@ -81,6 +83,8 @@ export async function loadCartLines(
 
     if (!item.productInStock) {
       problem = `${item.productName} is no longer available`;
+    } else if (variant && !variant.isActive) {
+      problem = `${item.productName} (${describeVariant(variant)}) is no longer available`;
     } else if (productsWithVariants.has(item.productId)) {
       if (!variant || variant.productId !== item.productId) {
         problem = `Choose a size and colour for ${item.productName}`;

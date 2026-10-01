@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
       })
       .from(productVariants)
       .leftJoin(products, eq(productVariants.productId, products.id))
-      .where(lte(productVariants.stockQuantity, 5))
+      .where(and(lte(productVariants.stockQuantity, 5), eq(productVariants.isActive, true)))
       .limit(20);
 
     // Orders by status

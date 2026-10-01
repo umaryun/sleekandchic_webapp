@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { products, productImages, productVariants, categories } from "@/lib/db/schema";
 import { eq, asc } from "drizzle-orm";
 import { apiSuccess, apiError } from "@/lib/api-utils";
+import { activeVariantsOf } from "@/lib/services/catalog";
 
 export async function GET(
   req: NextRequest,
@@ -32,7 +33,7 @@ export async function GET(
     const variants = await db
       .select()
       .from(productVariants)
-      .where(eq(productVariants.productId, product.id));
+      .where(activeVariantsOf(product.id));
 
     // Fetch category
     let category = null;

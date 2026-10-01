@@ -139,7 +139,7 @@ export async function GET(req: NextRequest) {
               stock: productVariants.stockQuantity,
             })
             .from(productVariants)
-            .where(inArray(productVariants.productId, productIds))
+            .where(and(inArray(productVariants.productId, productIds), eq(productVariants.isActive, true)))
         : [];
     const variantsByProduct = new Map<string, { id: string; stock: number }[]>();
     for (const v of variantRows) {
