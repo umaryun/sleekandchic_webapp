@@ -21,18 +21,13 @@ import ShopLayout from "@/components/ShopLayout";
 import PageBreadcrumb from "@/components/PageBreadcrumb";
 import { formatNGN } from "@/lib/utils";
 import { useCart } from "@/context/CartContext";
+import { NIGERIAN_STATES } from "@/lib/nigeria";
+import { useSession } from "@/lib/auth-client";
 
 const STEPS = ["Shipping & Delivery", "Payment Method", "Order Placed"] as const;
 type Step = (typeof STEPS)[number];
 type ShippingMethod = "standard" | "express";
 type PaymentMethod = "paystack" | "cod";
-
-const NIGERIAN_STATES = [
-  "Abia", "Abuja (FCT)", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa", "Benue", "Borno",
-  "Cross River", "Delta", "Ebonyi", "Edo", "Ekiti", "Enugu", "Gombe", "Imo", "Jigawa", "Kaduna",
-  "Kano", "Katsina", "Kebbi", "Kogi", "Kwara", "Lagos", "Nasarawa", "Niger", "Ogun", "Ondo", "Osun",
-  "Oyo", "Plateau", "Rivers", "Sokoto", "Taraba", "Yobe", "Zamfara",
-];
 
 const PAYMENT_METHODS: { id: PaymentMethod; label: string; sub: string; badge: string }[] = [
   {
@@ -68,6 +63,17 @@ interface Quote {
   discountError: string | null;
   shippingOptions: Record<ShippingMethod, ShippingOption>;
   problems: string[];
+}
+
+interface SavedAddress {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  phone: string | null;
+  street: string;
+  city: string;
+  state: string;
+  isDefault: boolean;
 }
 
 interface PlacedOrder {
@@ -139,6 +145,47 @@ export default function CheckoutPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [retryOrderNumber, setRetryOrderNumber] = useState<string | null>(null);
   const [placed, setPlaced] = useState<PlacedOrder | null>(null);
+
+  // Signed-in customers start from their default saved address.
+  const { data: session } = useSession();
+  const sessionUser = session?.user ?? null;
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
+
+  const applySavedAddress = (a: SavedAddress) =>
+    setShipping((s) => ({
+      ...s,
+      firstName: a.firstName ?? s.firstName,
+      lastName: a.lastName ?? s.lastName,
+      phone: a.phone ?? s.phone,
+      address: a.street,
+      city: a.city,
+      state: (NIGERIAN_STATES as readonly string[]).includes(a.state) ? a.state : s.state,
+    }));
+
+  useEffect(() => {
+    if (!sessionUser) return;
+    let cancelled = false;
+    fetch("/api/v1/store/addresses")
+      .then((res) => res.json())
+      .then((json) => {
+        if (cancelled) return;
+        const saved: SavedAddress[] = json?.success ? json.data : [];
+        setSavedAddresses(saved);
+        const [first = "", ...rest] = (sessionUser.name ?? "").split(" ");
+        setShipping((s) => ({
+          ...s,
+          email: s.email || sessionUser.email,
+          firstName: s.firstName || first,
+          lastName: s.lastName || rest.join(" "),
+        }));
+        const preferred = saved.find((a) => a.isDefault);
+        if (preferred) applySavedAddress(preferred);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionUser]);
 
   // The quote is keyed by everything that changes the price; a quote for an
   // older key is ignored, so stale totals are never shown.
@@ -398,6 +445,27 @@ export default function CheckoutPage() {
                     <MapPin size={20} color="#1a1a1a" className="shrink-0" />
                     <h2 className="text-base sm:text-lg font-bold text-[#1a1a1a]">Delivery Address (Nigeria)</h2>
                   </div>
+
+                  {savedAddresses.length > 1 && (
+                    <div className="mb-5">
+                      <label htmlFor="co-saved" style={labelStyle}>Saved addresses</label>
+                      <select
+                        id="co-saved"
+                        defaultValue={savedAddresses.find((a) => a.isDefault)?.id ?? ""}
+                        onChange={(e) => {
+                          const chosen = savedAddresses.find((a) => a.id === e.target.value);
+                          if (chosen) applySavedAddress(chosen);
+                        }}
+                        style={{ ...inputStyle, background: "#fff" }}
+                      >
+                        {savedAddresses.map((a) => (
+                          <option key={a.id} value={a.id}>
+                            {[a.firstName, a.lastName].filter(Boolean).join(" ")} · {a.street}, {a.city}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                     <div>

@@ -88,6 +88,14 @@ export const ADDRESS = {
   country: "Nigeria",
 };
 
+/** Signs up a customer through better-auth; returns headers that authenticate as them. */
+export async function signUpCustomer(email = `shopper-${crypto.randomUUID().slice(0, 8)}@example.com`) {
+  const { auth } = await import("@/lib/auth");
+  const result = await auth.api.signUpEmail({ body: { email, password: "correct-horse-battery", name: "Aisha Bello" } });
+  if (!result.token) throw new Error("sign-up returned no session token");
+  return { userId: result.user.id, email, headers: { authorization: `Bearer ${result.token}` } };
+}
+
 export function signPaystack(body: string) {
   return crypto.createHmac("sha512", process.env.PAYSTACK_SECRET_KEY!).update(body).digest("hex");
 }

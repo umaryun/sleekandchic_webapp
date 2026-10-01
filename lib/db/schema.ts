@@ -131,6 +131,10 @@ export const userAddresses = pgTable("user_addresses", {
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   label: varchar("label", { length: 50 }),
+  // Recipient, so an address can be for someone else. Null on rows saved before these existed.
+  firstName: varchar("first_name", { length: 100 }),
+  lastName: varchar("last_name", { length: 100 }),
+  phone: varchar("phone", { length: 30 }),
   street: text("street").notNull(),
   city: varchar("city", { length: 100 }).notNull(),
   state: varchar("state", { length: 100 }).notNull(),
