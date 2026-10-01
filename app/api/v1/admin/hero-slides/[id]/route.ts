@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
-import { z } from "zod";
 import { db } from "@/lib/db";
 import { heroSlides } from "@/lib/db/schema";
+import { slideFieldsSchema } from "@/lib/services/hero-slides";
 import { eq } from "drizzle-orm";
 import {
   apiSuccess,
@@ -21,17 +21,7 @@ export async function PUT(
     const session = await requireAdmin(req);
     const { id } = await params;
 
-    const updateSchema = z.object({
-      boldText: z.string().nullable().optional(),
-      regularText: z.string().nullable().optional(),
-      linkText: z.string().nullable().optional(),
-      href: z.string().nullable().optional(),
-      imageUrl: z.string().url().optional(),
-      displayOrder: z.number().int().optional(),
-      isActive: z.boolean().optional(),
-    });
-
-    const { data, error } = await parseBody(req, updateSchema);
+    const { data, error } = await parseBody(req, slideFieldsSchema.partial());
     if (error) return error;
 
     const [existing] = await db

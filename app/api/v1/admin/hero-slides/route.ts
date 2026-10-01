@@ -1,8 +1,8 @@
 import { NextRequest } from "next/server";
-import { z } from "zod";
 import { db } from "@/lib/db";
 import { heroSlides } from "@/lib/db/schema";
-import { asc, count } from "drizzle-orm";
+import { slideFieldsSchema } from "@/lib/services/hero-slides";
+import { asc } from "drizzle-orm";
 import {
   apiSuccess,
   apiError,
@@ -29,15 +29,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-const createSlideSchema = z.object({
-  boldText: z.string().optional(),
-  regularText: z.string().optional(),
-  linkText: z.string().optional(),
-  href: z.string().optional(),
-  imageUrl: z.string().url(),
-  displayOrder: z.number().int().default(0),
-  isActive: z.boolean().default(true),
-});
+const createSlideSchema = slideFieldsSchema;
 
 export async function POST(req: NextRequest) {
   try {
@@ -48,13 +40,13 @@ export async function POST(req: NextRequest) {
     const [slide] = await db
       .insert(heroSlides)
       .values({
-        boldText: data!.boldText || null,
-        regularText: data!.regularText || null,
-        linkText: data!.linkText || null,
-        href: data!.href || null,
+        boldText: data!.boldText ?? null,
+        regularText: data!.regularText ?? null,
+        linkText: data!.linkText ?? null,
+        href: data!.href ?? null,
         imageUrl: data!.imageUrl,
-        displayOrder: data!.displayOrder,
-        isActive: data!.isActive,
+        displayOrder: data!.displayOrder ?? 0,
+        isActive: data!.isActive ?? true,
       })
       .returning();
 
