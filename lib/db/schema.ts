@@ -14,6 +14,7 @@ import {
   jsonb,
   index,
   uniqueIndex,
+  type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 import { relations, sql } from "drizzle-orm";
 
@@ -180,12 +181,15 @@ export const categories = pgTable(
     name: varchar("name", { length: 100 }).notNull(),
     slug: varchar("slug", { length: 120 }).notNull().unique(),
     iconUrl: text("icon_url"),
-    parentId: uuid("parent_id"),
+    // One level deep: a subcategory's parent is a top-level category.
+    // Deleting a parent moves its subcategories to the top level.
+    parentId: uuid("parent_id").references((): AnyPgColumn => categories.id, { onDelete: "set null" }),
     displayOrder: integer("display_order").notNull().default(0),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   (table) => [
     uniqueIndex("categories_slug_idx").on(table.slug),
+    index("categories_parent_idx").on(table.parentId),
   ]
 );
 
