@@ -7,6 +7,7 @@ import type { Product } from "@/types";
 import { formatNGN } from "@/lib/utils";
 import { useCart } from "@/context/CartContext";
 import ShopImage from "@/components/ShopImage";
+import QuickAddModal from "@/components/QuickAddModal";
 
 interface ProductCardProps {
   product: Product;
@@ -25,10 +26,11 @@ export default function ProductCard({ product }: ProductCardProps) {
   const { addItem } = useCart();
   const [state, setState] = useState<"idle" | "adding" | "added">("idle");
   const [error, setError] = useState<string | null>(null);
+  const [quickAddOpen, setQuickAddOpen] = useState(false);
   const href = `/products/${product.slug}`;
 
-  // Sizes and colours are chosen on the product page; the card only adds
-  // directly when there's nothing to choose.
+  // With sizes or colours to choose, Add to Cart opens the quick-add window;
+  // with nothing to choose, it goes straight in the bag.
   const handleAdd = async () => {
     setError(null);
     setState("adding");
@@ -90,12 +92,15 @@ export default function ProductCard({ product }: ProductCardProps) {
         {product.soldOut ? (
           <span className={`${buttonClass} border-[#e0e0e0] text-[#767676] cursor-not-allowed`}>Sold out</span>
         ) : product.hasOptions ? (
-          <Link
-            href={href}
-            className={`${buttonClass} bg-[#1a1a1a] text-white border-[#1a1a1a] hover:bg-white hover:text-[#1a1a1a] no-underline`}
+          <button
+            type="button"
+            onClick={() => setQuickAddOpen(true)}
+            aria-haspopup="dialog"
+            className={`${buttonClass} cursor-pointer bg-[#1a1a1a] text-white border-[#1a1a1a] hover:bg-white hover:text-[#1a1a1a]`}
           >
-            Choose size
-          </Link>
+            <ShoppingCart size={14} />
+            Add to Cart
+          </button>
         ) : (
           <button
             type="button"
@@ -126,6 +131,8 @@ export default function ProductCard({ product }: ProductCardProps) {
           {error}
         </p>
       )}
+
+      {quickAddOpen && <QuickAddModal product={product} onClose={() => setQuickAddOpen(false)} />}
     </div>
   );
 }
