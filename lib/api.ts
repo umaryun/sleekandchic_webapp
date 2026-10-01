@@ -36,6 +36,8 @@ export interface FetchProductsParams {
   minPrice?: number;
   maxPrice?: number;
   badge?: "sale" | "new" | "hot";
+  /** Only products the shop marks as featured. */
+  featured?: boolean;
   sort?: "price_asc" | "price_desc" | "newest" | "rating" | "name";
 }
 
@@ -52,6 +54,7 @@ export async function fetchProducts(
   if (params.maxPrice !== undefined)
     query.set("maxPrice", String(params.maxPrice));
   if (params.badge) query.set("badge", params.badge);
+  if (params.featured) query.set("featured", "1");
   if (params.sort) query.set("sort", params.sort);
 
   const qs = query.toString();

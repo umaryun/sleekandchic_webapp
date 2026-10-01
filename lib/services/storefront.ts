@@ -2,6 +2,7 @@ import { and, asc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { categories, productImages, productVariants, products } from "@/lib/db/schema";
 import { activeVariantsOf } from "@/lib/services/catalog";
+import { displayBadge, saleInfo } from "@/lib/pricing";
 import type { Product } from "@/types";
 
 /** A product on sale, as the shop shows it, or null when it isn't for sale. */
@@ -21,6 +22,9 @@ export async function getStoreProduct(slug: string): Promise<Product | null> {
       : Promise.resolve(null),
   ]);
 
+  const price = Number(product.price);
+  const sale = saleInfo(price, product.originalPrice ? Number(product.originalPrice) : null);
+
   const mappedImages = images.map((i) => ({
     id: i.id,
     imageUrl: i.imageUrl,
@@ -33,12 +37,12 @@ export async function getStoreProduct(slug: string): Promise<Product | null> {
     name: product.name,
     slug: product.slug,
     description: product.description,
-    price: Number(product.price),
-    originalPrice: product.originalPrice ? Number(product.originalPrice) : null,
+    price,
+    originalPrice: sale.originalPrice,
     sku: product.sku,
     brand: product.brand,
-    badge: product.badge,
-    discount: product.discount,
+    badge: displayBadge(sale.onSale, product.badge),
+    discount: sale.discountPercent,
     rating: product.rating,
     reviewCount: product.reviewCount,
     inStock: product.inStock,

@@ -2,7 +2,8 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { products, productImages, productVariants, categories } from "@/lib/db/schema";
-import { eq, ilike, and, or, gte, lte, sql, desc, asc, count, inArray } from "drizzle-orm";
+import { eq, ilike, and, or, gt, gte, lte, sql, desc, asc, count, inArray } from "drizzle-orm";
+import { displayBadge, saleInfo } from "@/lib/pricing";
 import { apiSuccess, apiError, paginationMeta } from "@/lib/api-utils";
 
 const querySchema = z.object({
@@ -13,6 +14,7 @@ const querySchema = z.object({
   minPrice: z.coerce.number().optional(),
   maxPrice: z.coerce.number().optional(),
   badge: z.enum(["sale", "new", "hot"]).optional(),
+  featured: z.enum(["1"]).optional(),
   sort: z.enum(["price_asc", "price_desc", "newest", "rating", "name"]).default("newest"),
 });
 
@@ -26,7 +28,7 @@ export async function GET(req: NextRequest) {
       return apiError("Invalid query parameters", 422);
     }
 
-    const { page, limit, category, search, minPrice, maxPrice, badge, sort } = parsed.data;
+    const { page, limit, category, search, minPrice, maxPrice, badge, featured, sort } = parsed.data;
     const offset = (page - 1) * limit;
 
     // Build where conditions. Drafts and archived products aren't for sale.
@@ -57,9 +59,10 @@ export async function GET(req: NextRequest) {
       conditions.push(lte(products.price, String(maxPrice)));
     }
 
-    if (badge) {
-      conditions.push(eq(products.badge, badge));
-    }
+    // "sale" means a "was" price above the price (see lib/pricing.ts).
+    if (badge === "sale") conditions.push(gt(products.originalPrice, products.price));
+    else if (badge) conditions.push(eq(products.badge, badge));
+    if (featured) conditions.push(eq(products.isFeatured, true));
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
@@ -151,14 +154,16 @@ export async function GET(req: NextRequest) {
     const data = rows.map((p) => {
       const variants = variantsByProduct.get(p.id) ?? [];
       const soldOut = !p.inStock || (variants.length > 0 && variants.every((v) => v.stock <= 0));
+      const price = Number(p.price);
+      const sale = saleInfo(price, p.originalPrice ? Number(p.originalPrice) : null);
       return {
         id: p.id,
         name: p.name,
         slug: p.slug,
-        price: Number(p.price),
-        originalPrice: p.originalPrice ? Number(p.originalPrice) : null,
-        badge: p.badge,
-        discount: p.discount,
+        price,
+        originalPrice: sale.originalPrice,
+        badge: displayBadge(sale.onSale, p.badge),
+        discount: sale.discountPercent,
         rating: p.rating,
         reviewCount: p.reviewCount,
         inStock: p.inStock,

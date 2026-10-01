@@ -214,6 +214,8 @@ export const products = pgTable(
     reviewCount: integer("review_count").notNull().default(0),
     inStock: boolean("in_stock").notNull().default(true),
     status: productStatusEnum("status").notNull().default("active"),
+    // Shown in the home page's Featured tab.
+    isFeatured: boolean("is_featured").notNull().default(false),
     categoryId: uuid("category_id").references(() => categories.id, {
       onDelete: "set null",
     }),

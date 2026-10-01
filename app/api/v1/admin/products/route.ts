@@ -121,6 +121,7 @@ const createProductSchema = z.object({
   categoryId: z.string().uuid().optional(),
   inStock: z.boolean().default(true),
   status: z.enum(["draft", "active"]).default("active"),
+  isFeatured: z.boolean().default(false),
   images: z
     .array(
       z.object({
@@ -159,6 +160,7 @@ export async function POST(req: NextRequest) {
       categoryId,
       inStock,
       status,
+      isFeatured,
       images,
       variants,
     } = data!;
@@ -186,6 +188,7 @@ export async function POST(req: NextRequest) {
           categoryId: categoryId || null,
           inStock,
           status,
+          isFeatured,
         })
         .returning();
 

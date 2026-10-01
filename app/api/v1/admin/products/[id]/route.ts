@@ -89,6 +89,7 @@ const updateProductSchema = z.object({
   ),
   inStock: z.boolean().optional(),
   status: z.enum(["draft", "active", "archived"]).optional(),
+  isFeatured: z.boolean().optional(),
   images: z
     .array(
       z.object({
@@ -154,6 +155,7 @@ export async function PUT(
     if (data!.discount !== undefined) updates.discount = data!.discount;
     if (data!.categoryId !== undefined) updates.categoryId = data!.categoryId;
     if (data!.status !== undefined) updates.status = data!.status;
+    if (data!.isFeatured !== undefined) updates.isFeatured = data!.isFeatured;
     if (data!.inStock !== undefined) updates.inStock = data!.inStock;
 
     // One transaction, so a failure part-way never leaves the product without

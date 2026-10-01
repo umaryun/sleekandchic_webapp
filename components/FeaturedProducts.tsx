@@ -3,31 +3,29 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import ProductCard from "./ProductCard";
-import { fetchProducts } from "@/lib/api";
+import { fetchProducts, type FetchProductsParams } from "@/lib/api";
 import type { Product } from "@/types";
 
-const tabs = [
-  { id: "all", label: "All", badge: undefined as "sale" | "new" | "hot" | undefined },
-  { id: "sale", label: "On Sale", badge: "sale" as const },
-  { id: "new", label: "New Arrivals", badge: "new" as const },
-  { id: "hot", label: "Best Sellers", badge: "hot" as const },
+// Every tab is backed by real data: newest products, the ones the shop marks
+// as featured, and those with a "was" price above the price.
+const TABS: { id: string; label: string; query: FetchProductsParams; empty: string; more: string }[] = [
+  { id: "new", label: "New in", query: { sort: "newest" }, empty: "New pieces are on the way.", more: "/products" },
+  { id: "featured", label: "Featured", query: { featured: true }, empty: "Nothing featured right now.", more: "/products" },
+  { id: "sale", label: "On sale", query: { badge: "sale" }, empty: "Nothing on sale right now.", more: "/products?sale=1" },
 ];
 
 export default function FeaturedProducts() {
-  const [activeTab, setActiveTab] = useState("all");
+  const [activeTab, setActiveTab] = useState(TABS[0].id);
   // Products for the tab they were loaded for; a different tab means loading.
   const [loaded, setLoaded] = useState<{ tab: string; products: Product[] } | null>(null);
   const loading = loaded?.tab !== activeTab;
   const products = loaded?.products ?? [];
+  const tab = TABS.find((t) => t.id === activeTab) ?? TABS[0];
 
   useEffect(() => {
     let cancelled = false;
-    const tab = tabs.find((t) => t.id === activeTab);
-    fetchProducts({
-      limit: 8,
-      badge: tab?.badge,
-      sort: "newest",
-    })
+    const current = TABS.find((t) => t.id === activeTab) ?? TABS[0];
+    fetchProducts({ limit: 8, sort: "newest", ...current.query })
       .then((data) => {
         if (!cancelled) setLoaded({ tab: activeTab, products: data.products });
       })
@@ -41,140 +39,60 @@ export default function FeaturedProducts() {
   }, [activeTab]);
 
   return (
-    <section
-      style={{
-        maxWidth: "1280px",
-        margin: "0 auto 56px",
-        padding: "0 16px",
-      }}
-    >
-      {/* Section Header */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: "24px",
-          flexWrap: "wrap",
-          gap: "16px",
-        }}
-      >
-        <div>
-          <p
-            style={{
-              fontSize: "12px",
-              color: "#8a6452",
-              fontWeight: 600,
-              letterSpacing: "2px",
-              textTransform: "uppercase",
-              marginBottom: "4px",
-            }}
-          >
-            This Week
-          </p>
-          <h2
-            style={{
-              fontSize: "24px",
-              fontWeight: 700,
-              color: "#1a1a1a",
-            }}
-          >
-            Featured Products
-          </h2>
-        </div>
+    <section className="mx-auto mb-14 max-w-[1280px] px-4" aria-labelledby="home-products-heading">
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <h2 id="home-products-heading" className="text-2xl font-bold text-[#1a1a1a]">
+          Shop the collection
+        </h2>
 
-        {/* Tabs */}
-        <div
-          style={{
-            display: "flex",
-            gap: "4px",
-            background: "#f5f5f5",
-            borderRadius: "4px",
-            padding: "4px",
-          }}
-        >
-          {tabs.map((tab) => (
+        <div role="tablist" aria-label="Show" className="flex gap-1 rounded bg-[#f5f5f5] p-1">
+          {TABS.map((t) => (
             <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              style={{
-                padding: "7px 16px",
-                borderRadius: "3px",
-                border: "none",
-                cursor: "pointer",
-                fontSize: "13px",
-                fontWeight: activeTab === tab.id ? 600 : 400,
-                background: activeTab === tab.id ? "#1a1a1a" : "transparent",
-                color: activeTab === tab.id ? "#fff" : "#666",
-                transition: "all 0.2s",
-              }}
+              key={t.id}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === t.id}
+              onClick={() => setActiveTab(t.id)}
+              className={`rounded-[3px] px-4 py-1.5 text-[13px] transition-colors ${
+                activeTab === t.id ? "bg-[#1a1a1a] font-semibold text-white" : "text-[#555] hover:text-[#1a1a1a]"
+              }`}
             >
-              {tab.label}
+              {t.label}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Product Grid */}
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 lg:grid-cols-4" aria-busy="true">
           {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} style={{ background: "#fff", borderRadius: "5px", overflow: "hidden" }}>
-              <div style={{ paddingTop: "100%", background: "#f5f5f5" }} className="animate-pulse" />
-              <div style={{ padding: "14px 16px" }}>
-                <div style={{ height: "16px", background: "#f0f0f0", borderRadius: "4px", marginBottom: "10px", width: "80%" }} className="animate-pulse" />
-                <div style={{ height: "14px", background: "#f0f0f0", borderRadius: "4px", width: "50%" }} className="animate-pulse" />
+            <div key={i} className="overflow-hidden rounded-[5px] bg-white">
+              <div className="animate-pulse bg-[#f5f5f5] pt-[100%]" />
+              <div className="space-y-2.5 p-3.5">
+                <div className="h-4 w-4/5 animate-pulse rounded bg-[#f0f0f0]" />
+                <div className="h-3.5 w-1/2 animate-pulse rounded bg-[#f0f0f0]" />
               </div>
             </div>
           ))}
         </div>
       ) : products.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "48px 0", color: "#6b6b6b" }}>
-          <p style={{ fontSize: "16px" }}>No products found in this category.</p>
-        </div>
+        <p className="py-12 text-center text-base text-[#6b6b6b]">{tab.empty}</p>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
           {products.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-            />
+            <ProductCard key={product.id} product={product} />
           ))}
         </div>
       )}
 
-      {/* View All */}
-      <div style={{ textAlign: "center", marginTop: "36px" }}>
+      <div className="mt-9 text-center">
         <Link
-          href="/products"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "8px",
-            padding: "12px 36px",
-            border: "2px solid #1a1a1a",
-            color: "#1a1a1a",
-            textDecoration: "none",
-            fontWeight: 600,
-            fontSize: "14px",
-            borderRadius: "2px",
-            transition: "all 0.2s",
-          }}
-          onMouseEnter={(e) => {
-            const el = e.currentTarget as HTMLAnchorElement;
-            el.style.background = "#1a1a1a";
-            el.style.color = "#fff";
-          }}
-          onMouseLeave={(e) => {
-            const el = e.currentTarget as HTMLAnchorElement;
-            el.style.background = "transparent";
-            el.style.color = "#1a1a1a";
-          }}
+          href={tab.more}
+          className="inline-flex items-center gap-2 rounded-sm border-2 border-[#1a1a1a] px-9 py-3 text-sm font-semibold text-[#1a1a1a] transition-colors hover:bg-[#1a1a1a] hover:text-white"
         >
-          View All Products
+          View all
         </Link>
       </div>
-
     </section>
   );
 }

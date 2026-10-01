@@ -33,7 +33,7 @@ export default function CategorySection() {
   if (loading) {
     return (
       <section
-        className="hidden sm:block"
+        className="block"
         style={{
           maxWidth: "1280px",
           margin: "50px auto",
@@ -55,7 +55,7 @@ export default function CategorySection() {
             </span>
           </h2>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-5">
+        <div className="grid grid-cols-3 md:grid-cols-6 gap-5">
           {Array.from({ length: 6 }).map((_, i) => (
             <div
               key={i}
@@ -82,7 +82,7 @@ export default function CategorySection() {
 
   return (
     <section
-    className="hidden sm:block"
+    className="block"
       style={{
         maxWidth: "1280px",
         margin: "50px auto",
@@ -112,7 +112,7 @@ export default function CategorySection() {
       </div>
 
       {/* Category Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-5">
+      <div className="grid grid-cols-3 md:grid-cols-6 gap-5">
         {categories.map((cat) => {
           const iconSrc = cat.iconUrl || categoryIconMap[cat.slug] || `/${cat.slug}.png`;
           return (

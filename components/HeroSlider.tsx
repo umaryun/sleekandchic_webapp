@@ -3,10 +3,10 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
-import { fetchHeroSlides, fetchCategories } from "@/lib/api";
+import { fetchHeroSlides } from "@/lib/api";
 import { isSafeHref } from "@/lib/links";
 import { STORE } from "@/lib/store";
-import type { HeroSlide, Category } from "@/types";
+import type { HeroSlide } from "@/types";
 import ShopImage from "@/components/ShopImage";
 
 const SLIDE_MS = 6000;
@@ -28,18 +28,14 @@ function usePrefersReducedMotion() {
 
 export default function HeroSlider() {
   const [slides, setSlides] = useState<HeroSlide[]>([]);
-  const [cats, setCats] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [current, setCurrent] = useState(0);
   const [paused, setPaused] = useState(false);
   const reducedMotion = usePrefersReducedMotion();
 
   useEffect(() => {
-    Promise.all([fetchHeroSlides(), fetchCategories()])
-      .then(([slidesData, catsData]) => {
-        setSlides(slidesData);
-        setCats(catsData);
-      })
+    fetchHeroSlides()
+      .then(setSlides)
       .catch((err) => console.error("HeroSlider fetch error:", err))
       .finally(() => setLoading(false));
   }, []);
@@ -55,7 +51,6 @@ export default function HeroSlider() {
   if (loading) {
     return (
       <section className="mx-auto mb-8 flex max-w-[1280px] gap-6 px-4" aria-busy="true">
-        <div className="hidden w-[220px] shrink-0 animate-pulse rounded-[5px] bg-[#f5f5f5] lg:block" style={{ minHeight: 420 }} />
         <div className="flex-1 animate-pulse rounded-[5px] bg-[#f0ece6]" style={{ minHeight: 420 }} />
       </section>
     );
@@ -63,25 +58,6 @@ export default function HeroSlider() {
 
   return (
     <section className="mx-auto mb-8 flex max-w-[1280px] gap-6 px-4">
-      {/* Categories (desktop) */}
-      {cats.length > 0 && (
-        <nav aria-label="Shop by category" className="hidden w-[220px] shrink-0 overflow-y-auto rounded-b-[5px] border border-t-0 border-[#e8e8e8] bg-white lg:block">
-          <ul>
-            {cats.map((cat) => (
-              <li key={cat.id}>
-                <Link
-                  href={`/products?category=${cat.slug}`}
-                  className="flex items-center justify-between py-2.5 pl-[18px] pr-5 text-[13.5px] leading-snug text-[#333] transition-all hover:pl-[22px] hover:text-[#8a6452] focus-visible:pl-[22px] focus-visible:text-[#8a6452]"
-                >
-                  <span>{cat.name}</span>
-                  {cat.children && cat.children.length > 0 && <ChevronRight size={12} className="text-[#bbb]" aria-hidden />}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
-      )}
-
       {/* Slides */}
       {slides.length === 0 ? (
         <Link
