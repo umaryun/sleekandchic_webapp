@@ -8,7 +8,6 @@ import {
   stockMovements,
   type StockMovementReason,
 } from "@/lib/db/schema";
-import { generateOrderNumber } from "@/lib/api-utils";
 import { koboToDecimal, toKobo } from "@/lib/money";
 import { getDbShippingRates, getShippingQuotes, type ShippingQuote, type ShippingZone } from "@/lib/shipping";
 import { findCart, loadCartLines, type CartLine, type DbOrTx } from "@/lib/services/cart";
@@ -173,7 +172,6 @@ export async function placeOrder(input: PlaceOrderInput) {
     const [order] = await tx
       .insert(orders)
       .values({
-        orderNumber: generateOrderNumber(),
         userId: input.userId,
         guestEmail: input.guestEmail,
         subtotal: koboToDecimal(quote.subtotalKobo),

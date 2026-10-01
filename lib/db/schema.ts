@@ -1,6 +1,7 @@
 import {
   pgTable,
   pgEnum,
+  pgSequence,
   uuid,
   text,
   varchar,
@@ -14,7 +15,7 @@ import {
   index,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 
 // ──────────────────────────────────────────────
 // Enums
@@ -305,11 +306,17 @@ export const cartItems = pgTable(
 // Orders
 // ──────────────────────────────────────────────
 
+// Order numbers are SC-10001, SC-10002, … : short enough to read over the phone.
+export const orderNumberSeq = pgSequence("order_number_seq", { startWith: 10001 });
+
 export const orders = pgTable(
   "orders",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    orderNumber: varchar("order_number", { length: 20 }).notNull().unique(),
+    orderNumber: varchar("order_number", { length: 20 })
+      .notNull()
+      .unique()
+      .default(sql`'SC-' || nextval('order_number_seq')`),
     userId: text("user_id").references(() => users.id, {
       onDelete: "set null",
     }),

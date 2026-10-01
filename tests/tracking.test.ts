@@ -52,3 +52,18 @@ describe("order tracking", () => {
     expect(wrong.body.error).toBe(missing.body.error);
   });
 });
+
+describe("order numbers", () => {
+  it("are short and sequential, and can be typed without the SC-", async () => {
+    const [a] = await db.insert(orders).values({ totalAmount: "1000.00", guestEmail: "x@y.com" }).returning();
+    const [b] = await db.insert(orders).values({ totalAmount: "1000.00", guestEmail: "x@y.com" }).returning();
+    expect(a.orderNumber).toMatch(/^SC-\d{5,}$/);
+    expect(Number(b.orderNumber.slice(3))).toBe(Number(a.orderNumber.slice(3)) + 1);
+
+    const digits = a.orderNumber.slice(3);
+    for (const typed of [digits, `sc ${digits}`, `SC${digits}`]) {
+      const res = await trackGet(jsonRequest(`/api/v1/store/orders/tracking?order_number=${encodeURIComponent(typed)}&contact=x@y.com`));
+      expect(res.status).toBe(200);
+    }
+  });
+});

@@ -25,7 +25,9 @@ export async function GET(req: NextRequest) {
     const parsed = trackingSchema.safeParse(params);
     if (!parsed.success) return apiError("Enter your order number", 422);
 
-    const orderNumber = parsed.data.order_number.toUpperCase();
+    // "sc-10001", "SC 10001" and plain "10001" all mean SC-10001.
+    const typed = parsed.data.order_number.trim().toUpperCase().replace(/\s+/g, "");
+    const orderNumber = /^\d+$/.test(typed) ? `SC-${typed}` : typed.replace(/^SC(?=\d)/, "SC-");
     const contact = (parsed.data.contact ?? parsed.data.email ?? "").trim();
 
     const [order] = await db.select().from(orders).where(eq(orders.orderNumber, orderNumber)).limit(1);
