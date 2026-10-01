@@ -101,3 +101,14 @@ describe("editing a product's sizes", () => {
     expect(moves[0]).toMatchObject({ delta: 4, reason: "adjustment" });
   });
 });
+
+describe("variant colours", () => {
+  it("refuses hex codes, which customers would see as-is", async () => {
+    const { product } = await createProduct({ price: 20000, variants: [{ size: "M", stock: 5 }] });
+    const res = await json(await put(product.id, { variants: [{ size: "M", color: "#000000", stockQuantity: 5 }] }));
+    expect(res.status).toBe(422);
+    expect(res.body.error).toMatch(/colour name/);
+    expect((await put(product.id, { variants: [{ size: "M", color: " Emerald ", stockQuantity: 5 }] })).status).toBe(200);
+    expect((await variantsOf(product.id))[0].color).toBe("Emerald");
+  });
+});

@@ -12,7 +12,7 @@ import {
   parseBody,
   auditLog,
 } from "@/lib/api-utils";
-import { activeVariantsOf, duplicateCombos, syncVariants } from "@/lib/services/catalog";
+import { activeVariantsOf, duplicateCombos, syncVariants, variantColourSchema } from "@/lib/services/catalog";
 
 // ──────────────────────────────────────────────
 // GET — Single product detail
@@ -104,7 +104,7 @@ const updateProductSchema = z.object({
         // Matched against this product's variants; anything else is treated as new.
         id: z.string().optional().nullable(),
         size: z.string().optional().nullable(),
-        color: z.string().optional().nullable(),
+        color: variantColourSchema.optional().nullable(),
         stockQuantity: z.number().int().min(0).default(0),
         priceOverride: z.number().positive().nullable().optional(),
       })

@@ -1,7 +1,15 @@
 import { and, eq, inArray } from "drizzle-orm";
+import { z } from "zod";
 import { cartItems, orderItems, productVariants, stockMovements } from "@/lib/db/schema";
 import { koboToDecimal, toKobo } from "@/lib/money";
 import type { DbOrTx } from "@/lib/services/cart";
+
+/** A size's colour as customers will read it: a name, never a hex code. */
+export const variantColourSchema = z
+  .string()
+  .trim()
+  .max(30, "Keep colour names to 30 characters")
+  .refine((v) => !/^#?[0-9a-f]{3}([0-9a-f]{3})?$/i.test(v), "Use a colour name customers understand, like Black or Emerald");
 
 export interface VariantInput {
   id?: string | null;

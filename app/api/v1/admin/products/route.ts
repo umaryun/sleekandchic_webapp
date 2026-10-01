@@ -17,7 +17,7 @@ import {
   slugify,
   paginationMeta,
 } from "@/lib/api-utils";
-import { duplicateCombos, syncVariants } from "@/lib/services/catalog";
+import { duplicateCombos, syncVariants, variantColourSchema } from "@/lib/services/catalog";
 
 // ──────────────────────────────────────────────
 // GET — List products (with search, pagination)
@@ -133,7 +133,7 @@ const createProductSchema = z.object({
     .array(
       z.object({
         size: z.string().optional(),
-        color: z.string().optional(),
+        color: variantColourSchema.optional(),
         stockQuantity: z.number().int().min(0).default(0),
         priceOverride: z.number().positive().optional(),
       })
