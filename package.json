@@ -9,6 +9,8 @@
     "lint": "eslint",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
+    "db:migrate": "npx tsx lib/db/migrate.ts",
+    "db:baseline": "npx tsx lib/db/baseline.ts",
     "db:seed": "npx tsx lib/db/seed.ts",
     "db:storage": "npx tsx lib/db/setup-storage.ts",
     "db:studio": "drizzle-kit studio",
