@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import { apiSuccess, apiError, parseBody } from "@/lib/api-utils";
+import { rateLimit } from "@/lib/rate-limit";
 import { env } from "@/lib/env";
 import { STORE } from "@/lib/store";
 import { isEmailConfigured, sendEmail } from "@/lib/email/send";
@@ -19,6 +20,9 @@ const contactSchema = z.object({
 /** POST /api/v1/store/contact — emails a customer's message to the shop. */
 export async function POST(req: NextRequest) {
   try {
+    const limited = await rateLimit(req, "contact");
+    if (limited) return limited;
+
     const { data, error } = await parseBody(req, contactSchema);
     if (error) return error;
     if (data!.website) return apiSuccess({ sent: true }); // spam: accept silently

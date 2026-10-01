@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { orders, users } from "@/lib/db/schema";
 import { apiSuccess, apiError, parseBody, getSession } from "@/lib/api-utils";
+import { rateLimit } from "@/lib/rate-limit";
 import { isPaystackConfigured } from "@/lib/paystack";
 import { findOrderForReference } from "@/lib/services/orders";
 import { startCardPayment } from "@/lib/services/payments";
@@ -22,6 +23,9 @@ const paySchema = z.union([
  */
 export async function POST(req: NextRequest) {
   try {
+    const limited = await rateLimit(req, "payment");
+    if (limited) return limited;
+
     if (!isPaystackConfigured()) {
       return apiError("Card payments are unavailable right now. Please try again later.", 503);
     }

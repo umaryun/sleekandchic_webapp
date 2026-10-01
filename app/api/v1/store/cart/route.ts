@@ -4,6 +4,7 @@ import { and, eq, isNull } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { carts, cartItems, products, productVariants } from "@/lib/db/schema";
 import { apiSuccess, apiError, parseBody, getSession } from "@/lib/api-utils";
+import { rateLimit } from "@/lib/rate-limit";
 import { describeVariant, findCart, firstImages, loadCartLines } from "@/lib/services/cart";
 import { koboToNaira } from "@/lib/money";
 
@@ -77,6 +78,9 @@ const cartActionSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
+    const limited = await rateLimit(req, "cart");
+    if (limited) return limited;
+
     const { data, error } = await parseBody(req, cartActionSchema);
     if (error) return error;
     const { action, productId, variantId, quantity } = data!;

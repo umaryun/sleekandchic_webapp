@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { orders, orderItems, users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { apiSuccess, apiError, getSession } from "@/lib/api-utils";
+import { rateLimit } from "@/lib/rate-limit";
 
 const trackingSchema = z.object({
   order_number: z.string().trim().min(1),
@@ -17,6 +18,9 @@ const digits = (s: string) => s.replace(/\D/g, "").replace(/^234/, "0");
 
 export async function GET(req: NextRequest) {
   try {
+    const limited = await rateLimit(req, "tracking");
+    if (limited) return limited;
+
     const params = Object.fromEntries(new URL(req.url).searchParams.entries());
     const parsed = trackingSchema.safeParse(params);
     if (!parsed.success) return apiError("Enter your order number", 422);

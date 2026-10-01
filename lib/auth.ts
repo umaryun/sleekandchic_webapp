@@ -30,8 +30,16 @@ export const auth = betterAuth({
       session: schema.sessions,
       account: schema.accounts,
       verification: schema.verifications,
+      rateLimit: schema.authRateLimits,
     },
   }),
+
+  // On in production (better-auth's default), with stricter built-in limits for
+  // sign-in, sign-up and password resets. Counted in the database so every
+  // server instance shares them.
+  rateLimit: {
+    storage: "database",
+  },
 
   // The secret comes from BETTER_AUTH_SECRET; better-auth refuses to start in
   // production without one.

@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import { apiSuccess, apiError, parseBody, getSession } from "@/lib/api-utils";
+import { rateLimit } from "@/lib/rate-limit";
 import { koboToNaira } from "@/lib/money";
 import { isPaystackConfigured } from "@/lib/paystack";
 import { CheckoutError, expireStaleOrders, placeOrder } from "@/lib/services/orders";
@@ -28,6 +29,9 @@ const checkoutSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
+    const limited = await rateLimit(req, "checkout");
+    if (limited) return limited;
+
     const { data, error } = await parseBody(req, checkoutSchema);
     if (error) return error;
 

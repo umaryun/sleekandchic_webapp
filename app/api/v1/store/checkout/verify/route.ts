@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { orderItems } from "@/lib/db/schema";
 import { apiSuccess, apiError } from "@/lib/api-utils";
+import { rateLimit } from "@/lib/rate-limit";
 import { koboToNaira, toKobo } from "@/lib/money";
 import { PaystackError, verifyTransaction } from "@/lib/paystack";
 import { findOrderForReference, markOrderPaid, orderAmountKobo } from "@/lib/services/orders";
@@ -16,6 +17,9 @@ import { notifyNewOrder } from "@/lib/email/notify";
  */
 export async function GET(req: NextRequest) {
   try {
+    const limited = await rateLimit(req, "verify");
+    if (limited) return limited;
+
     const reference = new URL(req.url).searchParams.get("reference")?.trim();
     if (!reference) return apiError("Missing payment reference", 400);
 

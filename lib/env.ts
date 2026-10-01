@@ -28,6 +28,10 @@ const schema = z.object({
   EMAIL_FROM: optional,
   // Who receives new-order alerts; defaults to the store's contact email.
   OWNER_NOTIFICATION_EMAIL: optional,
+  // Optional Upstash Redis for request limits. Without it, limits are counted
+  // in Postgres.
+  UPSTASH_REDIS_REST_URL: optional,
+  UPSTASH_REDIS_REST_TOKEN: optional,
 });
 
 export type Env = z.infer<typeof schema>;

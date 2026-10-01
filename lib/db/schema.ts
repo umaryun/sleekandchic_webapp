@@ -6,6 +6,7 @@ import {
   varchar,
   boolean,
   integer,
+  bigint,
   decimal,
   real,
   timestamp,
@@ -119,6 +120,23 @@ export const verifications = pgTable("verifications", {
   expiresAt: timestamp("expires_at").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Sign-in and password-reset attempt counters, kept by better-auth. In the
+// database so the limits hold across server instances.
+export const authRateLimits = pgTable("auth_rate_limits", {
+  id: text("id").primaryKey(),
+  key: text("key").notNull().unique(),
+  count: integer("count").notNull(),
+  lastRequest: bigint("last_request", { mode: "number" }).notNull(),
+});
+
+// Request counters for the shop's public endpoints (lib/rate-limit.ts), used
+// when Upstash isn't configured. One row per client and endpoint group.
+export const rateLimits = pgTable("rate_limits", {
+  key: text("key").primaryKey(),
+  count: integer("count").notNull(),
+  resetAt: timestamp("reset_at", { withTimezone: true }).notNull(),
 });
 
 // ──────────────────────────────────────────────

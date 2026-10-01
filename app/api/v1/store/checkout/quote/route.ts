@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import { apiSuccess, apiError, parseBody, getSession } from "@/lib/api-utils";
+import { rateLimit } from "@/lib/rate-limit";
 import { koboToNaira } from "@/lib/money";
 import { findCart, loadCartLines } from "@/lib/services/cart";
 import { quoteLines } from "@/lib/services/orders";
@@ -19,6 +20,9 @@ const quoteSchema = z.object({
  */
 export async function POST(req: NextRequest) {
   try {
+    const limited = await rateLimit(req, "quote");
+    if (limited) return limited;
+
     const { data, error } = await parseBody(req, quoteSchema);
     if (error) return error;
 
