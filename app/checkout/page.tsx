@@ -141,6 +141,7 @@ export default function CheckoutPage() {
   const [appliedCode, setAppliedCode] = useState<string | null>(null);
   const [couponError, setCouponError] = useState("");
   const [checkingCoupon, setCheckingCoupon] = useState(false);
+  const [summaryOpen, setSummaryOpen] = useState(false);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -723,9 +724,23 @@ export default function CheckoutPage() {
             {/* Right Column — Order Summary */}
             {!placed && (
               <div className="order-1 lg:order-2 bg-white border border-[#f0f0f0] rounded-lg p-4 sm:p-6 lg:sticky lg:top-[90px] shadow-xs h-fit">
-                <h3 className="text-base font-bold text-[#1a1a1a] mb-4 pb-3 border-b border-[#f0f0f0]">
+                {/* On phones the summary folds to one line so the form comes first. */}
+                <button
+                  type="button"
+                  onClick={() => setSummaryOpen((v) => !v)}
+                  aria-expanded={summaryOpen}
+                  aria-controls="checkout-summary"
+                  className="flex w-full items-center justify-between text-left lg:hidden"
+                >
+                  <span className="text-sm font-bold text-[#1a1a1a]">
+                    {summaryOpen ? "Hide" : "Show"} order summary ({totalItemsCount} {totalItemsCount === 1 ? "item" : "items"})
+                  </span>
+                  <span className="text-base font-extrabold text-[#1a1a1a]">{formatNGN(quote?.totalAmount ?? shownSubtotal)}</span>
+                </button>
+                <h3 className="hidden lg:block text-base font-bold text-[#1a1a1a] mb-4 pb-3 border-b border-[#f0f0f0]">
                   Order Summary ({totalItemsCount} {totalItemsCount === 1 ? "item" : "items"})
                 </h3>
+                <div id="checkout-summary" className={`${summaryOpen ? "mt-4 block" : "hidden"} lg:mt-0 lg:block`}>
 
                 <div className="flex flex-col gap-3 mb-5 max-h-[280px] overflow-y-auto pr-1">
                   {items.map((item) => (
@@ -823,6 +838,7 @@ export default function CheckoutPage() {
 
                 <div className="flex items-center justify-center gap-1.5 text-xs text-[#6b6b6b]">
                   <Lock size={12} /> <span>Card payments are processed by Paystack</span>
+                </div>
                 </div>
               </div>
             )}

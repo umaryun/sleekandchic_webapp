@@ -29,6 +29,30 @@ export function internalError(where: string, err: unknown) {
 // Zod Parsing
 // ──────────────────────────────────────────────
 
+// Zod's built-in messages ("Invalid input: expected string…") mean little
+// without the field name; the ones written in schemas are full sentences.
+const GENERIC_MESSAGE = /^(Invalid|Too (small|big)|Expected|Required|Unrecognized)/;
+
+/**
+ * 422 with a readable message (each problem once, in order) and the
+ * problems per field in `issues` for forms that want to mark fields.
+ */
+function validationError(issues: z.core.$ZodIssue[]) {
+  const describe = (i: z.core.$ZodIssue) => {
+    const field = i.path.join(".");
+    return GENERIC_MESSAGE.test(i.message) && field ? `${field}: ${i.message}` : i.message;
+  };
+  const message = [...new Set(issues.map(describe))].join(". ");
+  return NextResponse.json(
+    {
+      success: false,
+      error: message,
+      issues: issues.map((i) => ({ path: i.path.join("."), message: i.message })),
+    },
+    { status: 422 }
+  );
+}
+
 export async function parseBody<T extends z.ZodType>(
   req: NextRequest,
   schema: T
@@ -37,10 +61,7 @@ export async function parseBody<T extends z.ZodType>(
     const body = await req.json();
     const result = schema.safeParse(body);
     if (!result.success) {
-      const messages = result.error.issues
-        .map((i) => `${i.path.join(".")}: ${i.message}`)
-        .join("; ");
-      return { data: null, error: apiError(`Validation failed: ${messages}`, 422) };
+      return { data: null, error: validationError(result.error.issues) };
     }
     return { data: result.data, error: null };
   } catch {
