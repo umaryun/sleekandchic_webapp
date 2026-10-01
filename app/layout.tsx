@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/context/CartContext";
 import { siteUrl } from "@/lib/env";
+
+// Self-hosted by Next.js: no request to Google from shoppers' browsers.
+const inter = Inter({ subsets: ["latin"], display: "swap" });
 
 export const metadata: Metadata = {
   // Makes share-preview and canonical links absolute.
@@ -25,14 +29,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
-          rel="stylesheet"
-        />
-      </head>
-      <body style={{ fontFamily: "'Inter', 'Helvetica Neue', Arial, sans-serif" }}>
+      <body className={inter.className}>
         <CartProvider>{children}</CartProvider>
       </body>
     </html>

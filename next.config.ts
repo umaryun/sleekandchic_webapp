@@ -14,7 +14,9 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  allowedDevOrigins: ['172.20.10.3'],
+  // Other devices allowed to open the dev server (e.g. a phone on the same
+  // Wi-Fi): DEV_ORIGINS=192.168.1.20,192.168.1.21
+  allowedDevOrigins: process.env.DEV_ORIGINS?.split(",").map((o) => o.trim()).filter(Boolean),
   images: {
     formats: ["image/avif", "image/webp"],
     // Uploaded product, category and banner photos (Supabase Storage public
