@@ -10,7 +10,8 @@ import {
   type ReactNode,
 } from "react";
 import type { CartData, CartItem } from "@/types";
-import { fetchCart, cartAction } from "@/lib/cart-api";
+import { fetchCart, cartAction, mergeCart } from "@/lib/cart-api";
+import { useSession } from "@/lib/auth-client";
 
 export type CartResult = { ok: true } | { ok: false; error: string };
 
@@ -42,6 +43,7 @@ function getGuestToken(): string | null {
 function setGuestToken(token: string | null) {
   try {
     if (token) localStorage.setItem(GUEST_TOKEN_KEY, token);
+    else localStorage.removeItem(GUEST_TOKEN_KEY);
   } catch {
     // Storage blocked (private mode): the bag lasts for this page only.
   }
@@ -76,11 +78,40 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [apply]);
 
+  // Signing in moves the guest bag into the account; signing out leaves an
+  // empty guest bag rather than showing the account's items.
+  const { data: session, isPending: sessionPending } = useSession();
+  const userId = session?.user?.id ?? null;
+  const previousUserId = useRef<string | null | undefined>(undefined);
+
+  useEffect(() => {
+    if (sessionPending) return;
+    const previous = previousUserId.current;
+    previousUserId.current = userId;
+
+    const guestToken = getGuestToken();
+    if (userId && guestToken) {
+      const id = ++requestIdRef.current;
+      mergeCart(guestToken)
+        .then((data) => {
+          setGuestToken(null);
+          if (id === requestIdRef.current) apply(data);
+        })
+        // Leave the guest token so the next page load tries again.
+        .catch((err) => console.error("Cart merge error:", err));
+    } else if (previous !== undefined && previous !== userId) {
+      if (!userId) setGuestToken(null);
+      void refresh();
+    }
+  }, [userId, sessionPending, apply, refresh]);
+
   useEffect(() => {
     let cancelled = false;
+    const id = ++requestIdRef.current;
     fetchCart(getGuestToken())
       .then((data) => {
-        if (!cancelled) apply(data);
+        // A merge started meanwhile has the newer bag.
+        if (!cancelled && id === requestIdRef.current) apply(data);
       })
       .catch((err) => console.error("Cart fetch error:", err))
       .finally(() => {

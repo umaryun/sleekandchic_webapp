@@ -5,10 +5,7 @@ import { db } from "@/lib/db";
 import { carts, cartItems, products, productVariants } from "@/lib/db/schema";
 import { apiSuccess, apiError, parseBody, getSession } from "@/lib/api-utils";
 import { rateLimit } from "@/lib/rate-limit";
-import { describeVariant, findCart, firstImages, loadCartLines } from "@/lib/services/cart";
-import { koboToNaira } from "@/lib/money";
-
-const MAX_LINE_QUANTITY = 20;
+import { MAX_LINE_QUANTITY, cartPayload, describeVariant, findCart } from "@/lib/services/cart";
 
 async function findOrCreateCart(userId: string | null, guestToken: string | null) {
   const existing = await findCart(userId, guestToken);
@@ -20,29 +17,8 @@ async function findOrCreateCart(userId: string | null, guestToken: string | null
   return created;
 }
 
-/** The cart as the storefront shows it, priced from the current catalogue. */
-async function cartResponse(cartId: string, guestToken: string | null) {
-  const lines = await loadCartLines(cartId);
-  const images = await firstImages([...new Set(lines.map((l) => l.productId))]);
-  const items = lines.map((line) => ({
-    id: line.itemId,
-    productId: line.productId,
-    productName: line.productName,
-    productSlug: line.productSlug,
-    productInStock: line.problem === null,
-    image: images.get(line.productId) ?? null,
-    variantId: line.variantId,
-    size: line.size,
-    color: line.color,
-    quantity: line.quantity,
-    unitPrice: koboToNaira(line.unitPriceKobo),
-    total: koboToNaira(line.unitPriceKobo * line.quantity),
-    stockAvailable: line.stockAvailable,
-    problem: line.problem,
-  }));
-  const subtotal = koboToNaira(lines.reduce((sum, l) => sum + l.unitPriceKobo * l.quantity, 0));
-  return apiSuccess({ items, subtotal, guestToken });
-}
+const cartResponse = async (cartId: string, guestToken: string | null) =>
+  apiSuccess(await cartPayload(cartId, guestToken));
 
 // ──────────────────────────────────────────────
 // GET — Retrieve cart

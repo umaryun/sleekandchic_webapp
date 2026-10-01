@@ -25,6 +25,17 @@ export async function fetchCart(guestToken?: string | null): Promise<CartData> {
   return readCart(await fetch(BASE, { headers: getHeaders(guestToken), cache: "no-store" }));
 }
 
+/** Moves the guest bag into the signed-in customer's bag and returns the result. */
+export async function mergeCart(guestToken: string): Promise<CartData> {
+  return readCart(
+    await fetch(`${BASE}/merge`, {
+      method: "POST",
+      headers: getHeaders(),
+      body: JSON.stringify({ guestToken }),
+    })
+  );
+}
+
 export async function cartAction(
   action: "add" | "update" | "remove",
   productId: string,

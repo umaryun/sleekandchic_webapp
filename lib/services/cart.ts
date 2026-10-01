@@ -1,7 +1,9 @@
-import { eq, inArray, asc } from "drizzle-orm";
+import { and, eq, inArray, asc } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { carts, cartItems, products, productImages, productVariants } from "@/lib/db/schema";
-import { toKobo } from "@/lib/money";
+import { koboToNaira, toKobo } from "@/lib/money";
+
+export const MAX_LINE_QUANTITY = 20;
 
 export type DbOrTx = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -131,4 +133,78 @@ export async function firstImages(productIds: string[], tx: DbOrTx = db) {
   const map = new Map<string, string>();
   for (const row of rows) if (!map.has(row.productId)) map.set(row.productId, row.imageUrl);
   return map;
+}
+
+/** The cart as the storefront shows it, priced from the current catalogue. */
+export async function cartPayload(cartId: string, guestToken: string | null) {
+  const lines = await loadCartLines(cartId);
+  const images = await firstImages([...new Set(lines.map((l) => l.productId))]);
+  const items = lines.map((line) => ({
+    id: line.itemId,
+    productId: line.productId,
+    productName: line.productName,
+    productSlug: line.productSlug,
+    productInStock: line.problem === null,
+    image: images.get(line.productId) ?? null,
+    variantId: line.variantId,
+    size: line.size,
+    color: line.color,
+    quantity: line.quantity,
+    unitPrice: koboToNaira(line.unitPriceKobo),
+    total: koboToNaira(line.unitPriceKobo * line.quantity),
+    stockAvailable: line.stockAvailable,
+    problem: line.problem,
+  }));
+  const subtotal = koboToNaira(lines.reduce((sum, l) => sum + l.unitPriceKobo * l.quantity, 0));
+  return { items, subtotal, guestToken };
+}
+
+/**
+ * Moves a guest's bag into the signed-in customer's bag. With no bag of their
+ * own, the guest cart simply becomes theirs (keeping its id, which pending
+ * orders refer to). Otherwise lines are added in, same lines' quantities
+ * combined up to the per-line limit, and the guest cart is removed.
+ * Returns the customer's cart id, or null if they have no cart at all.
+ */
+export async function mergeGuestCart(userId: string, guestToken: string): Promise<string | null> {
+  return db.transaction(async (tx) => {
+    const [guest] = await tx
+      .select()
+      .from(carts)
+      .where(eq(carts.guestSessionToken, guestToken))
+      .for("update")
+      .limit(1);
+    const [own] = await tx.select().from(carts).where(eq(carts.userId, userId)).limit(1);
+
+    if (!guest) return own?.id ?? null;
+
+    if (!own) {
+      await tx
+        .update(carts)
+        .set({ userId, guestSessionToken: null, updatedAt: new Date() })
+        .where(eq(carts.id, guest.id));
+      return guest.id;
+    }
+
+    const guestLines = await tx.select().from(cartItems).where(eq(cartItems.cartId, guest.id));
+    const ownLines = await tx.select().from(cartItems).where(eq(cartItems.cartId, own.id));
+    const key = (l: { productId: string; variantId: string | null }) => `${l.productId}:${l.variantId ?? ""}`;
+    const ownByKey = new Map(ownLines.map((l) => [key(l), l]));
+
+    for (const line of guestLines) {
+      const match = ownByKey.get(key(line));
+      if (match) {
+        await tx
+          .update(cartItems)
+          .set({ quantity: Math.min(match.quantity + line.quantity, MAX_LINE_QUANTITY) })
+          .where(and(eq(cartItems.id, match.id), eq(cartItems.cartId, own.id)));
+      } else {
+        await tx.update(cartItems).set({ cartId: own.id }).where(eq(cartItems.id, line.id));
+      }
+    }
+
+    await tx.delete(carts).where(eq(carts.id, guest.id));
+    await tx.update(carts).set({ updatedAt: new Date() }).where(eq(carts.id, own.id));
+    return own.id;
+  });
 }
