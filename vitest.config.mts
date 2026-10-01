@@ -5,8 +5,8 @@ export default defineConfig({
   resolve: {
     alias: [
       // Tests run against an in-memory Postgres (PGlite) instead of DATABASE_URL.
-      { find: /^@\/lib\/db$/, replacement: path.resolve(__dirname, "tests/support/test-db.ts") },
-      { find: /^@\//, replacement: `${path.resolve(__dirname)}/` },
+      { find: /^@\/lib\/db$/, replacement: path.resolve(import.meta.dirname, "tests/support/test-db.ts") },
+      { find: /^@\//, replacement: `${path.resolve(import.meta.dirname)}/` },
     ],
   },
   test: {

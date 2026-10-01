@@ -3,12 +3,19 @@ import { z } from "zod";
 import { getSupabaseAdmin, isStorageConfigured } from "@/lib/supabase";
 import { apiSuccess, apiError, requireAdmin, withCors, parseBody } from "@/lib/api-utils";
 
+// SVG is left out on purpose: it can carry scripts that run on the storage domain.
+const EXTENSIONS = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+} as const;
+
 const uploadSchema = z.object({
   bucket: z.enum(["products", "categories", "banners"]),
-  filename: z.string().min(1),
-  contentType: z
-    .string()
-    .regex(/^image\/(jpeg|png|webp|gif|svg\+xml)$/, "Only image files allowed"),
+  filename: z.string().min(1).max(200),
+  contentType: z.enum(Object.keys(EXTENSIONS) as [keyof typeof EXTENSIONS], {
+    message: "Upload a JPEG, PNG or WebP image",
+  }),
 });
 
 export async function POST(req: NextRequest) {
@@ -23,10 +30,10 @@ export async function POST(req: NextRequest) {
     const { data, error } = await parseBody(req, uploadSchema);
     if (error) return error;
 
-    const { bucket, filename, contentType } = data!;
+    const { bucket, contentType } = data!;
 
-    // Generate a unique path
-    const ext = filename.split(".").pop() || "jpg";
+    // The extension comes from the checked type, never from the filename.
+    const ext = EXTENSIONS[contentType];
     const uniqueName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
     const path = `uploads/${uniqueName}`;
 
