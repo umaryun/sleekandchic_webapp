@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { orders, orderItems, users } from "@/lib/db/schema";
-import { eq, ilike, desc, count, and, or, gte, lte, sql } from "drizzle-orm";
+import { eq, ilike, desc, count, and, or, gte, lte, sql, inArray } from "drizzle-orm";
 import {
   apiSuccess,
   apiError,
@@ -13,6 +13,7 @@ import {
   paginationMeta,
 } from "@/lib/api-utils";
 import { cancelOrder } from "@/lib/services/orders";
+import { recordOrderEvent, transitionError } from "@/lib/services/order-status";
 import { afterResponse } from "@/lib/email/send";
 import { notifyStatusChange } from "@/lib/email/notify";
 
@@ -46,7 +47,9 @@ export async function GET(req: NextRequest) {
 
     const conditions = [];
 
-    if (status) conditions.push(eq(orders.status, status));
+    // Older orders marked "paid" are being prepared too.
+    if (status === "processing" || status === "paid") conditions.push(inArray(orders.status, ["processing", "paid"]));
+    else if (status) conditions.push(eq(orders.status, status));
     if (search?.trim()) {
       // Order number, email, recipient name or phone (any format).
       const term = `%${search.trim().replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
@@ -136,59 +139,88 @@ export async function GET(req: NextRequest) {
 
 const updateOrderSchema = z.object({
   orderId: z.string().uuid(),
-  status: z
-    .enum(["pending", "paid", "processing", "shipped", "delivered", "cancelled"])
-    .optional(),
+  status: z.enum(["pending", "processing", "shipped", "delivered", "cancelled"]).optional(),
   paymentStatus: z.enum(["unpaid", "paid", "refunded"]).optional(),
+  // Shown on the timeline, e.g. why it was cancelled.
+  note: z.string().trim().max(500).optional(),
 });
+
+class Refusal extends Error {}
 
 export async function PUT(req: NextRequest) {
   try {
     const session = await requireAdmin(req);
     const { data, error } = await parseBody(req, updateOrderSchema);
     if (error) return error;
+    const { orderId, status, paymentStatus, note } = data!;
+    const actorId = session.user.id;
 
-    const [existing] = await db
-      .select()
-      .from(orders)
-      .where(eq(orders.id, data!.orderId))
-      .limit(1);
+    let existing: typeof orders.$inferSelect;
+    let updated: typeof orders.$inferSelect;
+    try {
+      ({ existing, updated } = await db.transaction(async (tx) => {
+        const [row] = await tx.select().from(orders).where(eq(orders.id, orderId)).for("update");
+        if (!row) throw new Refusal("Order not found");
 
-    if (!existing) return apiError("Order not found", 404);
+        const nextPayment = paymentStatus ?? row.paymentStatus;
+        if (status && status !== row.status) {
+          const refusal = transitionError({ ...row, paymentStatus: nextPayment }, status);
+          if (refusal) throw new Refusal(refusal);
+        }
+        if (paymentStatus === "refunded" && row.paymentStatus !== "paid") {
+          throw new Refusal("Only a paid order can be marked refunded.");
+        }
 
-    if (existing.status === "cancelled" && data!.status && data!.status !== "cancelled") {
-      return apiError("Cancelled orders can't be reopened; its stock has been returned. Ask the customer to order again.", 409);
+        if (paymentStatus && paymentStatus !== row.paymentStatus) {
+          await tx
+            .update(orders)
+            .set({
+              paymentStatus,
+              ...(paymentStatus === "paid" ? { paidAt: row.paidAt ?? new Date(), expiresAt: null } : {}),
+              updatedAt: new Date(),
+            })
+            .where(eq(orders.id, orderId));
+          await recordOrderEvent(tx, orderId, "payment_status_changed", {
+            from: row.paymentStatus,
+            to: paymentStatus,
+            actorId,
+          });
+        }
+
+        if (status === "cancelled" && row.status !== "cancelled") {
+          // Returns the order's stock and promo-code use, and adds the timeline entry.
+          await cancelOrder(tx, orderId, "order_cancelled", { actorId, note: note || undefined });
+        } else if (status && status !== row.status) {
+          await tx.update(orders).set({ status, updatedAt: new Date() }).where(eq(orders.id, orderId));
+          await recordOrderEvent(tx, orderId, "status_changed", {
+            from: row.status,
+            to: status,
+            actorId,
+            message: note || null,
+          });
+        } else if (note) {
+          await recordOrderEvent(tx, orderId, "note", { actorId, message: note });
+        }
+
+        const [after] = await tx.select().from(orders).where(eq(orders.id, orderId));
+        return { existing: row, updated: after };
+      }));
+    } catch (err) {
+      if (err instanceof Refusal) {
+        return withCors(apiError(err.message, err.message === "Order not found" ? 404 : 409), req);
+      }
+      throw err;
     }
 
-    const updated = await db.transaction(async (tx) => {
-      // Cancelling returns the order's stock and promo-code use.
-      if (data!.status === "cancelled" && existing.status !== "cancelled") {
-        await cancelOrder(tx, existing.id, "order_cancelled", { actorId: session.user.id });
-      }
-
-      const updates: Partial<typeof orders.$inferInsert> = { updatedAt: new Date() };
-      if (data!.status) updates.status = data!.status;
-      if (data!.paymentStatus) {
-        updates.paymentStatus = data!.paymentStatus;
-        if (data!.paymentStatus === "paid" && existing.paymentStatus !== "paid") updates.paidAt = new Date();
-        if (data!.paymentStatus === "paid") updates.expiresAt = null;
-      }
-
-      const [row] = await tx.update(orders).set(updates).where(eq(orders.id, data!.orderId)).returning();
-      return row;
-    });
-
-    if (data!.status && data!.status !== existing.status) {
-      const orderId = existing.id;
-      const status = data!.status;
+    if (status && status !== existing.status) {
       afterResponse(() => notifyStatusChange(orderId, status));
     }
 
-    await auditLog(session.user.id, "update", "order", {
-      orderId: data!.orderId,
+    await auditLog(actorId, "update", "order", {
+      orderId,
       orderNumber: existing.orderNumber,
       from: { status: existing.status, paymentStatus: existing.paymentStatus },
-      to: { status: data!.status, paymentStatus: data!.paymentStatus },
+      to: { status: updated.status, paymentStatus: updated.paymentStatus },
     });
 
     const response = apiSuccess({
@@ -199,6 +231,7 @@ export async function PUT(req: NextRequest) {
     return withCors(response, req);
   } catch (err) {
     if (err instanceof Response) return err;
+    console.error("PUT /api/v1/admin/orders error:", err);
     return apiError("Internal server error", 500);
   }
 }

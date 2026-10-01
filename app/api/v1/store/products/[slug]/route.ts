@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { products, productImages, productVariants, categories } from "@/lib/db/schema";
-import { eq, asc } from "drizzle-orm";
+import { and, eq, asc } from "drizzle-orm";
 import { apiSuccess, apiError } from "@/lib/api-utils";
 import { activeVariantsOf } from "@/lib/services/catalog";
 
@@ -15,7 +15,7 @@ export async function GET(
     const [product] = await db
       .select()
       .from(products)
-      .where(eq(products.slug, slug))
+      .where(and(eq(products.slug, slug), eq(products.status, "active")))
       .limit(1);
 
     if (!product) {

@@ -88,6 +88,7 @@ const updateProductSchema = z.object({
     z.string().uuid().nullable().optional()
   ),
   inStock: z.boolean().optional(),
+  status: z.enum(["draft", "active", "archived"]).optional(),
   images: z
     .array(
       z.object({
@@ -152,6 +153,7 @@ export async function PUT(
     if (data!.badge !== undefined) updates.badge = data!.badge === "none" ? null : data!.badge;
     if (data!.discount !== undefined) updates.discount = data!.discount;
     if (data!.categoryId !== undefined) updates.categoryId = data!.categoryId;
+    if (data!.status !== undefined) updates.status = data!.status;
     if (data!.inStock !== undefined) updates.inStock = data!.inStock;
 
     // One transaction, so a failure part-way never leaves the product without
@@ -217,15 +219,16 @@ export async function DELETE(
       return apiError("Product not found", 404);
     }
 
-    // Cascade delete (images and variants deleted via FK cascade)
-    await db.delete(products).where(eq(products.id, id));
+    // Archived, not deleted: past orders, stock history and bags still refer
+    // to it. It disappears from the shop and can be restored.
+    await db.update(products).set({ status: "archived", updatedAt: new Date() }).where(eq(products.id, id));
 
-    await auditLog(session.user.id, "delete", "product", {
+    await auditLog(session.user.id, "archive", "product", {
       productId: id,
       name: existing.name,
     });
 
-    const response = apiSuccess({ deleted: true });
+    const response = apiSuccess({ archived: true });
     return withCors(response, req);
   } catch (err) {
     if (err instanceof Response) return err;

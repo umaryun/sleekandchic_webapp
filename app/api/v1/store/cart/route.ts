@@ -83,11 +83,11 @@ export async function POST(req: NextRequest) {
     }
 
     const [product] = await db
-      .select({ id: products.id, name: products.name, price: products.price, inStock: products.inStock })
+      .select({ id: products.id, name: products.name, price: products.price, inStock: products.inStock, status: products.status })
       .from(products)
       .where(eq(products.id, productId))
       .limit(1);
-    if (!product) return apiError("This product is no longer available", 404);
+    if (!product || product.status !== "active") return apiError("This product is no longer available", 404);
     if (!product.inStock) return apiError(`${product.name} is currently unavailable`, 409);
 
     const variants = await db

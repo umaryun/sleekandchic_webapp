@@ -29,8 +29,8 @@ export async function GET(req: NextRequest) {
     const { page, limit, category, search, minPrice, maxPrice, badge, sort } = parsed.data;
     const offset = (page - 1) * limit;
 
-    // Build where conditions
-    const conditions = [];
+    // Build where conditions. Drafts and archived products aren't for sale.
+    const conditions = [eq(products.status, "active")];
 
     if (category) {
       // Find category by slug

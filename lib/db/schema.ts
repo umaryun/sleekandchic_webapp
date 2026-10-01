@@ -32,6 +32,9 @@ export const productBadgeEnum = pgEnum("product_badge", [
   "hot",
 ]);
 
+// Fulfilment: pending → processing ("preparing") → shipped → delivered, or
+// cancelled. "paid" is only on orders from before payment and fulfilment were
+// separated; payment lives in payment_status. Rules: lib/services/order-status.ts.
 export const orderStatusEnum = pgEnum("order_status", [
   "pending",
   "paid",
@@ -40,6 +43,9 @@ export const orderStatusEnum = pgEnum("order_status", [
   "delivered",
   "cancelled",
 ]);
+
+// Archived products are hidden from the shop but kept for past orders.
+export const productStatusEnum = pgEnum("product_status", ["draft", "active", "archived"]);
 
 export const paymentStatusEnum = pgEnum("payment_status", [
   "unpaid",
@@ -202,6 +208,7 @@ export const products = pgTable(
     rating: real("rating").notNull().default(0),
     reviewCount: integer("review_count").notNull().default(0),
     inStock: boolean("in_stock").notNull().default(true),
+    status: productStatusEnum("status").notNull().default("active"),
     categoryId: uuid("category_id").references(() => categories.id, {
       onDelete: "set null",
     }),
@@ -211,6 +218,7 @@ export const products = pgTable(
   (table) => [
     uniqueIndex("products_slug_idx").on(table.slug),
     index("products_category_idx").on(table.categoryId),
+    index("products_status_idx").on(table.status),
   ]
 );
 
@@ -448,6 +456,36 @@ export const shippingRates = pgTable(
 
 export type ShippingRateRecord = typeof shippingRates.$inferSelect;
 export type NewShippingRateRecord = typeof shippingRates.$inferInsert;
+
+// ──────────────────────────────────────────────
+// Order timeline
+// ──────────────────────────────────────────────
+
+export type OrderEventType =
+  | "placed"
+  | "payment_received"
+  | "status_changed"
+  | "payment_status_changed"
+  | "cancelled"
+  | "note";
+
+export const orderEvents = pgTable(
+  "order_events",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    orderId: uuid("order_id")
+      .notNull()
+      .references(() => orders.id, { onDelete: "cascade" }),
+    type: varchar("type", { length: 30 }).$type<OrderEventType>().notNull(),
+    fromStatus: varchar("from_status", { length: 30 }),
+    toStatus: varchar("to_status", { length: 30 }),
+    // Null when the customer or the system did it.
+    actorId: text("actor_id").references(() => users.id, { onDelete: "set null" }),
+    message: text("message"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [index("order_events_order_idx").on(table.orderId, table.createdAt)]
+);
 
 // ──────────────────────────────────────────────
 // Stock movements (every change to variant stock)

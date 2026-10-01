@@ -6,7 +6,7 @@ import {
   productImages,
   categories,
 } from "@/lib/db/schema";
-import { eq, ilike, count, asc, desc, sql } from "drizzle-orm";
+import { and, eq, ilike, count, asc, desc, ne, sql } from "drizzle-orm";
 import {
   apiSuccess,
   apiError,
@@ -27,6 +27,8 @@ const querySchema = z.object({
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
   search: z.string().optional(),
+  // Archived products are listed only when asked for.
+  status: z.enum(["draft", "active", "archived"]).optional(),
 });
 
 export async function GET(req: NextRequest) {
@@ -41,12 +43,13 @@ export async function GET(req: NextRequest) {
       return apiError("Invalid query parameters", 422);
     }
 
-    const { page, limit, search } = parsed.data;
+    const { page, limit, search, status } = parsed.data;
     const offset = (page - 1) * limit;
 
-    const whereClause = search
-      ? ilike(products.name, `%${search}%`)
-      : undefined;
+    const whereClause = and(
+      search ? ilike(products.name, `%${search}%`) : undefined,
+      status ? eq(products.status, status) : ne(products.status, "archived")
+    );
 
     const [{ total }] = await db
       .select({ total: count() })
@@ -117,6 +120,7 @@ const createProductSchema = z.object({
   discount: z.number().int().min(0).max(100).optional(),
   categoryId: z.string().uuid().optional(),
   inStock: z.boolean().default(true),
+  status: z.enum(["draft", "active"]).default("active"),
   images: z
     .array(
       z.object({
@@ -154,6 +158,7 @@ export async function POST(req: NextRequest) {
       discount,
       categoryId,
       inStock,
+      status,
       images,
       variants,
     } = data!;
@@ -180,6 +185,7 @@ export async function POST(req: NextRequest) {
           discount,
           categoryId: categoryId || null,
           inStock,
+          status,
         })
         .returning();
 

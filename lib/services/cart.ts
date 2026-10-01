@@ -57,6 +57,7 @@ export async function loadCartLines(
       productSlug: products.slug,
       productPrice: products.price,
       productInStock: products.inStock,
+      productStatus: products.status,
     })
     .from(cartItems)
     .innerJoin(products, eq(cartItems.productId, products.id))
@@ -83,7 +84,7 @@ export async function loadCartLines(
     let problem: string | null = null;
     let stockAvailable: number | null = null;
 
-    if (!item.productInStock) {
+    if (!item.productInStock || item.productStatus !== "active") {
       problem = `${item.productName} is no longer available`;
     } else if (variant && !variant.isActive) {
       problem = `${item.productName} (${describeVariant(variant)}) is no longer available`;

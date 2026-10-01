@@ -264,7 +264,7 @@ describe("card payment", () => {
     expect((await webhook(event)).status).toBe(200); // Paystack retry
 
     const [paid] = await db.select().from(orders);
-    expect(paid).toMatchObject({ paymentStatus: "paid", status: "paid" });
+    expect(paid).toMatchObject({ paymentStatus: "paid", status: "processing" });
     expect(paid.paidAt).not.toBeNull();
     expect(await db.select().from(paymentEvents)).toHaveLength(1);
     expect(await stockOf(variantId)).toBe(4);
@@ -329,7 +329,7 @@ describe("card payment", () => {
 
     await webhook({ event: "charge.success", data: { id: 55, reference: "REF", amount: 1650000, currency: "NGN", metadata: { orderId: order.id } } });
     const [paid] = await db.select().from(orders);
-    expect(paid).toMatchObject({ paymentStatus: "paid", status: "paid" });
+    expect(paid).toMatchObject({ paymentStatus: "paid", status: "processing" });
     expect(await stockOf(variantId)).toBe(4);
   });
 

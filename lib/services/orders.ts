@@ -12,6 +12,7 @@ import { generateOrderNumber } from "@/lib/api-utils";
 import { koboToDecimal, toKobo } from "@/lib/money";
 import { getDbShippingRates, getShippingQuotes, type ShippingQuote, type ShippingZone } from "@/lib/shipping";
 import { findCart, loadCartLines, type CartLine, type DbOrTx } from "@/lib/services/cart";
+import { recordOrderEvent } from "@/lib/services/order-status";
 import {
   claimDiscount,
   evaluateDiscount,
@@ -223,6 +224,12 @@ export async function placeOrder(input: PlaceOrderInput) {
       );
     }
 
+    await recordOrderEvent(tx, order.id, "placed", {
+      to: "pending",
+      actorId: input.userId,
+      message: input.paymentMethod === "cod" ? "Pay on delivery" : "Waiting for card payment",
+    });
+
     if (input.paymentMethod === "cod") {
       await tx.delete(cartItems).where(eq(cartItems.cartId, cart.id));
     }
@@ -288,6 +295,12 @@ export async function cancelOrder(
   }
 
   if (order.discountCode) await releaseDiscount(tx, order.discountCode);
+  await recordOrderEvent(tx, orderId, "cancelled", {
+    from: order.status,
+    to: "cancelled",
+    actorId: opts.actorId,
+    message: opts.note ?? (toReturn.length > 0 ? "Stock returned" : null),
+  });
   return true;
 }
 
@@ -341,8 +354,9 @@ export async function markOrderPaid(
       paidAt: new Date(),
       paymentReference: payment.reference,
       paymentIntentId: String(payment.transactionId),
-      // Fulfilment never moves backwards; only a waiting order becomes "paid".
-      status: order.status === "pending" || reinstated ? "paid" : order.status,
+      // A paid card order is confirmed and goes to preparing; fulfilment
+      // already under way is left alone.
+      status: order.status === "pending" || reinstated ? "processing" : order.status,
       expiresAt: null,
       updatedAt: new Date(),
     })
@@ -371,6 +385,14 @@ export async function markOrderPaid(
       );
     }
   }
+
+  await recordOrderEvent(tx, orderId, "payment_received", {
+    from: order.status,
+    to: updated.status,
+    message: reinstated
+      ? `Paid by card after the order had expired (ref ${payment.reference}); stock taken again`
+      : `Paid by card (ref ${payment.reference})`,
+  });
 
   if (order.cartId) await tx.delete(cartItems).where(eq(cartItems.cartId, order.cartId));
   return { order: updated, changed: true };
