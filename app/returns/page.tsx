@@ -38,7 +38,7 @@ export default function ReturnsPage() {
             that you received it. It must also be in its original packaging with all brand tags and labels intact.
           </Point>
           <Point label="Time frame">
-            You have {STORE.returnsWindow} (calendar days) from the date of delivery to start a return.
+            You have 7 to 10 calendar days from the date of delivery to start a return.
           </Point>
         </ul>
       </section>
