@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import InfoPage from "@/components/InfoPage";
-import { RETURNS_CONTACT, STORE } from "@/lib/store";
+import { STORE, telLink, mailLink } from "@/lib/store";
 
 export const metadata: Metadata = {
   title: `Return & Refund Policy | ${STORE.name}`,
@@ -160,12 +160,12 @@ export default function ReturnsPage() {
         <p>For any questions about this policy, or for help with a return, reach out to our team:</p>
         <ul className="mt-2">
           <Point label="Email">
-            <a href={`mailto:${RETURNS_CONTACT.email}`}>{RETURNS_CONTACT.email}</a>
+            <a href={mailLink}>{STORE.email}</a>
           </Point>
           <Point label="Phone">
-            <a href={`tel:${RETURNS_CONTACT.phoneE164}`}>{RETURNS_CONTACT.phoneDisplay}</a>
+            <a href={telLink}>{STORE.phoneDisplay}</a>
           </Point>
-          <Point label="Customer service hours">{RETURNS_CONTACT.hours}</Point>
+          <Point label="Customer service hours">{STORE.serviceHours}</Point>
         </ul>
       </section>
     </InfoPage>

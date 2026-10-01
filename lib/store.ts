@@ -3,22 +3,15 @@
 export const STORE = {
   name: "Sleekandchic",
   tagline: "Modest fashion from Kaduna, delivered across Nigeria",
-  email: "sleekandchic.it@gmail.com",
-  phoneDisplay: "+234 903 377 7385",
-  phoneE164: "+2349033777385",
-  whatsappNumber: "2349033777385",
+  email: "sleekandchic5@gmail.com",
+  phoneDisplay: "0808 090 2490",
+  phoneE164: "+2348080902490",
+  whatsappNumber: "2348080902490",
+  serviceHours: "9:00 am to 5:00 pm",
   address: "Grey Parrot Center, beside Second Gate, Urban Shelter Estate, Millennium City, Kaduna",
   city: "Kaduna",
   /** How long after delivery a return can be started (see /returns). */
   returnsWindow: "7 to 10 days",
-} as const;
-
-/** Who handles returns and refunds, as given in the returns policy. */
-export const RETURNS_CONTACT = {
-  email: "sleekandchic5@gmail.com",
-  phoneDisplay: "0808 090 2490",
-  phoneE164: "+2348080902490",
-  hours: "9:00 am to 5:00 pm",
 } as const;
 
 /** How orders reach customers; shown on product pages, at checkout and in Help. */

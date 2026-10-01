@@ -66,11 +66,11 @@ describe("order emails", () => {
 
     await vi.waitFor(() => expect(sent).toHaveLength(2));
     const customer = sent.find((e) => e.to[0] === "aisha@example.com")!;
-    const shop = sent.find((e) => e.to[0] === "sleekandchic.it@gmail.com")!;
+    const shop = sent.find((e) => e.to[0] === "sleekandchic5@gmail.com")!;
     expect(customer.subject).toMatch(/^Order received: SC-/);
     expect(customer.html).toContain("Emerald Abaya");
     expect(customer.html).toContain("in cash or by POS");
-    expect(customer.reply_to).toBe("sleekandchic.it@gmail.com");
+    expect(customer.reply_to).toBe("sleekandchic5@gmail.com");
     expect(shop.subject).toMatch(/pay on delivery/);
     expect(shop.html).toContain("wa.me/2348030000000");
   });
@@ -120,7 +120,7 @@ describe("contact form", () => {
     const ok = await json(await contactPost(jsonRequest("/api/v1/store/contact", message)));
     expect(ok.status).toBe(200);
     expect(sent).toHaveLength(1);
-    expect(sent[0]).toMatchObject({ to: ["sleekandchic.it@gmail.com"], reply_to: "aisha@example.com" });
+    expect(sent[0]).toMatchObject({ to: ["sleekandchic5@gmail.com"], reply_to: "aisha@example.com" });
 
     const bot = await json(await contactPost(jsonRequest("/api/v1/store/contact", { ...message, website: "spam.example" })));
     expect(bot.status).toBe(200);
@@ -132,6 +132,6 @@ describe("contact form", () => {
     env.RESEND_API_KEY = undefined;
     const res = await json(await contactPost(jsonRequest("/api/v1/store/contact", { name: "A", email: "a@example.com", message: "Hello there" })));
     expect(res.status).toBe(503);
-    expect(res.body.error).toMatch(/WhatsApp us on \+234 903 377 7385/);
+    expect(res.body.error).toMatch(/WhatsApp us on 0808 090 2490/);
   });
 });
