@@ -108,8 +108,6 @@ export default function Navigation() {
             );
           })}
         </ul>
-
-        <p className="w-[260px] text-xs text-[#6b6b6b]">Nationwide delivery · Pay on delivery available</p>
       </div>
     </nav>
   );
