@@ -10,6 +10,7 @@ import {
   withCors,
   paginationMeta,
 } from "@/lib/api-utils";
+import { usersWithPassword } from "@/lib/services/staff";
 import { AdminUser, AdminRole } from "@/types";
 
 const querySchema = z.object({
@@ -103,12 +104,15 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    // Invited staff haven't chosen a password yet.
+    const canSignIn = await usersWithPassword(userIds);
+
     const admins: AdminUser[] = userRows.map((u) => ({
       id: u.id,
       name: u.name,
       email: u.email,
       role: u.role as AdminRole,
-      status: u.banned ? "suspended" : "active",
+      status: u.banned ? "suspended" : canSignIn.has(u.id) ? "active" : "invited",
       avatarUrl: u.image || null,
       createdAt: u.createdAt ? new Date(u.createdAt).toISOString() : new Date().toISOString(),
       lastLoginAt: sessionMap.has(u.id) ? sessionMap.get(u.id)!.toISOString() : null,

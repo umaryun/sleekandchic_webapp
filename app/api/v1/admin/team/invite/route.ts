@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { users, accounts } from "@/lib/db/schema";
+import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import {
   apiSuccess,
@@ -11,143 +11,91 @@ import {
   parseBody,
   auditLog,
 } from "@/lib/api-utils";
-import { hashPassword } from "better-auth/crypto";
+import { sendEmail } from "@/lib/email/send";
+import { staffAccessEmail, staffInviteEmail } from "@/lib/email/templates";
+import {
+  STAFF_INVITE_TTL_HOURS,
+  adminAppUrl,
+  createPasswordSetupLink,
+  usersWithPassword,
+} from "@/lib/services/staff";
 import { AdminUser, AdminRole } from "@/types";
 
+// No password here: the new staff member chooses their own from the emailed
+// link, and an existing customer keeps the password they already have.
 const inviteSchema = z.object({
-  name: z.string().min(1, "Name is required"),
+  name: z.string().trim().min(1, "Name is required").max(100),
   email: z.string().email("Invalid email address").transform((e) => e.toLowerCase().trim()),
   role: z.enum(["admin", "super_admin"]).default("admin"),
-  password: z.string().min(6, "Password must be at least 6 characters").optional(),
 });
+
+interface InviteResult extends AdminUser {
+  invitation: {
+    emailSent: boolean;
+    /** Returned only when the email couldn't be sent, so the owner can pass it on. */
+    setupLink: string | null;
+  };
+}
 
 export async function POST(req: NextRequest) {
   try {
     const session = await requireSuperAdmin(req);
     const { data, error } = await parseBody(req, inviteSchema);
     if (error) return error;
+    const { name, email, role } = data!;
 
-    const { name, email, role, password } = data!;
+    const adminUrl = adminAppUrl();
+    if (!adminUrl) {
+      return withCors(apiError("Set ADMIN_APP_URL to the admin console's address before inviting staff", 503), req);
+    }
 
-    const [existingUser] = await db
-      .select()
-      .from(users)
-      .where(eq(users.email, email))
-      .limit(1);
+    const [existingUser] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    if (existingUser && (existingUser.role === "admin" || existingUser.role === "super_admin")) {
+      return withCors(apiError("This person is already on the team", 409), req);
+    }
 
+    let member: typeof users.$inferSelect;
     if (existingUser) {
-      if (existingUser.role === "admin" || existingUser.role === "super_admin") {
-        return apiError("An administrator with this email already exists", 409);
-      }
-
-      // Promote existing customer to admin/super_admin
-      const [updatedUser] = await db
+      // An existing customer: give them access, keep their name and password.
+      [member] = await db
         .update(users)
-        .set({
-          name,
-          role: role as AdminRole,
-          banned: false,
-          banReason: null,
-          banExpires: null,
-          updatedAt: new Date(),
-        })
+        .set({ role: role as AdminRole, banned: false, banReason: null, banExpires: null, updatedAt: new Date() })
         .where(eq(users.id, existingUser.id))
         .returning();
-
-      // If password provided, update/insert credential account
-      if (password) {
-        const hashedPassword = await hashPassword(password);
-        const [existingAccount] = await db
-          .select()
-          .from(accounts)
-          .where(eq(accounts.userId, existingUser.id))
-          .limit(1);
-
-        if (existingAccount) {
-          await db
-            .update(accounts)
-            .set({ password: hashedPassword, updatedAt: new Date() })
-            .where(eq(accounts.id, existingAccount.id));
-        } else {
-          await db.insert(accounts).values({
-            id: crypto.randomUUID(),
-            accountId: existingUser.id,
-            providerId: "credential",
-            userId: existingUser.id,
-            password: hashedPassword,
-          });
-        }
-      }
-
-      await auditLog(session.user.id, "promote_admin", "admin_user", {
-        targetId: existingUser.id,
-        email,
-        role,
-        name,
-      });
-
-      const adminUser: AdminUser = {
-        id: updatedUser.id,
-        name: updatedUser.name,
-        email: updatedUser.email,
-        role: updatedUser.role as AdminRole,
-        status: updatedUser.banned ? "suspended" : "active",
-        avatarUrl: updatedUser.image || null,
-        createdAt: updatedUser.createdAt ? new Date(updatedUser.createdAt).toISOString() : new Date().toISOString(),
-        lastLoginAt: null,
-      };
-
-      const response = apiSuccess(adminUser, 200);
-      return withCors(response, req);
+    } else {
+      [member] = await db
+        .insert(users)
+        .values({ id: crypto.randomUUID(), name, email, role: role as AdminRole, emailVerified: true, banned: false })
+        .returning();
     }
 
-    // Create new admin user
-    const userId = crypto.randomUUID();
+    const hasPassword = (await usersWithPassword([member.id])).has(member.id);
+    const setupLink = hasPassword ? null : await createPasswordSetupLink(member.id);
+    const emailSent = await sendEmail(
+      setupLink
+        ? staffInviteEmail(member.email, member.name, role, setupLink, STAFF_INVITE_TTL_HOURS)
+        : staffAccessEmail(member.email, member.name, role, adminUrl)
+    );
 
-    const [newUser] = await db
-      .insert(users)
-      .values({
-        id: userId,
-        name,
-        email,
-        role: role as AdminRole,
-        emailVerified: true,
-        banned: false,
-      })
-      .returning();
-
-    // If password provided, create credential account
-    if (password) {
-      const hashedPassword = await hashPassword(password);
-      await db.insert(accounts).values({
-        id: crypto.randomUUID(),
-        accountId: userId,
-        providerId: "credential",
-        userId: userId,
-        password: hashedPassword,
-      });
-    }
-
-    await auditLog(session.user.id, "invite_admin", "admin_user", {
-      targetId: userId,
+    await auditLog(session.user.id, existingUser ? "promote_admin" : "invite_admin", "admin_user", {
+      targetId: member.id,
       email,
       role,
-      name,
+      emailSent,
     });
 
-    const createdAdmin: AdminUser = {
-      id: newUser.id,
-      name: newUser.name,
-      email: newUser.email,
-      role: newUser.role as AdminRole,
-      status: "active",
-      avatarUrl: newUser.image || null,
-      createdAt: newUser.createdAt ? new Date(newUser.createdAt).toISOString() : new Date().toISOString(),
+    const result: InviteResult = {
+      id: member.id,
+      name: member.name,
+      email: member.email,
+      role: member.role as AdminRole,
+      status: hasPassword ? "active" : "invited",
+      avatarUrl: member.image || null,
+      createdAt: (member.createdAt ?? new Date()).toISOString(),
       lastLoginAt: null,
+      invitation: { emailSent, setupLink: emailSent ? null : setupLink },
     };
-
-    const response = apiSuccess(createdAdmin, 201);
-    return withCors(response, req);
+    return withCors(apiSuccess(result, existingUser ? 200 : 201), req);
   } catch (err) {
     if (err instanceof Response) return err;
     console.error("POST /api/v1/admin/team/invite error:", err);

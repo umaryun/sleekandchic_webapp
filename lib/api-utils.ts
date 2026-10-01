@@ -90,22 +90,29 @@ export async function requireAuth(req: NextRequest) {
   return session;
 }
 
-export async function requireAdmin(req: NextRequest) {
+/** Staff sign in again after this long, however long a customer session lasts. */
+export const STAFF_SESSION_MAX_AGE_MS = 12 * 60 * 60 * 1000;
+
+async function requireStaffSession(req: NextRequest) {
   const session = await requireAuth(req);
-  const user = session.user as AuthenticatedUser;
-  const role = user.role;
+  const role = (session.user as AuthenticatedUser).role;
   if (role !== "admin" && role !== "super_admin") {
-    throw apiError("Forbidden: Admin access required", 403);
+    throw apiError("This account doesn't have admin access", 403);
+  }
+  if (Date.now() - new Date(session.session.createdAt).getTime() > STAFF_SESSION_MAX_AGE_MS) {
+    throw apiError("Your admin session has expired. Please sign in again.", 401);
   }
   return session;
 }
 
+export async function requireAdmin(req: NextRequest) {
+  return requireStaffSession(req);
+}
+
 export async function requireSuperAdmin(req: NextRequest) {
-  const session = await requireAuth(req);
-  const user = session.user as AuthenticatedUser;
-  const role = user.role;
-  if (role !== "super_admin") {
-    throw apiError("Forbidden: Super Admin access required", 403);
+  const session = await requireStaffSession(req);
+  if ((session.user as AuthenticatedUser).role !== "super_admin") {
+    throw apiError("Only the store owner can do this", 403);
   }
   return session;
 }

@@ -46,6 +46,42 @@ ${button(url, "Choose a new password")}
   };
 }
 
+// ── Staff ──────────────────────────────────────────────
+
+const roleLabel = (role: string) => (role === "super_admin" ? "owner" : "staff");
+
+/** Sent to a new staff member, who has no password yet. */
+export function staffInviteEmail(to: string, name: string, role: string, setupUrl: string, hoursValid: number): Email {
+  return {
+    to,
+    subject: `You've been added to the ${STORE.name} admin`,
+    html: layout(
+      "Set up your admin account",
+      `<p>Hi ${escapeHtml(name || "there")},</p>
+<p>You've been given ${roleLabel(role)} access to the ${STORE.name} admin console. Choose a password to finish setting up your account:</p>
+${button(setupUrl, "Choose a password")}
+<p style="color:#666">This link works once and expires in ${hoursValid} hours. If you weren't expecting this, ignore this email.</p>`
+    ),
+    text: `You've been given ${roleLabel(role)} access to the ${STORE.name} admin console. Choose a password: ${setupUrl}\n\nThis link works once and expires in ${hoursValid} hours.`,
+  };
+}
+
+/** Sent to an existing customer who was given staff access; their password is unchanged. */
+export function staffAccessEmail(to: string, name: string, role: string, adminUrl: string): Email {
+  return {
+    to,
+    subject: `You now have access to the ${STORE.name} admin`,
+    html: layout(
+      "You have admin access",
+      `<p>Hi ${escapeHtml(name || "there")},</p>
+<p>Your ${STORE.name} account now has ${roleLabel(role)} access to the admin console. Sign in with the email and password you already use:</p>
+${button(`${adminUrl}/login`, "Open the admin console")}
+<p style="color:#666">If you weren't expecting this, reply to this email.</p>`
+    ),
+    text: `Your ${STORE.name} account now has ${roleLabel(role)} access to the admin console. Sign in with your existing password: ${adminUrl}/login`,
+  };
+}
+
 // ── Orders ─────────────────────────────────────────────
 
 export interface OrderEmailData {
