@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
+import { isNigerianState } from "@/lib/nigeria";
 import { db } from "@/lib/db";
 import { shippingRates } from "@/lib/db/schema";
 import { asc, eq, ilike, and, count } from "drizzle-orm";
@@ -102,7 +103,8 @@ export async function GET(req: NextRequest) {
 }
 
 const createShippingRateSchema = z.object({
-  state: z.string().min(1, "State or location name is required"),
+  // Must match the state names checkout uses, or the rate is never found.
+  state: z.string().trim().refine(isNigerianState, "Use one of the 36 states or Abuja (FCT), spelt as in the list"),
   zone: z.string().min(1).default("C"),
   standardBase: z.number().int().min(0, "Standard base fee must be positive or zero"),
   expressBase: z.number().int().min(0, "Express base fee must be positive or zero"),

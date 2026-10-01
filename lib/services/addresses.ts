@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isNigerianState } from "@/lib/nigeria";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { userAddresses } from "@/lib/db/schema";
@@ -12,7 +13,7 @@ export const addressSchema = z.object({
   phone: z.string().trim().min(7, "Enter a phone number the courier can call").max(30),
   street: z.string().trim().min(1, "Enter the street address"),
   city: z.string().trim().min(1, "Enter the city or town").max(100),
-  state: z.string().trim().min(1, "Choose a state").max(100),
+  state: z.string().trim().refine(isNigerianState, "Choose your state from the list"),
   isDefault: z.boolean().optional(),
 });
 

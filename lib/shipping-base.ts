@@ -14,6 +14,8 @@ export interface ShippingZone {
 }
 
 export interface ShippingQuote {
+  /** False when there's no rate for the state; the order can't be placed. */
+  deliverable: boolean;
   method: ShippingMethod;
   fee: number;
   estimatedDays: string;
@@ -43,7 +45,6 @@ export const DEFAULT_STATE_ZONES: Record<string, ShippingZone> = {
   Katsina:   { zone: "A", standardBase: 1500, expressBase: 3500, estimatedDays: { standard: "1–2 days", express: "Next day" }, freeShippingThreshold: 30000 },
   Niger:     { zone: "A", standardBase: 1500, expressBase: 3500, estimatedDays: { standard: "1–2 days", express: "Next day" }, freeShippingThreshold: 30000 },
   Plateau:   { zone: "A", standardBase: 1500, expressBase: 3500, estimatedDays: { standard: "1–2 days", express: "Next day" }, freeShippingThreshold: 30000 },
-  Nassarawa: { zone: "A", standardBase: 1500, expressBase: 3500, estimatedDays: { standard: "1–2 days", express: "Next day" }, freeShippingThreshold: 30000 },
 
   // Zone B — Abuja + other northern states
   "Abuja (FCT)": { zone: "B", standardBase: 2500, expressBase: 5000, estimatedDays: { standard: "2–3 days", express: "1–2 days" }, freeShippingThreshold: 50000 },
@@ -102,45 +103,25 @@ export const ZONE_NAMES: Record<string, string> = {
   E: "Far North / Remote",
 };
 
+/** Orders of more than this many items pay a little extra delivery per item. */
+export const BULK_ITEMS_INCLUDED = 3;
+export const BULK_ITEM_SURCHARGE = 200;
+
 /**
- * Match state against given rates map or fallback defaults
+ * The rate for a state: the configured one, else the built-in default for that
+ * state. Null when neither exists; such a state is never priced as another.
  */
 export function matchZoneInfo(
   state: string,
   ratesMap: Record<string, ShippingZone> = DEFAULT_STATE_ZONES
-): ShippingZone {
-  if (!state) {
-    return (
-      ratesMap["Lagos"] || {
-        zone: "C",
-        standardBase: 3000,
-        expressBase: 6000,
-        estimatedDays: { standard: "3–5 days", express: "2–3 days" },
-        freeShippingThreshold: 75000,
-      }
-    );
-  }
-
-  // Exact match
-  if (ratesMap[state]) return ratesMap[state];
-
-  // Case-insensitive match
+): ShippingZone | null {
   const lower = state.trim().toLowerCase();
-  const key = Object.keys(ratesMap).find((k) => k.toLowerCase() === lower);
-  if (key) return ratesMap[key];
-
-  // Fallback to default state zones if not found
-  if (DEFAULT_STATE_ZONES[state]) return DEFAULT_STATE_ZONES[state];
-  const fallbackKey = Object.keys(DEFAULT_STATE_ZONES).find((k) => k.toLowerCase() === lower);
-  if (fallbackKey) return DEFAULT_STATE_ZONES[fallbackKey];
-
-  return {
-    zone: "C",
-    standardBase: 3000,
-    expressBase: 6000,
-    estimatedDays: { standard: "3–5 days", express: "2–3 days" },
-    freeShippingThreshold: 75000,
-  };
+  if (!lower) return null;
+  for (const map of [ratesMap, DEFAULT_STATE_ZONES]) {
+    const key = Object.keys(map).find((k) => k.toLowerCase() === lower);
+    if (key) return map[key];
+  }
+  return null;
 }
 
 /**
@@ -154,6 +135,9 @@ export function calculateShippingQuote(
   ratesMap: Record<string, ShippingZone> = DEFAULT_STATE_ZONES
 ): ShippingQuote {
   const zoneInfo = matchZoneInfo(state, ratesMap);
+  if (!zoneInfo) {
+    return { deliverable: false, method, fee: 0, estimatedDays: "", zone: "", zoneName: "", freeThreshold: 0, isFree: false };
+  }
   const { zone, standardBase, expressBase, estimatedDays } = zoneInfo;
 
   const freeThreshold =
@@ -163,14 +147,14 @@ export function calculateShippingQuote(
 
   let baseFee = method === "express" ? expressBase : standardBase;
 
-  // Apply per-item surcharge for bulk orders (over 3 items: +₦200 per extra item)
-  if (itemCount > 3) {
-    baseFee += (itemCount - 3) * 200;
+  if (itemCount > BULK_ITEMS_INCLUDED) {
+    baseFee += (itemCount - BULK_ITEMS_INCLUDED) * BULK_ITEM_SURCHARGE;
   }
 
   const isFreeEligible = method === "standard" && subtotal >= freeThreshold;
 
   return {
+    deliverable: true,
     method,
     fee: isFreeEligible ? 0 : baseFee,
     estimatedDays: estimatedDays[method],

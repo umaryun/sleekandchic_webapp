@@ -13,7 +13,6 @@ export const INITIAL_SHIPPING_RATES = [
   { state: "Katsina", zone: "A", standardBase: 1500, expressBase: 3500, estimatedDaysStandard: "1–2 days", estimatedDaysExpress: "Next day", freeShippingThreshold: 30000 },
   { state: "Niger", zone: "A", standardBase: 1500, expressBase: 3500, estimatedDaysStandard: "1–2 days", estimatedDaysExpress: "Next day", freeShippingThreshold: 30000 },
   { state: "Plateau", zone: "A", standardBase: 1500, expressBase: 3500, estimatedDaysStandard: "1–2 days", estimatedDaysExpress: "Next day", freeShippingThreshold: 30000 },
-  { state: "Nassarawa", zone: "A", standardBase: 1500, expressBase: 3500, estimatedDaysStandard: "1–2 days", estimatedDaysExpress: "Next day", freeShippingThreshold: 30000 },
 
   // Zone B — Abuja + other northern states
   { state: "Abuja (FCT)", zone: "B", standardBase: 2500, expressBase: 5000, estimatedDaysStandard: "2–3 days", estimatedDaysExpress: "1–2 days", freeShippingThreshold: 50000 },

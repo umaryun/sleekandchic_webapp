@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
+import { isNigerianState } from "@/lib/nigeria";
 import { apiSuccess, apiError, parseBody, getSession } from "@/lib/api-utils";
 import { rateLimit } from "@/lib/rate-limit";
 import { koboToNaira } from "@/lib/money";
@@ -15,7 +16,7 @@ const checkoutSchema = z.object({
   shippingAddress: z.object({
     street: z.string().trim().min(1, "Enter your street address"),
     city: z.string().trim().min(1, "Enter your city or town"),
-    state: z.string().trim().min(1, "Choose your state"),
+    state: z.string().trim().refine(isNigerianState, "Choose your state from the list"),
     country: z.string().default("Nigeria"),
     postalCode: z.string().optional(),
     phone: z.string().trim().min(7, "Enter a phone number the courier can call"),

@@ -93,7 +93,10 @@ export async function quoteLines(
     discountError,
     shipping,
     shippingOptions,
-    problems: lines.flatMap((l) => (l.problem ? [l.problem] : [])),
+    problems: [
+      ...lines.flatMap((l) => (l.problem ? [l.problem] : [])),
+      ...(shipping.deliverable ? [] : [`We don't have a delivery rate for ${input.state || "that state"} yet. Please contact us to arrange delivery`]),
+    ],
   };
 }
 

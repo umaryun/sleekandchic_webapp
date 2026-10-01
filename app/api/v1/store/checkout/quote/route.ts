@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
+import { isNigerianState } from "@/lib/nigeria";
 import { apiSuccess, apiError, parseBody, getSession } from "@/lib/api-utils";
 import { rateLimit } from "@/lib/rate-limit";
 import { koboToNaira } from "@/lib/money";
@@ -8,7 +9,7 @@ import { quoteLines } from "@/lib/services/orders";
 
 const quoteSchema = z.object({
   guestToken: z.string().optional(),
-  state: z.string().trim().min(1),
+  state: z.string().trim().refine(isNigerianState, "Choose your state from the list"),
   shippingMethod: z.enum(["standard", "express"]).default("standard"),
   discountCode: z.string().optional(),
 });
