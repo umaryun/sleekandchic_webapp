@@ -29,7 +29,7 @@ async function revenueSince(from: Date, to?: Date) {
   const [row] = await db
     .select({ total: sum(orders.totalAmount), orders: count() })
     .from(orders)
-    .where(and(isPaid, gte(paidMoment, from), to ? lt(paidMoment, to) : undefined));
+    .where(and(isPaid, gte(paidMoment, from.toISOString()), to ? lt(paidMoment, to.toISOString()) : undefined));
   return { amount: Number(row.total ?? 0), orders: row.orders };
 }
 
@@ -79,7 +79,7 @@ export async function getOverview(now = new Date()) {
   const daily = await db
     .select({ date: lagosDay, revenue: sum(orders.totalAmount), orders: count() })
     .from(orders)
-    .where(and(isPaid, gte(paidMoment, windowStart)))
+    .where(and(isPaid, gte(paidMoment, windowStart.toISOString())))
     .groupBy(lagosDay);
   const byDay = new Map(daily.map((d) => [d.date, d]));
   const dailyRevenue = Array.from({ length: 30 }, (_, i) => {
