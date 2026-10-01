@@ -2,8 +2,10 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { users, orders, orderItems } from "@/lib/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, inArray, count } from "drizzle-orm";
 import { apiSuccess, apiError, getSession, parseBody } from "@/lib/api-utils";
+
+const RECENT_ORDERS = 50;
 
 const updateProfileSchema = z.object({
   name: z.string().min(2).optional(),
@@ -38,46 +40,54 @@ export async function GET(req: NextRequest) {
       return apiError("User not found", 404);
     }
 
-    // Fetch user's orders
-    const userOrders = await db
-      .select()
-      .from(orders)
-      .where(eq(orders.userId, userId))
-      .orderBy(desc(orders.createdAt));
+    // The most recent orders; the count covers all of them.
+    const [userOrders, [{ totalOrders }]] = await Promise.all([
+      db.select().from(orders).where(eq(orders.userId, userId)).orderBy(desc(orders.createdAt)).limit(RECENT_ORDERS),
+      db.select({ totalOrders: count() }).from(orders).where(eq(orders.userId, userId)),
+    ]);
 
-    // Fetch items for each order
-    const ordersWithItems = await Promise.all(
-      userOrders.map(async (o) => {
-        const items = await db
-          .select()
-          .from(orderItems)
-          .where(eq(orderItems.orderId, o.id));
+    // All items in one query, grouped by order.
+    const allItems =
+      userOrders.length > 0
+        ? await db.select().from(orderItems).where(inArray(orderItems.orderId, userOrders.map((o) => o.id)))
+        : [];
+    const itemsByOrder = new Map<string, typeof allItems>();
+    for (const item of allItems) {
+      const list = itemsByOrder.get(item.orderId) ?? [];
+      list.push(item);
+      itemsByOrder.set(item.orderId, list);
+    }
 
-        return {
-          id: o.id,
-          orderNumber: o.orderNumber,
-          totalAmount: Number(o.totalAmount),
-          discountAmount: Number(o.discountAmount),
-          shippingFee: Number(o.shippingFee),
-          status: o.status,
-          paymentStatus: o.paymentStatus,
-          shippingAddress: o.shippingAddress,
-          createdAt: o.createdAt,
-          items: items.map((item) => ({
-            id: item.id,
-            name: item.name,
-            price: Number(item.price),
-            quantity: item.quantity,
-            color: item.color,
-            size: item.size,
-          })),
-        };
-      })
-    );
+    const ordersWithItems = userOrders.map((o) => {
+      const items = itemsByOrder.get(o.id) ?? [];
+      return {
+        id: o.id,
+        orderNumber: o.orderNumber,
+        subtotal:
+          o.subtotal !== null ? Number(o.subtotal) : items.reduce((sum, i) => sum + Number(i.price) * i.quantity, 0),
+        totalAmount: Number(o.totalAmount),
+        discountAmount: Number(o.discountAmount),
+        shippingFee: Number(o.shippingFee),
+        status: o.status,
+        paymentStatus: o.paymentStatus,
+        paymentMethod: o.paymentMethod,
+        shippingAddress: o.shippingAddress,
+        createdAt: o.createdAt,
+        items: items.map((item) => ({
+          id: item.id,
+          name: item.name,
+          price: Number(item.price),
+          quantity: item.quantity,
+          color: item.color,
+          size: item.size,
+        })),
+      };
+    });
 
     return apiSuccess({
       profile: user,
       orders: ordersWithItems,
+      totalOrders,
     });
   } catch (err) {
     console.error("GET /api/v1/store/profile error:", err);

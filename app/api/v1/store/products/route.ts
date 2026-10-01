@@ -1,8 +1,9 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { products, productImages, categories } from "@/lib/db/schema";
-import { eq, ilike, and, gte, lte, sql, desc, asc, count } from "drizzle-orm";
+import { products, productImages, productVariants, categories } from "@/lib/db/schema";
+import { eq, ilike, and, or, gt, gte, lte, sql, desc, asc, count, inArray } from "drizzle-orm";
+import { displayBadge, saleInfo } from "@/lib/pricing";
 import { apiSuccess, apiError, paginationMeta } from "@/lib/api-utils";
 
 const querySchema = z.object({
@@ -13,6 +14,7 @@ const querySchema = z.object({
   minPrice: z.coerce.number().optional(),
   maxPrice: z.coerce.number().optional(),
   badge: z.enum(["sale", "new", "hot"]).optional(),
+  featured: z.enum(["1"]).optional(),
   sort: z.enum(["price_asc", "price_desc", "newest", "rating", "name"]).default("newest"),
 });
 
@@ -26,11 +28,11 @@ export async function GET(req: NextRequest) {
       return apiError("Invalid query parameters", 422);
     }
 
-    const { page, limit, category, search, minPrice, maxPrice, badge, sort } = parsed.data;
+    const { page, limit, category, search, minPrice, maxPrice, badge, featured, sort } = parsed.data;
     const offset = (page - 1) * limit;
 
-    // Build where conditions
-    const conditions = [];
+    // Build where conditions. Drafts and archived products aren't for sale.
+    const conditions = [eq(products.status, "active")];
 
     if (category) {
       // Find category by slug
@@ -39,13 +41,14 @@ export async function GET(req: NextRequest) {
         .from(categories)
         .where(eq(categories.slug, category))
         .limit(1);
-      if (cat) {
-        conditions.push(eq(products.categoryId, cat.id));
-      }
+      // An unknown category matches nothing rather than everything.
+      conditions.push(cat ? eq(products.categoryId, cat.id) : sql`false`);
     }
 
-    if (search) {
-      conditions.push(ilike(products.name, `%${search}%`));
+    if (search?.trim()) {
+      // Match name, description or category; escape LIKE wildcards in the input.
+      const term = `%${search.trim().replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+      conditions.push(or(ilike(products.name, term), ilike(products.description, term), ilike(categories.name, term))!);
     }
 
     if (minPrice !== undefined) {
@@ -56,9 +59,10 @@ export async function GET(req: NextRequest) {
       conditions.push(lte(products.price, String(maxPrice)));
     }
 
-    if (badge) {
-      conditions.push(eq(products.badge, badge));
-    }
+    // "sale" means a "was" price above the price (see lib/pricing.ts).
+    if (badge === "sale") conditions.push(gt(products.originalPrice, products.price));
+    else if (badge) conditions.push(eq(products.badge, badge));
+    if (featured) conditions.push(eq(products.isFeatured, true));
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
@@ -75,6 +79,7 @@ export async function GET(req: NextRequest) {
     const [{ total }] = await db
       .select({ total: count() })
       .from(products)
+      .leftJoin(categories, eq(products.categoryId, categories.id))
       .where(whereClause);
 
     // Fetch products with category info via left join
@@ -126,22 +131,51 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const data = rows.map((p) => ({
-      id: p.id,
-      name: p.name,
-      slug: p.slug,
-      price: Number(p.price),
-      originalPrice: p.originalPrice ? Number(p.originalPrice) : null,
-      badge: p.badge,
-      discount: p.discount,
-      rating: p.rating,
-      reviewCount: p.reviewCount,
-      inStock: p.inStock,
-      brand: p.brand,
-      category: p.categoryName || null,
-      categorySlug: p.categorySlug || null,
-      image: imageMap.get(p.id) || null,
-    }));
+    // Enough about sizes for a card to add straight to the bag only when
+    // there is nothing to choose.
+    const variantRows =
+      productIds.length > 0
+        ? await db
+            .select({
+              productId: productVariants.productId,
+              id: productVariants.id,
+              stock: productVariants.stockQuantity,
+            })
+            .from(productVariants)
+            .where(and(inArray(productVariants.productId, productIds), eq(productVariants.isActive, true)))
+        : [];
+    const variantsByProduct = new Map<string, { id: string; stock: number }[]>();
+    for (const v of variantRows) {
+      const list = variantsByProduct.get(v.productId) ?? [];
+      list.push(v);
+      variantsByProduct.set(v.productId, list);
+    }
+
+    const data = rows.map((p) => {
+      const variants = variantsByProduct.get(p.id) ?? [];
+      const soldOut = !p.inStock || (variants.length > 0 && variants.every((v) => v.stock <= 0));
+      const price = Number(p.price);
+      const sale = saleInfo(price, p.originalPrice ? Number(p.originalPrice) : null);
+      return {
+        id: p.id,
+        name: p.name,
+        slug: p.slug,
+        price,
+        originalPrice: sale.originalPrice,
+        badge: displayBadge(sale.onSale, p.badge),
+        discount: sale.discountPercent,
+        rating: p.rating,
+        reviewCount: p.reviewCount,
+        inStock: p.inStock,
+        brand: p.brand,
+        category: p.categoryName || null,
+        categorySlug: p.categorySlug || null,
+        image: imageMap.get(p.id) || null,
+        soldOut,
+        hasOptions: variants.length > 1,
+        singleVariantId: variants.length === 1 ? variants[0].id : null,
+      };
+    });
 
     const response = apiSuccess({
       products: data,

@@ -1,213 +1,116 @@
-"use client";
-
-import { useState } from "react";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
+import { STORE, whatsappLink } from "@/lib/store";
+import Image from "next/image";
 
 const footerLinks = {
-  "Customer Service": [
-    { label: "Track Your Order", href: "/orders/tracking" },
-    { label: "Contact Us", href: "/contact" },
-    { label: "FAQs", href: "/faqs" },
+  Help: [
+    { label: "Track your order", href: "/orders/tracking" },
+    { label: "Delivery & FAQs", href: "/help" },
+    { label: "Returns", href: "/returns" },
+    { label: "Contact us", href: "/contact" },
   ],
   Information: [
-    { label: "About Us", href: "/about" },
-    { label: "Privacy Policy", href: "/privacy-policy" },
-    { label: "Terms & Conditions", href: "/terms" },
-  ],
-  Social: [
-    { label: "Instagram", href: "https://instagram.com" },
-    { label: "Facebook", href: "https://facebook.com" },
-    { label: "Twitter", href: "https://twitter.com" },
-    { label: "YouTube", href: "https://youtube.com" },
+    { label: "About us", href: "/about" },
+    { label: "Privacy policy", href: "/privacy" },
+    { label: "Terms & conditions", href: "/terms" },
   ],
 };
 
 const contactInfo = [
-  { heading: "EMAIL", value: "hello@slickandchic.com" },
-  { heading: "CALL US", value: "+234 903 377 7385" },
-  { heading: "ADDRESS", value: "Grey parrot center, beside second gate urban shelter. Millenium city"},
+  { heading: "WhatsApp / Call", value: STORE.phoneDisplay, href: whatsappLink() },
+  { heading: "Email", value: STORE.email, href: `mailto:${STORE.email}` },
+  { heading: "Address", value: STORE.address },
 ];
 
-function AccordionSection({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  const [open, setOpen] = useState(false);
+function LinkList({ links }: { links: { label: string; href: string }[] }) {
   return (
-    <div className="border-b border-neutral-200">
-      <button
-        onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between py-4 px-1 bg-transparent border-none cursor-pointer text-left"
-      >
-        <span className="text-[13px] font-bold uppercase tracking-wider text-[#1a1a1a]">
-          {title}
-        </span>
-        <ChevronDown
-          size={18}
-          className="text-neutral-400 transition-transform duration-300"
-          style={{ transform: open ? "rotate(180deg)" : "rotate(0)" }}
-        />
-      </button>
-      <div
-        className="overflow-hidden transition-all duration-300"
-        style={{
-          maxHeight: open ? "300px" : "0",
-          opacity: open ? 1 : 0,
-          paddingBottom: open ? "16px" : "0",
-        }}
-      >
-        {children}
-      </div>
-    </div>
+    <ul className="list-none p-0 m-0 space-y-2.5">
+      {links.map((link) => (
+        <li key={link.href}>
+          <Link href={link.href} className="text-[13px] text-neutral-600 no-underline hover:text-[#8a6452] transition-colors duration-200">
+            {link.label}
+          </Link>
+        </li>
+      ))}
+    </ul>
   );
 }
 
 export default function Footer() {
   return (
     <footer className="bg-[#f5f5f5] text-[#1a1a1a]">
-      {/* === Large Logo Section === */}
-      <div
-        style={{
-          maxWidth: "1280px",
-          margin: "0 auto",
-          padding: "20px 10px 12px",
-          textAlign: "center",
-        }}
-      >
+      <div className="max-w-[1280px] mx-auto px-2.5 pt-5 pb-3 text-center">
         <Link href="/" className="inline-block no-underline">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/logo.png"
-            alt="Slickandchic"
-            className="w-[240px] sm:w-[320px] lg:w-[450px] h-auto mx-auto"
-          />
+          <Image src="/logo.png" alt={STORE.name} width={450} height={227} className="w-[240px] sm:w-[320px] lg:w-[450px] h-auto mx-auto" />
         </Link>
       </div>
 
-      {/* === Desktop: Contact + Links Row === */}
+      {/* Desktop */}
       <div className="hidden md:block border-t border-neutral-300 w-full">
-        <div
-          style={{
-            maxWidth: "1280px",
-            margin: "10px auto",
-            padding: "10px 24px",
-          }}
-        >
-          <div className="grid grid-cols-[1fr_auto] gap-10 lg:gap-25 items-start">
-            {/* Contact Info Columns */}
-            <div className="flex gap-10 lg:gap-14">
-              {contactInfo.map((item) => (
-                <div key={item.heading}>
-                  <p className="text-[15px] font-bold uppercase tracking-widest text-[#1a1a1a] mb-2 m-0">
-                    {item.heading}
-                  </p>
-                  <p className="text-[13px] text-neutral-600 m-0 leading-relaxed">
+        <div className="max-w-[1280px] mx-auto my-2.5 px-6 py-2.5 grid grid-cols-[1fr_auto] gap-10 lg:gap-24 items-start">
+          <div className="flex gap-10 lg:gap-14">
+            {contactInfo.map((item) => (
+              <div key={item.heading} className="max-w-[260px]">
+                <p className="text-[13px] font-bold uppercase tracking-widest text-[#1a1a1a] mb-2">{item.heading}</p>
+                {item.href ? (
+                  <a href={item.href} className="text-[13px] text-neutral-600 leading-relaxed no-underline hover:text-[#8a6452]">
                     {item.value}
-                  </p>
-                </div>
-              ))}
-            </div>
-
-            {/* Link Columns */}
-            <div className="flex gap-12 lg:gap-25">
-              {Object.entries(footerLinks).map(([title, links]) => (
-                <div key={title}>
-                  <p className="text-[15px] font-bold uppercase tracking-widest text-[#1a1a1a] mb-3 m-0">
-                    {title}
-                  </p>
-                  <ul className="list-none p-0 m-0 space-y-2">
-                    {links.map((link) => (
-                      <li key={link.label}>
-                        <Link
-                          href={link.href}
-                          target={link.href.startsWith("http") ? "_blank" : undefined}
-                          rel={link.href.startsWith("http") ? "noopener noreferrer" : undefined}
-                          className="text-[13px] text-neutral-600 no-underline hover:text-[#b88d7a] transition-colors duration-200"
-                        >
-                          {link.label}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
+                  </a>
+                ) : (
+                  <p className="text-[13px] text-neutral-600 m-0 leading-relaxed">{item.value}</p>
+                )}
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-12 lg:gap-24">
+            {Object.entries(footerLinks).map(([title, links]) => (
+              <div key={title}>
+                <p className="text-[13px] font-bold uppercase tracking-widest text-[#1a1a1a] mb-3">{title}</p>
+                <LinkList links={links} />
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* === Mobile: Accordion Sections === */}
-      <div className="md:hidden border-t border-neutral-300 px-4 pt-6">
+      {/* Mobile */}
+      <div className="md:hidden border-t border-neutral-300 px-4 pt-4">
         {Object.entries(footerLinks).map(([title, links]) => (
-          <AccordionSection key={title} title={title}>
-            <ul className="list-none p-0 m-0 space-y-2.5 px-1">
-              {links.map((link) => (
-                <li key={link.label}>
-                  <Link
-                    href={link.href}
-                    target={link.href.startsWith("http") ? "_blank" : undefined}
-                    rel={link.href.startsWith("http") ? "noopener noreferrer" : undefined}
-                    className="text-[13px] text-neutral-600 no-underline hover:text-[#b88d7a] transition-colors duration-200"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </AccordionSection>
+          <details key={title} className="group border-b border-neutral-200">
+            <summary className="flex items-center justify-between py-4 px-1 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+              <span className="text-[13px] font-bold uppercase tracking-wider">{title}</span>
+              <ChevronDown size={18} className="text-neutral-400 transition-transform duration-300 group-open:rotate-180" />
+            </summary>
+            <div className="px-1 pb-4">
+              <LinkList links={links} />
+            </div>
+          </details>
         ))}
-
-        {/* Mobile Contact Info */}
-        <div className="grid grid-cols-2 gap-6 mt-8">
+        <div className="grid grid-cols-1 gap-5 mt-7">
           {contactInfo.map((item) => (
             <div key={item.heading}>
-              <p className="text-[11px] font-bold uppercase tracking-widest text-[#1a1a1a] mb-1 m-0">
-                {item.heading}
-              </p>
-              <p className="text-[13px] text-neutral-600 m-0">
-                {item.value}
-              </p>
+              <p className="text-[11px] font-bold uppercase tracking-widest mb-1">{item.heading}</p>
+              {item.href ? (
+                <a href={item.href} className="text-[13px] text-neutral-600 no-underline">
+                  {item.value}
+                </a>
+              ) : (
+                <p className="text-[13px] text-neutral-600 m-0">{item.value}</p>
+              )}
             </div>
           ))}
         </div>
       </div>
 
-      {/* === Bottom Copyright Bar === */}
-      <div style={{ borderTop: "1px solid #d4d4d4", marginTop: "20px" }}>
-        <div
-          style={{
-            maxWidth: "1280px",
-            margin: "0 auto",
-            padding: "10px 16px",
-            display: "flex",
-            flexWrap: "wrap",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: "12px",
-            fontSize: "11px",
-            color: "#737373",
-          }}
-        >
-          <div className="flex items-center gap-6 flex-wrap justify-center">
-            <span>Kaduna, Nigeria</span>
-            <Link
-              href="/terms"
-              className="text-neutral-500 no-underline hover:text-[#b88d7a] transition-colors duration-200"
-            >
-              Terms of Service
-            </Link>
-            <Link
-              href="/privacy-policy"
-              className="text-neutral-500 no-underline hover:text-[#b88d7a] transition-colors duration-200"
-            >
-              Privacy Policy
-            </Link>
+      <div className="border-t border-[#d4d4d4] mt-5">
+        <div className="max-w-[1280px] mx-auto px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 text-[11px] text-[#737373]">
+          <div className="flex items-center gap-6 flex-wrap">
+            <span>{STORE.city}, Nigeria</span>
+            <Link href="/terms" className="text-neutral-500 no-underline hover:text-[#8a6452]">Terms</Link>
+            <Link href="/privacy" className="text-neutral-500 no-underline hover:text-[#8a6452]">Privacy</Link>
           </div>
-          <span>© {new Date().getFullYear()} Slickandchic</span>
+          <span>© {new Date().getFullYear()} {STORE.name}</span>
         </div>
       </div>
     </footer>

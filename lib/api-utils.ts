@@ -4,6 +4,7 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { auditLogs } from "@/lib/db/schema";
+import { adminAppOrigins } from "@/lib/env";
 // import { headers } from "next/headers";
 
 // ──────────────────────────────────────────────
@@ -18,9 +19,39 @@ export function apiError(message: string, status = 400) {
   return NextResponse.json({ success: false, error: message }, { status });
 }
 
+/** Logs an unexpected failure with where it happened, then answers 500. */
+export function internalError(where: string, err: unknown) {
+  console.error(`${where} failed:`, err);
+  return apiError("Internal server error", 500);
+}
+
 // ──────────────────────────────────────────────
 // Zod Parsing
 // ──────────────────────────────────────────────
+
+// Zod's built-in messages ("Invalid input: expected string…") mean little
+// without the field name; the ones written in schemas are full sentences.
+const GENERIC_MESSAGE = /^(Invalid|Too (small|big)|Expected|Required|Unrecognized)/;
+
+/**
+ * 422 with a readable message (each problem once, in order) and the
+ * problems per field in `issues` for forms that want to mark fields.
+ */
+function validationError(issues: z.core.$ZodIssue[]) {
+  const describe = (i: z.core.$ZodIssue) => {
+    const field = i.path.join(".");
+    return GENERIC_MESSAGE.test(i.message) && field ? `${field}: ${i.message}` : i.message;
+  };
+  const message = [...new Set(issues.map(describe))].join(". ");
+  return NextResponse.json(
+    {
+      success: false,
+      error: message,
+      issues: issues.map((i) => ({ path: i.path.join("."), message: i.message })),
+    },
+    { status: 422 }
+  );
+}
 
 export async function parseBody<T extends z.ZodType>(
   req: NextRequest,
@@ -30,10 +61,7 @@ export async function parseBody<T extends z.ZodType>(
     const body = await req.json();
     const result = schema.safeParse(body);
     if (!result.success) {
-      const messages = result.error.issues
-        .map((i) => `${i.path.join(".")}: ${i.message}`)
-        .join("; ");
-      return { data: null, error: apiError(`Validation failed: ${messages}`, 422) };
+      return { data: null, error: validationError(result.error.issues) };
     }
     return { data: result.data, error: null };
   } catch {
@@ -89,22 +117,29 @@ export async function requireAuth(req: NextRequest) {
   return session;
 }
 
-export async function requireAdmin(req: NextRequest) {
+/** Staff sign in again after this long, however long a customer session lasts. */
+export const STAFF_SESSION_MAX_AGE_MS = 12 * 60 * 60 * 1000;
+
+async function requireStaffSession(req: NextRequest) {
   const session = await requireAuth(req);
-  const user = session.user as AuthenticatedUser;
-  const role = user.role;
+  const role = (session.user as AuthenticatedUser).role;
   if (role !== "admin" && role !== "super_admin") {
-    throw apiError("Forbidden: Admin access required", 403);
+    throw apiError("This account doesn't have admin access", 403);
+  }
+  if (Date.now() - new Date(session.session.createdAt).getTime() > STAFF_SESSION_MAX_AGE_MS) {
+    throw apiError("Your admin session has expired. Please sign in again.", 401);
   }
   return session;
 }
 
+export async function requireAdmin(req: NextRequest) {
+  return requireStaffSession(req);
+}
+
 export async function requireSuperAdmin(req: NextRequest) {
-  const session = await requireAuth(req);
-  const user = session.user as AuthenticatedUser;
-  const role = user.role;
-  if (role !== "super_admin") {
-    throw apiError("Forbidden: Super Admin access required", 403);
+  const session = await requireStaffSession(req);
+  if ((session.user as AuthenticatedUser).role !== "super_admin") {
+    throw apiError("Only the store owner can do this", 403);
   }
   return session;
 }
@@ -124,15 +159,11 @@ export function getAdminRole(session: { user: { role?: string } } | null): "supe
 // CORS Helper
 // ──────────────────────────────────────────────
 
-const ADMIN_ORIGINS = (process.env.ADMIN_APP_URL || "http://localhost:3001")
-  .split(",")
-  .map((s) => s.trim());
-
 export function withCors(response: NextResponse, req: NextRequest) {
   const origin = req.headers.get("origin");
-  if (origin && ADMIN_ORIGINS.includes(origin)) {
+  if (origin && adminAppOrigins.includes(origin)) {
     response.headers.set("Access-Control-Allow-Origin", origin);
-    response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
     response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
     response.headers.set("Access-Control-Allow-Credentials", "true");
     response.headers.set("Access-Control-Max-Age", "86400");
@@ -182,17 +213,6 @@ export function paginationMeta(total: number, page: number, limit: number) {
     hasNext: page * limit < total,
     hasPrev: page > 1,
   };
-}
-
-// ──────────────────────────────────────────────
-// Order Number Generator
-// ──────────────────────────────────────────────
-
-export function generateOrderNumber(): string {
-  const prefix = "SC";
-  const timestamp = Date.now().toString(36).toUpperCase();
-  const random = Math.random().toString(36).substring(2, 6).toUpperCase();
-  return `${prefix}-${timestamp}-${random}`;
 }
 
 // ──────────────────────────────────────────────

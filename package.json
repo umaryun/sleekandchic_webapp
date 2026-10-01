@@ -1,5 +1,5 @@
 {
-  "name": "slickandchick_webapp",
+  "name": "sleekandchic_webapp",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,9 +9,13 @@
     "lint": "eslint",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
+    "db:migrate": "npx tsx lib/db/migrate.ts",
+    "db:baseline": "npx tsx lib/db/baseline.ts",
     "db:seed": "npx tsx lib/db/seed.ts",
+    "db:make-owner": "npx tsx lib/db/make-owner.ts",
     "db:storage": "npx tsx lib/db/setup-storage.ts",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "test": "vitest run"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.7",
@@ -27,6 +31,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
@@ -37,6 +42,7 @@
     "eslint-config-next": "16.2.9",
     "tailwindcss": "^4",
     "tsx": "^4.23.1",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.11"
   }
 }

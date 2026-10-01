@@ -1,232 +1,115 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ChevronDown, Grid3x3 } from "lucide-react";
 import { fetchCategories } from "@/lib/api";
 import type { Category } from "@/types";
-import { useSession } from "@/lib/auth-client";
+import { SHOP_LINKS } from "@/lib/nav";
 
-function getNavItems(isLoggedIn: boolean) {
-  const pagesChildren = [
-    { label: "Order Tracking", href: "/orders/tracking" },
-    { label: "About", href: "/about" },
-    ...(isLoggedIn
-      ? [
-          { label: "My Account", href: "/profile" },
-        ]
-      : [
-          { label: "Sign up", href: "/register" },
-          { label: "Login", href: "/login" },
-        ]),
-    { label: "Coming soon", href: "/coming-soon" },
-  ];
-
-  return [
-    { label: "Home", href: "/" },
-    {
-      label: "Shop",
-      href: "/products",
-      children: [
-        { label: "Shop Grid", href: "/products" },
-        { label: "Shop List", href: "/products?layout=list" },
-        { label: "Cart", href: "/cart" },
-      ],
-    },
-    { label: "Pages", href: "#", children: pagesChildren },
-    { label: "Contact", href: "/contact" },
-  ];
-}
-
+// Desktop has room for Home; About lives in the footer.
+const LINKS = [{ label: "Home", href: "/" }, ...SHOP_LINKS.filter((l) => l.label !== "About")];
 
 export default function Navigation() {
-  const { data: session } = useSession();
-  const isLoggedIn = !!session?.user;
-  const navItems = getNavItems(isLoggedIn);
-
-  const [activeNav, setActiveNav] = useState<string | null>(null);
-  const [catMenuOpen, setCatMenuOpen] = useState(false);
+  const pathname = usePathname();
   const [categories, setCategories] = useState<Category[]>([]);
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     fetchCategories()
-      .then((data) => setCategories(data))
+      .then(setCategories)
       .catch((err) => console.error("Navigation fetch error:", err));
   }, []);
 
+  // Close on Escape (back to the button) and on clicks outside.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setOpen(false);
+        buttonRef.current?.focus();
+      }
+    };
+    const onPointer = (e: PointerEvent) => {
+      if (!menuRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("pointerdown", onPointer);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("pointerdown", onPointer);
+    };
+  }, [open]);
+
   return (
-    <nav className="hidden md:block relative z-40 text-black">
-      <div
-        style={{
-          maxWidth: "1280px",
-          margin: "0 auto",
-          padding: "0 16px",
-          display: "flex",
-          justifyContent: "space-between",
-          gap: "25px",
-          
-        }}
-      >
-        {/* All Categories Mega Dropdown */}
+    <nav aria-label="Main" className="relative z-40 hidden text-black md:block">
+      <div className="mx-auto flex max-w-[1280px] items-center justify-between gap-6 px-4">
         <div
-          style={{ position: "relative" }}
-          onMouseEnter={() => setCatMenuOpen(true)}
-          onMouseLeave={() => setCatMenuOpen(false)}
+          ref={menuRef}
+          className="relative"
+          onMouseEnter={() => setOpen(true)}
+          onMouseLeave={() => setOpen(false)}
+          // Keyboard users tabbing out of the list close it.
+          onBlur={(e) => {
+            if (!menuRef.current?.contains(e.relatedTarget as Node)) setOpen(false);
+          }}
         >
           <button
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-              padding: "0 20px",
-              width: "220px",
-              height: "51px",
-              background: "#b88d7a",
-              borderRadius: "5px 5px 0 0",
-              cursor: "pointer",
-              color: "#fff",
-              fontWeight: 600,
-              fontSize: "13px",
-              whiteSpace: "nowrap",
-              letterSpacing: "0.3px",
-            }}
+            ref={buttonRef}
+            type="button"
+            aria-expanded={open}
+            aria-controls="category-menu"
+            onClick={() => setOpen((v) => !v)}
+            className="flex h-[51px] w-[220px] items-center gap-2.5 rounded-t-[5px] bg-[#8a6452] px-5 text-[13px] font-semibold tracking-wide text-white"
           >
-            <Grid3x3 size={16} />
+            <Grid3x3 size={16} aria-hidden />
             Categories
-            <ChevronDown
-              size={14}
-            />
+            <ChevronDown size={14} aria-hidden className={`ml-auto transition-transform ${open ? "rotate-180" : ""}`} />
           </button>
 
-          {/* Categories dropdown */}
-          {catMenuOpen && categories.length > 0 && (
-            <div
-              style={{
-                position: "absolute",
-                top: "100%",
-                left: 0,
-                background: "#fff",
-                border: "1px solid #e5e5e5",
-                borderRadius: "0 0 4px 4px",
-                boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-                width: "220px",
-                zIndex: 200,
-              }}
+          {open && categories.length > 0 && (
+            <ul
+              id="category-menu"
+              className="absolute left-0 top-full z-[200] w-[220px] rounded-b border border-[#e5e5e5] bg-white shadow-[0_8px_24px_rgba(0,0,0,0.12)]"
             >
               {categories.map((cat) => (
-                <Link
-                  key={cat.id}
-                  href={`/products?category=${cat.slug}`}
-                  style={{
-                    display: "block",
-                    padding: "10px 18px",
-                    color: "#1a1a1a",
-                    textDecoration: "none",
-                    fontSize: "13px",
-                    borderBottom: "1px solid #f5f5f5",
-                    transition: "background 0.15s, color 0.15s, padding-left 0.15s",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.color = "#b88d7a";
-                    e.currentTarget.style.paddingLeft = "24px";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.color = "#1a1a1a";
-                    e.currentTarget.style.paddingLeft = "18px";
-                  }}
-                >
-                  {cat.name}
-                </Link>
+                <li key={cat.id}>
+                  <Link
+                    href={`/products?category=${cat.slug}`}
+                    onClick={() => setOpen(false)}
+                    className="block border-b border-[#f5f5f5] px-[18px] py-2.5 text-[13px] text-[#1a1a1a] transition-all hover:pl-6 hover:text-[#8a6452] focus-visible:pl-6 focus-visible:text-[#8a6452]"
+                  >
+                    {cat.name}
+                  </Link>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
         </div>
 
-        {/* Main Nav Items */}
-        <div className="w-[58%]">
-          <div className="flex gap-5 items-center">
-            {navItems.map((item) => (
-              <div
-              className=""
-                key={item.label}
-                style={{ position: "relative" }}
-                onMouseEnter={() => setActiveNav(item.label)}
-                onMouseLeave={() => setActiveNav(null)}
-              >
+        <ul className="flex flex-1 items-center gap-6">
+          {LINKS.map((item) => {
+            const current = item.href === pathname;
+            return (
+              <li key={item.label}>
                 <Link
-                className="flex items-center gap-[10px] pr-[16px]"
                   href={item.href}
-                  style={{
-                    height: "51px",
-                    color: activeNav === item.label ? "#b88d7a" : "#000",
-                    textDecoration: "none",
-                    fontSize: "13px",
-                    fontWeight: 500,
-                    whiteSpace: "nowrap",
-                    transition: "color 0.15s",
-                    letterSpacing: "0.2px",
-                  }}
+                  aria-current={current ? "page" : undefined}
+                  className={`flex h-[51px] items-center whitespace-nowrap text-[13px] font-medium tracking-wide transition-colors hover:text-[#8a6452] ${
+                    current ? "text-[#8a6452]" : "text-black"
+                  }`}
                 >
                   {item.label}
-                  {item.children && <ChevronDown size={12} />}
                 </Link>
+              </li>
+            );
+          })}
+        </ul>
 
-                {item.children && activeNav === item.label && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: "100%",
-                      left: 0,
-                      background: "#fff",
-                      border: "1px solid #e5e5e5",
-                      borderRadius: "0 0 4px 4px",
-                      boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-                      minWidth: "200px",
-                      zIndex: 200,
-                    }}
-                  >
-                    {item.children.map((child) => (
-                      <Link
-                        key={child.label}
-                        href={child.href}
-                        style={{
-                          display: "block",
-                          padding: "10px 18px",
-                          color: "#1a1a1a",
-                          textDecoration: "none",
-                          fontSize: "13px",
-                          borderBottom: "1px solid #f5f5f5",
-                          transition: "background 0.15s, color 0.15s",
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.color = "#b88d7a";
-                          e.currentTarget.style.paddingLeft = "24px";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.color = "#1a1a1a";
-                          e.currentTarget.style.paddingLeft = "18px";
-                        }}
-                      >
-                        {child.label}
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>  
-        </div>
-        
-
-        {/* Right: Promo text */}
-        <div
-        className="flex items-center justify-start w-[260px]"
-        >
-          <span style={{ color: "#888", fontSize: "12px" }}>
-            🔥 <span style={{ color: "#b88d7a", fontWeight: 600 }}>Hot Deal</span>
-            <span style={{ color: "#ccc" }}> — Free Shipping Over ₦100,000</span>
-          </span>
-        </div>
+        <p className="w-[260px] text-xs text-[#6b6b6b]">Nationwide delivery · Pay on delivery available</p>
       </div>
     </nav>
   );

@@ -1,8 +1,9 @@
 import { NextRequest } from "next/server";
-import { z } from "zod";
 import { db } from "@/lib/db";
 import { categories } from "@/lib/db/schema";
-import { asc, count } from "drizzle-orm";
+import { isUniqueViolation } from "@/lib/db/errors";
+import { categoryFieldsSchema, parentProblem } from "@/lib/services/categories";
+import { asc } from "drizzle-orm";
 import {
   apiSuccess,
   apiError,
@@ -11,6 +12,7 @@ import {
   parseBody,
   auditLog,
   slugify,
+  internalError,
 } from "@/lib/api-utils";
 
 export async function GET(req: NextRequest) {
@@ -26,36 +28,38 @@ export async function GET(req: NextRequest) {
     return withCors(response, req);
   } catch (err) {
     if (err instanceof Response) return err;
-    return apiError("Internal server error", 500);
+    return internalError("GET /api/v1/admin/categories", err);
   }
 }
-
-const createCategorySchema = z.object({
-  name: z.string().min(1),
-  slug: z.string().optional(),
-  iconUrl: z.string().url().optional(),
-  parentId: z.string().uuid().optional(),
-  displayOrder: z.number().int().default(0),
-});
 
 export async function POST(req: NextRequest) {
   try {
     const session = await requireAdmin(req);
-    const { data, error } = await parseBody(req, createCategorySchema);
+    const { data, error } = await parseBody(req, categoryFieldsSchema);
     if (error) return error;
+    const d = data!;
 
-    const slug = data!.slug || slugify(data!.name);
+    const slug = d.slug || slugify(d.name);
+    if (!slug) return withCors(apiError("Use letters or numbers in the name", 422), req);
+    const problem = await parentProblem(null, d.parentId);
+    if (problem) return withCors(apiError(problem, 422), req);
 
-    const [category] = await db
-      .insert(categories)
-      .values({
-        name: data!.name,
-        slug,
-        iconUrl: data!.iconUrl || null,
-        parentId: data!.parentId || null,
-        displayOrder: data!.displayOrder,
-      })
-      .returning();
+    let category: typeof categories.$inferSelect;
+    try {
+      [category] = await db
+        .insert(categories)
+        .values({
+          name: d.name,
+          slug,
+          iconUrl: d.iconUrl || null,
+          parentId: d.parentId || null,
+          displayOrder: d.displayOrder ?? 0,
+        })
+        .returning();
+    } catch (err) {
+      if (isUniqueViolation(err)) return withCors(apiError(`A category already uses the address /${slug}`, 409), req);
+      throw err;
+    }
 
     await auditLog(session.user.id, "create", "category", {
       categoryId: category.id,
@@ -66,6 +70,6 @@ export async function POST(req: NextRequest) {
     return withCors(response, req);
   } catch (err) {
     if (err instanceof Response) return err;
-    return apiError("Internal server error", 500);
+    return internalError("POST /api/v1/admin/categories", err);
   }
 }

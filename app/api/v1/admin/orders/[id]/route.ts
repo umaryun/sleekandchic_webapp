@@ -1,15 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { orders, orderItems, users } from "@/lib/db/schema";
-import { eq, or } from "drizzle-orm";
-import {
-  apiSuccess,
-  apiError,
-  requireAdmin,
-  requireSuperAdmin,
-  withCors,
-  auditLog,
-} from "@/lib/api-utils";
+import { orders, orderItems, orderEvents, users } from "@/lib/db/schema";
+import { asc, eq, or } from "drizzle-orm";
+import { apiSuccess, apiError, requireAdmin, withCors } from "@/lib/api-utils";
+import { allowedNextStatuses } from "@/lib/services/order-status";
 
 // ──────────────────────────────────────────────
 // GET — Order details with line items
@@ -62,11 +56,44 @@ export async function GET(
       }
     }
 
+    const events = await db
+      .select({
+        id: orderEvents.id,
+        type: orderEvents.type,
+        fromStatus: orderEvents.fromStatus,
+        toStatus: orderEvents.toStatus,
+        message: orderEvents.message,
+        createdAt: orderEvents.createdAt,
+        actorName: users.name,
+      })
+      .from(orderEvents)
+      .leftJoin(users, eq(orderEvents.actorId, users.id))
+      .where(eq(orderEvents.orderId, order.id))
+      .orderBy(asc(orderEvents.createdAt));
+    // Orders from before the timeline existed still show when they were placed.
+    const timeline = events.some((e) => e.type === "placed")
+      ? events
+      : [
+          { id: `${order.id}-placed`, type: "placed", fromStatus: null, toStatus: "pending", message: null, createdAt: order.createdAt, actorName: null },
+          ...events,
+        ];
+
+    const address = (order.shippingAddress ?? {}) as { firstName?: string; lastName?: string; phone?: string };
+    const recipient = [address.firstName, address.lastName].filter(Boolean).join(" ");
+
     const response = apiSuccess({
       ...order,
+      subtotal: order.subtotal !== null ? Number(order.subtotal) : null,
       totalAmount: Number(order.totalAmount),
-      customerName,
+      discountAmount: Number(order.discountAmount),
+      shippingFee: Number(order.shippingFee),
+      // The person to deliver to; the account name when the address has none.
+      customerName: recipient || customerName,
+      customerPhone: address.phone ?? null,
+      accountName: customerName,
       customerEmail,
+      allowedStatuses: allowedNextStatuses(order),
+      timeline,
       items: items.map((item) => ({
         ...item,
         productName: item.name,
@@ -83,53 +110,8 @@ export async function GET(
   }
 }
 
-// ──────────────────────────────────────────────
-// DELETE — Delete order (Super Admin only)
-// ──────────────────────────────────────────────
-
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const session = await requireSuperAdmin(req);
-    const { id } = await params;
-
-    const isUuid =
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-
-    const whereClause = isUuid
-      ? or(eq(orders.id, id), eq(orders.orderNumber, id))
-      : eq(orders.orderNumber, id);
-
-    const [existing] = await db
-      .select()
-      .from(orders)
-      .where(whereClause)
-      .limit(1);
-
-    if (!existing) {
-      return apiError("Order not found", 404);
-    }
-
-    // Cascade delete items and order
-    await db.delete(orderItems).where(eq(orderItems.orderId, existing.id));
-    await db.delete(orders).where(eq(orders.id, existing.id));
-
-    await auditLog(session.user.id, "delete", "order", {
-      orderId: existing.id,
-      orderNumber: existing.orderNumber,
-      totalAmount: existing.totalAmount,
-    });
-
-    const response = apiSuccess({ deleted: true });
-    return withCors(response, req);
-  } catch (err) {
-    if (err instanceof Response) return err;
-    console.error("DELETE /api/v1/admin/orders/[id] error:", err);
-    return apiError("Internal server error", 500);
-  }
-}
+// Orders are never deleted: they are the record of sales, stock and payments.
+// Cancel instead (PUT /admin/orders with status "cancelled").
 
 export async function OPTIONS() {
   return new NextResponse(null, { status: 204 });

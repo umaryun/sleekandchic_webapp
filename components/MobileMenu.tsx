@@ -1,40 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { X, ChevronDown } from "lucide-react";
 import { fetchCategories } from "@/lib/api";
 import type { Category } from "@/types";
 import { useSession, signOut } from "@/lib/auth-client";
+import { useDialog } from "@/lib/hooks/use-dialog";
+import { SHOP_LINKS } from "@/lib/nav";
+import Image from "next/image";
 
-function getNavItems(isLoggedIn: boolean) {
-  const pagesChildren = [
-    { label: "Order Tracking", href: "/orders/tracking" },
-    { label: "About", href: "/about" },
-    ...(isLoggedIn
-      ? [{ label: "My Account", href: "/profile" }]
-      : [
-          { label: "Sign up", href: "/register" },
-          { label: "Login", href: "/login" },
-        ]),
-    { label: "Coming soon", href: "/coming-soon" },
-  ];
-
-  return [
-    {
-      label: "Shop",
-      href: "/products",
-      children: [
-        { label: "Shop Grid", href: "/products" },
-        { label: "Shop List", href: "/products?layout=list" },
-        { label: "Cart", href: "/cart" },
-      ],
-    },
-    { label: "Pages", href: "#", children: pagesChildren },
-    { label: "Contact", href: "/contact" },
-  ];
-}
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -45,11 +21,10 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
   const router = useRouter();
   const { data: session } = useSession();
   const isLoggedIn = !!session?.user;
-  const navItems = getNavItems(isLoggedIn);
-
-  const [openSection, setOpenSection] = useState<string | null>(null);
   const [catOpen, setCatOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
+  const panelRef = useRef<HTMLElement>(null);
+  useDialog(isOpen, onClose, panelRef);
 
   useEffect(() => {
     fetchCategories()
@@ -65,6 +40,11 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
 
   return (
     <aside
+      ref={panelRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Menu"
+      inert={!isOpen}
       style={{
         position: "fixed",
         top: 0,
@@ -90,12 +70,7 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
           justifyContent: "space-between",
         }}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/logo.png"
-          alt="Sleekandchic"
-          style={{ width: "120px", height: "auto" }}
-        />
+        <Image src="/logo.png" alt="Sleekandchic" width={120} height={61} className="h-auto w-[120px]" />
         <button
           onClick={onClose}
           style={{
@@ -119,7 +94,7 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
             alignItems: "center",
             justifyContent: "space-between",
             padding: "14px 20px",
-            background: catOpen ? "#fff3ec" : "transparent",
+            background: catOpen ? "#f6efe9" : "transparent",
             border: "none",
             borderBottom: "1px solid #f0f0f0",
             cursor: "pointer",
@@ -134,14 +109,17 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
       {/* Categories */}
       <div style={{ padding: "0 0 8px" }}>
         <button
+          type="button"
           onClick={() => setCatOpen(!catOpen)}
+          aria-expanded={catOpen}
+          aria-controls="mobile-categories"
           style={{
             width: "100%",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
             padding: "14px 20px",
-            background: catOpen ? "#fff3ec" : "transparent",
+            background: catOpen ? "#f6efe9" : "transparent",
             border: "none",
             borderBottom: "1px solid #f0f0f0",
             cursor: "pointer",
@@ -160,7 +138,7 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
           />
         </button>
         {catOpen && (
-          <div style={{ background: "#fafafa" }}>
+          <div id="mobile-categories" style={{ background: "#fafafa" }}>
             {categories.map((cat) => (
               <Link
                 key={cat.id}
@@ -184,66 +162,28 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
         )}
       </div>
 
-      {/* Nav Items */}
-      <nav style={{ flex: 1 }}>
-        {navItems.map((item) => (
-          <div key={item.label} style={{ borderBottom: "1px solid #f0f0f0" }}>
-            <button
-              onClick={() =>
-                setOpenSection(openSection === item.label ? null : item.label)
-              }
-              style={{
-                width: "100%",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                padding: "14px 20px",
-                background: "transparent",
-                border: "none",
-                cursor: "pointer",
-                fontSize: "14px",
-                fontWeight: 600,
-                color: "#1a1a1a",
-                textAlign: "left",
-              }}
-            >
-              {item.label}
-              {item.children && (
-                <ChevronDown
-                  size={16}
-                  style={{
-                    transform:
-                      openSection === item.label ? "rotate(180deg)" : "rotate(0)",
-                    transition: "transform 0.2s",
-                    flexShrink: 0,
-                  }}
-                />
-              )}
-            </button>
-            {item.children && openSection === item.label && (
-              <div style={{ background: "#fafafa", paddingBottom: "4px" }}>
-                {item.children.map((child) => (
-                  <Link
-                    key={child.label}
-                    href={child.href}
-                    onClick={onClose}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                      padding: "10px 20px 10px 32px",
-                      color: "#666",
-                      textDecoration: "none",
-                      fontSize: "13px",
-                    }}
-                  >
-                    {child.label}
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
+      {/* Links */}
+      <nav aria-label="Menu" style={{ flex: 1 }}>
+        <ul>
+          {SHOP_LINKS.map((item) => (
+            <li key={item.label} style={{ borderBottom: "1px solid #f0f0f0" }}>
+              <Link
+                href={item.href}
+                onClick={onClose}
+                style={{
+                  display: "block",
+                  padding: "14px 20px",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  color: "#1a1a1a",
+                  textDecoration: "none",
+                }}
+              >
+                {item.label}
+              </Link>
+            </li>
+          ))}
+        </ul>
       </nav>
 
       {/* Footer links */}
@@ -280,7 +220,7 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
                 flex: 1,
                 textAlign: "center",
                 padding: "10px",
-                background: "#b88d7a",
+                background: "#8a6452",
                 color: "#fff",
                 border: "none",
                 fontSize: "13px",
@@ -318,7 +258,7 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
                 flex: 1,
                 textAlign: "center",
                 padding: "10px",
-                background: "#b88d7a",
+                background: "#8a6452",
                 color: "#fff",
                 textDecoration: "none",
                 fontSize: "13px",

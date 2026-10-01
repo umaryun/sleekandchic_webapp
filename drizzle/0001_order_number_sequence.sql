@@ -1,0 +1,2 @@
+CREATE SEQUENCE "public"."order_number_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 9223372036854775807 START WITH 10001 CACHE 1;--> statement-breakpoint
+ALTER TABLE "orders" ALTER COLUMN "order_number" SET DEFAULT 'SC-' || nextval('order_number_seq');

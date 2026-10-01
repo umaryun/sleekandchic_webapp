@@ -14,7 +14,8 @@ export async function GET() {
     const response = apiSuccess(slides);
     response.headers.set(
       "Cache-Control",
-      "public, s-maxage=3600, stale-while-revalidate=86400"
+      // Short, so slide edits show up within a minute.
+      "public, s-maxage=60, stale-while-revalidate=600"
     );
     return response;
   } catch (err) {

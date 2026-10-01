@@ -12,6 +12,7 @@ import {
   parseBody,
   auditLog,
 } from "@/lib/api-utils";
+import { activeVariantsOf, duplicateCombos, syncVariants, variantColourSchema } from "@/lib/services/catalog";
 
 // ──────────────────────────────────────────────
 // GET — Single product detail
@@ -41,10 +42,12 @@ export async function GET(
       .where(eq(productImages.productId, id))
       .orderBy(asc(productImages.displayOrder));
 
+    // Archived variants are kept for order history but can't be edited.
     const variants = await db
       .select()
       .from(productVariants)
-      .where(eq(productVariants.productId, id));
+      .where(activeVariantsOf(id))
+      .orderBy(asc(productVariants.size), asc(productVariants.color));
 
     const response = apiSuccess({
       ...product,
@@ -85,6 +88,8 @@ const updateProductSchema = z.object({
     z.string().uuid().nullable().optional()
   ),
   inStock: z.boolean().optional(),
+  status: z.enum(["draft", "active", "archived"]).optional(),
+  isFeatured: z.boolean().optional(),
   images: z
     .array(
       z.object({
@@ -97,9 +102,10 @@ const updateProductSchema = z.object({
   variants: z
     .array(
       z.object({
-        id: z.string().uuid().optional(),
+        // Matched against this product's variants; anything else is treated as new.
+        id: z.string().optional().nullable(),
         size: z.string().optional().nullable(),
-        color: z.string().optional().nullable(),
+        color: variantColourSchema.optional().nullable(),
         stockQuantity: z.number().int().min(0).default(0),
         priceOverride: z.number().positive().nullable().optional(),
       })
@@ -127,6 +133,13 @@ export async function PUT(
       return apiError("Product not found", 404);
     }
 
+    if (data!.variants) {
+      const dupes = duplicateCombos(data!.variants);
+      if (dupes.length > 0) {
+        return withCors(apiError(`Each size and colour can be listed once. Repeated: ${dupes.join(", ")}`, 422), req);
+      }
+    }
+
     // Build update object
     const updates: Record<string, unknown> = { updatedAt: new Date() };
     if (data!.name !== undefined) updates.name = data!.name;
@@ -141,46 +154,36 @@ export async function PUT(
     if (data!.badge !== undefined) updates.badge = data!.badge === "none" ? null : data!.badge;
     if (data!.discount !== undefined) updates.discount = data!.discount;
     if (data!.categoryId !== undefined) updates.categoryId = data!.categoryId;
+    if (data!.status !== undefined) updates.status = data!.status;
+    if (data!.isFeatured !== undefined) updates.isFeatured = data!.isFeatured;
     if (data!.inStock !== undefined) updates.inStock = data!.inStock;
 
-    const [updated] = await db
-      .update(products)
-      .set(updates)
-      .where(eq(products.id, id))
-      .returning();
+    // One transaction, so a failure part-way never leaves the product without
+    // its images or variants.
+    const updated = await db.transaction(async (tx) => {
+      const [row] = await tx.update(products).set(updates).where(eq(products.id, id)).returning();
 
-    // Replace images if provided
-    if (data!.images !== undefined) {
-      await db.delete(productImages).where(eq(productImages.productId, id));
-      if (data!.images.length > 0) {
-        await db.insert(productImages).values(
-          data!.images.map((img, i) => ({
-            productId: id,
-            imageUrl: img.imageUrl,
-            altText: img.altText || null,
-            displayOrder: i,
-          }))
-        );
+      if (data!.images !== undefined) {
+        await tx.delete(productImages).where(eq(productImages.productId, id));
+        if (data!.images.length > 0) {
+          await tx.insert(productImages).values(
+            data!.images.map((img, i) => ({
+              productId: id,
+              imageUrl: img.imageUrl,
+              altText: img.altText || null,
+              displayOrder: i,
+            }))
+          );
+        }
       }
-    }
 
-    // Replace variants if provided
-    if (data!.variants !== undefined) {
-      await db
-        .delete(productVariants)
-        .where(eq(productVariants.productId, id));
-      if (data!.variants.length > 0) {
-        await db.insert(productVariants).values(
-          data!.variants.map((v) => ({
-            productId: id,
-            size: v.size || null,
-            color: v.color || null,
-            stockQuantity: v.stockQuantity,
-            priceOverride: v.priceOverride ? String(v.priceOverride) : null,
-          }))
-        );
+      // Variants are updated in place so bags, orders and stock history keep
+      // pointing at them.
+      if (data!.variants !== undefined) {
+        await syncVariants(tx, id, data!.variants, session.user.id);
       }
-    }
+      return row;
+    });
 
     await auditLog(session.user.id, "update", "product", {
       productId: id,
@@ -218,15 +221,16 @@ export async function DELETE(
       return apiError("Product not found", 404);
     }
 
-    // Cascade delete (images and variants deleted via FK cascade)
-    await db.delete(products).where(eq(products.id, id));
+    // Archived, not deleted: past orders, stock history and bags still refer
+    // to it. It disappears from the shop and can be restored.
+    await db.update(products).set({ status: "archived", updatedAt: new Date() }).where(eq(products.id, id));
 
-    await auditLog(session.user.id, "delete", "product", {
+    await auditLog(session.user.id, "archive", "product", {
       productId: id,
       name: existing.name,
     });
 
-    const response = apiSuccess({ deleted: true });
+    const response = apiSuccess({ archived: true });
     return withCors(response, req);
   } catch (err) {
     if (err instanceof Response) return err;

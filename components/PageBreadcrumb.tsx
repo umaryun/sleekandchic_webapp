@@ -11,52 +11,38 @@ interface PageBreadcrumbProps {
   crumbs?: Crumb[];
 }
 
+const linkClass = "text-[#666] no-underline hover:text-[#8a6452] transition-colors";
+
 export default function PageBreadcrumb({ title, crumbs = [] }: PageBreadcrumbProps) {
   return (
-    <div
-      style={{
-        background: "#f8f8f8",
-        borderBottom: "1px solid #efefef",
-        padding: "30px 0",
-      }}
-    >
-      <div
-        style={{
-          maxWidth: "1280px",
-          margin: "0 auto",
-          padding: "0 16px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
-        {/* <h1 style={{ fontSize: "20px", fontWeight: 700, color: "#1a1a1a" }}>{title}</h1> */}
-        <nav style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px" }}>
-          <Link href="/" style={{ color: "#666", textDecoration: "none" }}
-            onMouseEnter={(e) => ((e.currentTarget as HTMLAnchorElement).style.color = "#b88d7a")}
-            onMouseLeave={(e) => ((e.currentTarget as HTMLAnchorElement).style.color = "#666")}
-          >
-            Home
-          </Link>
+    <div className="bg-[#f8f8f8] border-b border-[#efefef] py-[30px]">
+      <nav aria-label="Breadcrumb" className="max-w-[1280px] mx-auto px-4">
+        <ol className="flex flex-wrap items-center gap-1.5 text-[13px] list-none p-0 m-0">
+          <li>
+            <Link href="/" className={linkClass}>
+              Home
+            </Link>
+          </li>
           {crumbs.map((crumb) => (
-            <span key={crumb.label} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <ChevronRight size={12} color="#ccc" />
+            <li key={crumb.label} className="flex items-center gap-1.5">
+              <ChevronRight size={12} color="#ccc" aria-hidden />
               {crumb.href ? (
-                <Link href={crumb.href} style={{ color: "#666", textDecoration: "none" }}
-                  onMouseEnter={(e) => ((e.currentTarget as HTMLAnchorElement).style.color = "#b88d7a")}
-                  onMouseLeave={(e) => ((e.currentTarget as HTMLAnchorElement).style.color = "#666")}
-                >
+                <Link href={crumb.href} className={linkClass}>
                   {crumb.label}
                 </Link>
               ) : (
-                <span style={{ color: "#1a1a1a", fontWeight: 500 }}>{crumb.label}</span>
+                <span className="text-[#1a1a1a] font-medium">{crumb.label}</span>
               )}
-            </span>
+            </li>
           ))}
-          <ChevronRight size={12} color="#ccc" />
-          <span style={{ color: "#1a1a1a", fontWeight: 500 }}>{title}</span>
-        </nav>
-      </div>
+          <li className="flex items-center gap-1.5">
+            <ChevronRight size={12} color="#ccc" aria-hidden />
+            <span aria-current="page" className="text-[#1a1a1a] font-medium">
+              {title}
+            </span>
+          </li>
+        </ol>
+      </nav>
     </div>
   );
 }

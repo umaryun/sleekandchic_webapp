@@ -1,72 +1,83 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { orders, orderItems } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
-import { apiSuccess, apiError } from "@/lib/api-utils";
+import { orders, orderItems, users } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
+import { apiSuccess, apiError, getSession } from "@/lib/api-utils";
+import { rateLimit } from "@/lib/rate-limit";
 
 const trackingSchema = z.object({
-  order_number: z.string().min(1),
-  email: z.string().email(),
+  order_number: z.string().trim().min(1),
+  // The email or phone number the order was placed with. Not needed when the
+  // signed-in customer owns the order.
+  contact: z.string().trim().optional(),
+  email: z.string().trim().optional(), // older links
 });
+
+const digits = (s: string) => s.replace(/\D/g, "").replace(/^234/, "0");
 
 export async function GET(req: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url);
-    const params = Object.fromEntries(searchParams.entries());
+    const limited = await rateLimit(req, "tracking");
+    if (limited) return limited;
+
+    const params = Object.fromEntries(new URL(req.url).searchParams.entries());
     const parsed = trackingSchema.safeParse(params);
+    if (!parsed.success) return apiError("Enter your order number", 422);
 
-    if (!parsed.success) {
-      return apiError("order_number and email are required", 422);
-    }
+    // "sc-10001", "SC 10001" and plain "10001" all mean SC-10001.
+    const typed = parsed.data.order_number.trim().toUpperCase().replace(/\s+/g, "");
+    const orderNumber = /^\d+$/.test(typed) ? `SC-${typed}` : typed.replace(/^SC(?=\d)/, "SC-");
+    const contact = (parsed.data.contact ?? parsed.data.email ?? "").trim();
 
-    const { order_number, email } = parsed.data;
+    const [order] = await db.select().from(orders).where(eq(orders.orderNumber, orderNumber)).limit(1);
+    // Same answer for "no such order" and "details don't match", so order
+    // numbers can't be probed.
+    const notFound = () => apiError("We couldn't find an order with those details", 404);
+    if (!order) return notFound();
 
-    // Find order by number — check user email or guest email
-    const [order] = await db
-      .select()
-      .from(orders)
-      .where(eq(orders.orderNumber, order_number))
-      .limit(1);
+    const address = (order.shippingAddress ?? {}) as {
+      firstName?: string;
+      phone?: string;
+      city?: string;
+      state?: string;
+    };
 
-    if (!order) {
-      return apiError("Order not found", 404);
-    }
+    const session = await getSession(req);
+    const ownsOrder = Boolean(session?.user?.id && session.user.id === order.userId);
 
-    // Verify email matches (check guest email or authenticated user)
-    if (order.guestEmail !== email) {
-      // Could also check the user's email from the users table
+    if (!ownsOrder) {
+      if (!contact) return notFound();
+      let accountEmail: string | null = null;
       if (order.userId) {
-        const { users } = await import("@/lib/db/schema");
-        const [user] = await db
-          .select({ email: users.email })
-          .from(users)
-          .where(eq(users.id, order.userId))
-          .limit(1);
-
-        if (!user || user.email !== email) {
-          return apiError("Order not found", 404);
-        }
-      } else {
-        return apiError("Order not found", 404);
+        const [user] = await db.select({ email: users.email }).from(users).where(eq(users.id, order.userId)).limit(1);
+        accountEmail = user?.email ?? null;
       }
+      const emails = [order.guestEmail, accountEmail].filter(Boolean).map((e) => e!.toLowerCase());
+      const matchesEmail = contact.includes("@") && emails.includes(contact.toLowerCase());
+      const matchesPhone =
+        !contact.includes("@") && Boolean(address.phone) && digits(contact).length >= 10 && digits(contact) === digits(address.phone!);
+      if (!matchesEmail && !matchesPhone) return notFound();
     }
 
-    // Get order items
-    const items = await db
-      .select()
-      .from(orderItems)
-      .where(eq(orderItems.orderId, order.id));
+    const items = await db.select().from(orderItems).where(eq(orderItems.orderId, order.id));
 
     return apiSuccess({
       orderNumber: order.orderNumber,
       status: order.status,
       paymentStatus: order.paymentStatus,
+      paymentMethod: order.paymentMethod,
+      shippingMethod: order.shippingMethod,
+      subtotal: order.subtotal !== null ? Number(order.subtotal) : null,
       totalAmount: Number(order.totalAmount),
       discountAmount: Number(order.discountAmount),
       shippingFee: Number(order.shippingFee),
-      shippingAddress: order.shippingAddress,
       createdAt: order.createdAt,
+      paidAt: order.paidAt,
+      updatedAt: order.updatedAt,
+      firstName: address.firstName ?? null,
+      deliveryCity: address.city ?? null,
+      deliveryState: address.state ?? null,
       items: items.map((i) => ({
         name: i.name,
         price: Number(i.price),

@@ -36,6 +36,8 @@ export interface FetchProductsParams {
   minPrice?: number;
   maxPrice?: number;
   badge?: "sale" | "new" | "hot";
+  /** Only products the shop marks as featured. */
+  featured?: boolean;
   sort?: "price_asc" | "price_desc" | "newest" | "rating" | "name";
 }
 
@@ -52,6 +54,7 @@ export async function fetchProducts(
   if (params.maxPrice !== undefined)
     query.set("maxPrice", String(params.maxPrice));
   if (params.badge) query.set("badge", params.badge);
+  if (params.featured) query.set("featured", "1");
   if (params.sort) query.set("sort", params.sort);
 
   const qs = query.toString();
@@ -66,8 +69,21 @@ export async function fetchProduct(slug: string): Promise<Product> {
 // Categories
 // ──────────────────────────────────────────────
 
-export async function fetchCategories(): Promise<Category[]> {
-  return apiFetch<Category[]>("/categories");
+// The menu, mobile menu, home tiles and shop filters all want the category
+// list; one request per few minutes serves them all.
+const CATEGORY_TTL_MS = 5 * 60 * 1000;
+let categoriesRequest: { at: number; promise: Promise<Category[]> } | null = null;
+
+export function fetchCategories(): Promise<Category[]> {
+  if (!categoriesRequest || Date.now() - categoriesRequest.at > CATEGORY_TTL_MS) {
+    const promise = apiFetch<Category[]>("/categories");
+    categoriesRequest = { at: Date.now(), promise };
+    // A failed request isn't kept, so the next caller tries again.
+    promise.catch(() => {
+      if (categoriesRequest?.promise === promise) categoriesRequest = null;
+    });
+  }
+  return categoriesRequest.promise;
 }
 
 // ──────────────────────────────────────────────

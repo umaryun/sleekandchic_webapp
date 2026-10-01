@@ -1,28 +1,4 @@
-import type { SeedProduct as Product, SeedCategory as Category, NavItem, Announcement, SeedHeroSlide as HeroSlide } from "@/types";
-
-export const announcements: Announcement[] = [
-  {
-    id: 1,
-    bold: "Black Friday and Cyber Monday 2023 Deals for Motion Designers,",
-    text: " grab it now!",
-    linkText: "Shop now",
-    href: "/",
-  },
-  {
-    id: 2,
-    bold: "Trendy 25 silver jewelry,",
-    text: " save up 35% off today",
-    linkText: "Shop now",
-    href: "/",
-  },
-  {
-    id: 3,
-    bold: "Welcome to our international shop!",
-    text: " Enjoy free shipping on orders ₦100,000 & up",
-    linkText: "Shop now",
-    href: "/",
-  },
-];
+import type { SeedProduct as Product, SeedCategory as Category, SeedHeroSlide as HeroSlide } from "@/types";
 
 export const categories: Category[] = [
   { id: 1, name: "Abayas", slug: "abayas" },
@@ -35,51 +11,6 @@ export const categories: Category[] = [
   { id: 8, name: "Eid & Festive Wears", slug: "eid-festive-wears" },
   { id: 9, name: "Hijabs & Scarves", slug: "hijabs-scarves" },
   { id: 10, name: "Inner Dresses", slug: "inner-dresses" },
-];
-
-export const navItems: NavItem[] = [
-  {
-    label: "Home",
-    href: "/",
-    children: [
-      { label: "Wooden Home", href: "/" },
-      { label: "Fashion Home", href: "/fashion-home" },
-      { label: "Furniture Home", href: "/furniture-home" },
-      { label: "Cosmetics Home", href: "/cosmetics-home" },
-      { label: "Food Grocery", href: "/food-grocery-home" },
-    ],
-  },
-  {
-    label: "Shop",
-    href: "/products",
-    children: [
-      { label: "Shop Grid", href: "/products" },
-      { label: "Shop List", href: "/products?layout=list" },
-      { label: "Shop Detail", href: "/products/detail" },
-      { label: "Cart", href: "/cart" },
-    ],
-  },
-  {
-    label: "Pages",
-    href: "#",
-    children: [
-      { label: "Order Tracking", href: "/orders/tracking" },
-      { label: "About", href: "/about" },
-      { label: "Sign up", href: "/register" },
-      { label: "Login", href: "/login" },
-      { label: "404 / Error", href: "/404" },
-      { label: "Coming soon", href: "/coming-soon" },
-    ],
-  },
-  // {
-  //   label: "Blog",
-  //   href: "/blog",
-  //   children: [
-  //     { label: "Blog", href: "/blog" },
-  //     { label: "Blog Detail", href: "/blog/article" },
-  //   ],
-  // },
-  { label: "Contact", href: "/contact" },
 ];
 
 export const heroSlides: HeroSlide[] = [

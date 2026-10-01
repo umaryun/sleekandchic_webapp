@@ -17,6 +17,7 @@ export async function GET() {
         count: count(),
       })
       .from(products)
+      .where(eq(products.status, "active"))
       .groupBy(products.categoryId);
 
     const countMap = new Map<string, number>();

@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
+import { isNigerianState } from "@/lib/nigeria";
 import { db } from "@/lib/db";
 import { shippingRates } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
@@ -43,7 +44,8 @@ export async function GET(
 }
 
 const updateShippingRateSchema = z.object({
-  state: z.string().min(1).optional(),
+  // Must match the state names checkout uses, or the rate is never found.
+  state: z.string().trim().refine(isNigerianState, "Use one of the 36 states or Abuja (FCT), spelt as in the list").optional(),
   zone: z.string().min(1).optional(),
   standardBase: z.number().int().min(0).optional(),
   expressBase: z.number().int().min(0).optional(),

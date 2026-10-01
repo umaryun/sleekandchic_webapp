@@ -1,10 +1,16 @@
 import { db } from "./index";
-import { categories, products, productImages, productVariants, heroSlides, users } from "./schema";
+import { categories, products, productImages, productVariants, heroSlides } from "./schema";
 import { categories as defaultCategories, products as defaultProducts, heroSlides as defaultSlides } from "@/data/index";
 import { slugify } from "../api-utils";
-import { eq } from "drizzle-orm";
+import { count, eq } from "drizzle-orm";
 
+// Sample catalogue for development. Safe to run more than once: existing
+// categories and products are skipped and slides are only added when there
+// are none. To give someone owner access, use `npm run db:make-owner`.
 async function seed() {
+  if (process.env.NODE_ENV === "production" && process.env.SEED_ALLOW_PRODUCTION !== "1") {
+    throw new Error("This adds sample products. Set SEED_ALLOW_PRODUCTION=1 if you really want them in production.");
+  }
   console.log("Starting database seed...");
 
   // 1. Seed Categories
@@ -56,15 +62,14 @@ async function seed() {
       .values({
         name: item.name,
         slug,
-        description: item.description || `High quality ${item.name} for modern style.`,
+        description: item.description ?? null,
         price: String(priceNGN),
         originalPrice: origPriceNGN ? String(origPriceNGN) : null,
         sku: item.sku || `SC-${Math.floor(1000 + Math.random() * 9000)}`,
-        brand: item.brand || "Slickandchic",
+        brand: item.brand || "Sleekandchic",
         badge: item.badge || null,
         discount: item.discount || null,
-        rating: item.rating || 5,
-        reviewCount: item.reviewCount || 10,
+        // Ratings come only from real reviews; seeded products start with none.
         inStock: item.inStock ?? true,
         categoryId,
       })
@@ -83,7 +88,8 @@ async function seed() {
 
     // Insert Product Variants
     const sizes = item.sizes && item.sizes.length > 0 ? item.sizes : ["S", "M", "L", "XL"];
-    const colors = item.colors && item.colors.length > 0 ? item.colors : ["Default"];
+    // No colour rather than one literally called "Default".
+    const colors: (string | null)[] = item.colors && item.colors.length > 0 ? item.colors : [null];
 
     const variantValues = [];
     for (const s of sizes) {
@@ -102,8 +108,9 @@ async function seed() {
   }
   console.log("Seeded products with images and variants.");
 
-  // 3. Seed Hero Slides
-  for (let i = 0; i < defaultSlides.length; i++) {
+  // 3. Seed Hero Slides (only into an empty table, so reruns don't duplicate them)
+  const [{ slides }] = await db.select({ slides: count() }).from(heroSlides);
+  for (let i = 0; slides === 0 && i < defaultSlides.length; i++) {
     const slide = defaultSlides[i];
     await db.insert(heroSlides).values({
       boldText: slide.title || "New Arrival Collection",
@@ -115,25 +122,7 @@ async function seed() {
       isActive: true,
     });
   }
-  console.log("Seeded hero slides.");
-
-  // 4. Ensure Super Admin Accounts exist
-  const superAdminEmails = ["admin@slickandchic.com", "umaryunusa443@gmail.com"];
-  for (const email of superAdminEmails) {
-    const [adminUser] = await db
-      .select()
-      .from(users)
-      .where(eq(users.email, email))
-      .limit(1);
-
-    if (adminUser && adminUser.role !== "super_admin") {
-      await db
-        .update(users)
-        .set({ role: "super_admin" })
-        .where(eq(users.id, adminUser.id));
-      console.log(`Elevated ${email} to super_admin.`);
-    }
-  }
+  console.log(slides === 0 ? "Seeded hero slides." : "Hero slides already exist; left as they are.");
 
   console.log("Database seed completed successfully!");
 }

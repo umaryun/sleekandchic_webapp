@@ -1,327 +1,140 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import {
-  Search,
-  ShoppingCart,
-  User,
-  ChevronDown,
-  X,
-  Menu,
-} from "lucide-react";
-import { fetchCategories } from "@/lib/api";
-import type { Category } from "@/types";
+import { useRouter } from "next/navigation";
+import { Search, ShoppingCart, User, Menu } from "lucide-react";
 import CartDrawer from "./CartDrawer";
 import MobileMenu from "./MobileMenu";
 import { useCart } from "@/context/CartContext";
+import Image from "next/image";
 
+function SearchForm({ id, className, onDone }: { id: string; className?: string; onDone?: () => void }) {
+  const router = useRouter();
+  const [query, setQuery] = useState("");
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = query.trim();
+    router.push(q ? `/products?search=${encodeURIComponent(q)}` : "/products");
+    onDone?.();
+  };
+
+  return (
+    <form role="search" onSubmit={submit} className={className}>
+      <label htmlFor={id} className="sr-only">
+        Search products
+      </label>
+      <input
+        id={id}
+        type="search"
+        placeholder="Search abayas, kaftans, gowns…"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        className="flex-1 min-w-0 px-3.5 text-sm text-[#1a1a1a] bg-transparent outline-none"
+      />
+      <button type="submit" aria-label="Search" className="px-4 flex items-center text-[#1a1a1a] cursor-pointer">
+        <Search size={18} />
+      </button>
+    </form>
+  );
+}
+
+function CartBadge({ count }: { count: number }) {
+  if (count === 0) return null;
+  return (
+    <span className="absolute -top-1.5 -right-2 bg-[#8a6452] text-white rounded-full min-w-4 h-4 px-1 text-[10px] flex items-center justify-center font-bold">
+      {count}
+    </span>
+  );
+}
 
 export default function Header() {
   const { cartCount } = useCart();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [categoryOpen, setCategoryOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState("All Categories");
   const [cartOpen, setCartOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [categories, setCategories] = useState<Category[]>([]);
-
-  useEffect(() => {
-    fetchCategories()
-      .then((data) => setCategories(data))
-      .catch((err) => console.error("Header categories fetch error:", err));
-  }, []);
   const [searchOpen, setSearchOpen] = useState(false);
+  const cartLabel = cartCount === 0 ? "Open bag" : `Open bag, ${cartCount} ${cartCount === 1 ? "item" : "items"}`;
 
   return (
     <>
-      {/* Desktop Header */}
-      <header
-        className=""
-        style={{
-          background: "#fff",
-          marginBottom: "10px",
-          marginTop: "10px",
-          position: "sticky",
-          top: 0,
-          zIndex: 50,
-        }}
-      >
-        <div
-          className="justify-between"
-          style={{
-            maxWidth: "1280px",
-            margin: "0 auto",
-            padding: "0 16px",
-            display: "flex",
-            alignItems: "center",
-            gap: "20px",
-            height: "72px",
-          }}
-        >
-          {/* Mobile hamburger */}
-        <button
-          onClick={() => setMobileMenuOpen(true)}
-          className="block md:hidden bg-none border-none cursor-pointer text-[#1a1a1a] p-1"
-          aria-label="Open menu"
-        >
-          <Menu size={24} />
-        </button>
-
-        {/* Logo */}
-        <Link className="" href="/" style={{ flexShrink: 0, display: "flex", alignItems: "center" }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/logo.png"
-            alt="Slickandchic"
-            className="w-[160px] md:w-[190px]"
-          />
-        </Link>
-
-        {/* Mobile action buttons */}
-        <div className="flex md:hidden items-center gap-4 ml-auto">
-          {/* Mobile Search Toggle */}
+      <header className="sticky top-0 z-50 bg-white my-2.5">
+        <div className="max-w-[1280px] mx-auto px-4 flex items-center justify-between gap-5 h-[72px]">
           <button
-            onClick={() => setSearchOpen(!searchOpen)}
-            className="bg-none border-none cursor-pointer text-[#1a1a1a] p-1"
-            aria-label="Toggle search"
+            type="button"
+            onClick={() => setMobileMenuOpen(true)}
+            className="md:hidden text-[#1a1a1a] p-1 cursor-pointer"
+            aria-label="Open menu"
           >
-            <Search size={22} />
+            <Menu size={24} />
           </button>
-          {/* Mobile Cart Toggle */}
-          <button
-            onClick={() => setCartOpen(true)}
-            className="bg-none border-none cursor-pointer text-[#1a1a1a] p-1 relative"
-            aria-label="Open cart"
-          >
-            <ShoppingCart size={22} />
-            <span
-              className="absolute -top-1.5 -right-2 bg-[#b88d7a] text-white rounded-full w-4 h-4 text-[10px] flex items-center justify-center font-bold"
-            >
-              {cartCount}
-            </span>
-          </button>
-        </div>
 
-        {/* Search Bar */}
-        <div
-          className="hidden md:flex flex-1 rounded-[5px] max-w-[780px] overflow-hidden"
-        >
-            {/* Category Selector */}
-            <div style={{ position: "relative" }}>
-              <button
-                onClick={() => setCategoryOpen(!categoryOpen)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  padding: "0 14px",
-                  background: "#F3F4F7",
-                  border: "none",
-                  borderRight: "1px solid #e4e4e4",
-                  cursor: "pointer",
-                  fontSize: "13px",
-                  color: "#1a1a1a",
-                  height: "44px",
-                  whiteSpace: "nowrap",
-                  fontWeight: 500,
-                }}
-              >
-                {selectedCategory.length > 14
-                  ? selectedCategory.slice(0, 14) + "..."
-                  : selectedCategory}
-                <ChevronDown size={14} />
-              </button>
-              {categoryOpen && (
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "100%",
-                    left: 0,
-                    background: "#fff",
-                    border: "1px solid #e5e5e5",
-                    borderRadius: "4px",
-                    boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-                    zIndex: 200,
-                    minWidth: "200px",
-                    maxHeight: "320px",
-                    overflowY: "auto",
-                    marginTop: "2px",
-                  }}
-                >
-                  {["All Categories", ...categories.map((c: Category) => c.name)].map((cat) => (
-                    <button
-                      key={cat}
-                      onClick={() => {
-                        setSelectedCategory(cat);
-                        setCategoryOpen(false);
-                      }}
-                      style={{
-                        display: "block",
-                        width: "100%",
-                        padding: "10px 16px",
-                        background: "none",
-                        border: "none",
-                        cursor: "pointer",
-                        textAlign: "left",
-                        fontSize: "13px",
-                        color: selectedCategory === cat ? "#b88d7a" : "#1a1a1a",
-                        fontWeight: selectedCategory === cat ? 600 : 400,
-                        borderBottom: "1px solid #f5f5f5",
-                      }}
-                    >
-                      {cat}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+          <Link href="/" className="shrink-0 flex items-center">
+            <Image src="/logo.png" alt="Sleekandchic" width={190} height={96} priority className="h-auto w-[160px] md:w-[190px]" />
+          </Link>
 
-            {/* Search Input */}
-            <input
-              type="text"
-              placeholder="What Are You Looking For?"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{
-                flex: 1,
-                padding: "0 14px",
-                border: "none",
-                outline: "none",
-                fontSize: "13px",
-                color: "#1a1a1a",
-                background: "#F3F4F7",
-              }}
-            />
+          <SearchForm id="header-search" className="hidden md:flex flex-1 max-w-[680px] h-11 rounded-[5px] bg-[#F3F4F7]" />
 
-            {/* Search Button */}
+          {/* Mobile actions */}
+          <div className="flex md:hidden items-center gap-4 ml-auto">
             <button
-              style={{
-                padding: "0 18px",
-                background: "#F3F4F7",
-                border: "none",
-                cursor: "pointer",
-                color: "#000",
-                display: "flex",
-                alignItems: "center",
-              }}
+              type="button"
+              onClick={() => setSearchOpen(!searchOpen)}
+              className="text-[#1a1a1a] p-1 cursor-pointer"
               aria-label="Search"
+              aria-expanded={searchOpen}
             >
-              <Search size={18} />
+              <Search size={22} />
+            </button>
+            <button type="button" onClick={() => setCartOpen(true)} className="text-[#1a1a1a] p-1 relative cursor-pointer" aria-label={cartLabel}>
+              <ShoppingCart size={22} />
+              <CartBadge count={cartCount} />
             </button>
           </div>
 
-          {/* Action Icons */}
+          {/* Desktop actions */}
           <div className="hidden md:flex items-center gap-5 ml-auto shrink-0">
-
-
-
-            {/* Account */}
-            <Link
-              href="/profile"
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                color: "#1a1a1a",
-                textDecoration: "none",
-                fontSize: "11px",
-                gap: "2px",
-              }}
-            >
+            <Link href="/profile" className="flex flex-col items-center text-[#1a1a1a] no-underline text-[11px] gap-0.5">
               <User size={22} />
-              <span style={{ color: "#666", fontSize: "11px" }}>Account</span>
+              <span className="text-[#666]">Account</span>
             </Link>
-
-            {/* Cart */}
             <button
+              type="button"
               onClick={() => setCartOpen(true)}
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                color: "#1a1a1a",
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                position: "relative",
-                fontSize: "11px",
-                gap: "2px",
-              }}
-              aria-label="Open cart"
+              className="flex flex-col items-center text-[#1a1a1a] text-[11px] gap-0.5 cursor-pointer"
+              aria-label={cartLabel}
             >
-              <div style={{ position: "relative" }}>
+              <span className="relative">
                 <ShoppingCart size={22} />
-                <span
-                  style={{
-                    position: "absolute",
-                    top: "-6px",
-                    right: "-8px",
-                    background: "#b88d7a",
-                    color: "#fff",
-                    borderRadius: "50%",
-                    width: "16px",
-                    height: "16px",
-                    fontSize: "10px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontWeight: 700,
-                  }}
-                >
-                  {cartCount}
-                </span>
-              </div>
-              <span style={{ color: "#666", fontSize: "11px" }}>Cart</span>
+                <CartBadge count={cartCount} />
+              </span>
+              <span className="text-[#666]">Bag</span>
             </button>
           </div>
         </div>
 
-        {/* Mobile Search Input Row */}
         {searchOpen && (
           <div className="md:hidden border-t border-[#e5e5e5] px-4 py-2.5 bg-white">
-            <div className="flex border border-[#1a1a1a] rounded overflow-hidden">
-              <input
-                type="text"
-                placeholder="What Are You Looking For?"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="flex-1 px-3 py-2 text-sm outline-none bg-white text-[#1a1a1a]"
-              />
-              <button
-                className="bg-[#1a1a1a] text-white px-4 flex items-center justify-center"
-                aria-label="Search"
-              >
-                <Search size={16} />
-              </button>
-            </div>
+            <SearchForm
+              id="mobile-search"
+              className="flex h-10 border border-[#1a1a1a] rounded overflow-hidden"
+              onDone={() => setSearchOpen(false)}
+            />
           </div>
         )}
-
-        {/* Mobile Search CSS Cleanups */}
-        <style>{`
-          @media (max-width: 768px) {
-            .mobile-hamburger { display: flex !important; }
-          }
-        `}</style>
       </header>
 
-      {/* Cart Drawer */}
       <CartDrawer isOpen={cartOpen} onClose={() => setCartOpen(false)} />
-
-      {/* Mobile Menu */}
       <MobileMenu isOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
 
-      {/* Backdrop */}
       {(cartOpen || mobileMenuOpen) && (
         <div
-          onClick={() => { setCartOpen(false); setMobileMenuOpen(false); }}
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.5)",
-            zIndex: 49,
+          onClick={() => {
+            setCartOpen(false);
+            setMobileMenuOpen(false);
           }}
+          className="fixed inset-0 bg-black/50 z-[49]"
+          aria-hidden
         />
       )}
     </>

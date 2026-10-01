@@ -22,6 +22,13 @@ export interface Product {
   colors?: string[];
   sizes?: string[];
   inStock?: boolean;
+  // From the listing endpoint
+  /** Every size is sold out, or the product is switched off. */
+  soldOut?: boolean;
+  /** More than one size/colour, so the shopper must choose on the product page. */
+  hasOptions?: boolean;
+  /** The only variant, when there is exactly one; lets a card add it directly. */
+  singleVariantId?: string | null;
   // From API detail endpoint
   images?: ProductImage[];
   variants?: ProductVariant[];
@@ -99,29 +106,6 @@ export interface SeedHeroSlide {
 }
 
 // ──────────────────────────────────────────────
-// Nav / UI Types
-// ──────────────────────────────────────────────
-
-export interface NavItem {
-  label: string;
-  href: string;
-  children?: NavDropdownItem[];
-}
-
-export interface NavDropdownItem {
-  label: string;
-  href: string;
-}
-
-export interface Announcement {
-  id: number;
-  text: string;
-  bold: string;
-  linkText: string;
-  href: string;
-}
-
-// ──────────────────────────────────────────────
 // Hero Slides (matches DB shape)
 // ──────────────────────────────────────────────
 
@@ -134,17 +118,6 @@ export interface HeroSlide {
   imageUrl: string;
   displayOrder: number;
   isActive: boolean;
-}
-
-// Legacy hero slide shape (for static fallback)
-export interface LegacyHeroSlide {
-  id: number;
-  category: string;
-  title: string;
-  highlight: string;
-  subtitle: string;
-  image: string;
-  href: string;
 }
 
 // ──────────────────────────────────────────────
@@ -164,6 +137,10 @@ export interface CartItem {
   quantity: number;
   unitPrice: number;
   total: number;
+  /** Units left in this size and colour; null when stock isn't tracked. */
+  stockAvailable: number | null;
+  /** Why this line can't be bought right now (sold out, size missing …). */
+  problem: string | null;
 }
 
 export interface CartData {

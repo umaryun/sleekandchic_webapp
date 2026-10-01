@@ -4,10 +4,9 @@ import { db } from "@/lib/db";
 import {
   products,
   productImages,
-  productVariants,
   categories,
 } from "@/lib/db/schema";
-import { eq, ilike, count, asc, desc, sql } from "drizzle-orm";
+import { and, eq, ilike, count, asc, desc, ne, sql } from "drizzle-orm";
 import {
   apiSuccess,
   apiError,
@@ -18,6 +17,7 @@ import {
   slugify,
   paginationMeta,
 } from "@/lib/api-utils";
+import { duplicateCombos, syncVariants, variantColourSchema } from "@/lib/services/catalog";
 
 // ──────────────────────────────────────────────
 // GET — List products (with search, pagination)
@@ -27,6 +27,8 @@ const querySchema = z.object({
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
   search: z.string().optional(),
+  // Archived products are listed only when asked for.
+  status: z.enum(["draft", "active", "archived"]).optional(),
 });
 
 export async function GET(req: NextRequest) {
@@ -41,12 +43,13 @@ export async function GET(req: NextRequest) {
       return apiError("Invalid query parameters", 422);
     }
 
-    const { page, limit, search } = parsed.data;
+    const { page, limit, search, status } = parsed.data;
     const offset = (page - 1) * limit;
 
-    const whereClause = search
-      ? ilike(products.name, `%${search}%`)
-      : undefined;
+    const whereClause = and(
+      search ? ilike(products.name, `%${search}%`) : undefined,
+      status ? eq(products.status, status) : ne(products.status, "archived")
+    );
 
     const [{ total }] = await db
       .select({ total: count() })
@@ -117,6 +120,8 @@ const createProductSchema = z.object({
   discount: z.number().int().min(0).max(100).optional(),
   categoryId: z.string().uuid().optional(),
   inStock: z.boolean().default(true),
+  status: z.enum(["draft", "active"]).default("active"),
+  isFeatured: z.boolean().default(false),
   images: z
     .array(
       z.object({
@@ -129,7 +134,7 @@ const createProductSchema = z.object({
     .array(
       z.object({
         size: z.string().optional(),
-        color: z.string().optional(),
+        color: variantColourSchema.optional(),
         stockQuantity: z.number().int().min(0).default(0),
         priceOverride: z.number().positive().optional(),
       })
@@ -154,53 +159,54 @@ export async function POST(req: NextRequest) {
       discount,
       categoryId,
       inStock,
+      status,
+      isFeatured,
       images,
       variants,
     } = data!;
 
+    const dupes = duplicateCombos(variants ?? []);
+    if (dupes.length > 0) {
+      return withCors(apiError(`Each size and colour can be listed once. Repeated: ${dupes.join(", ")}`, 422), req);
+    }
+
     const slug = slugify(name) + "-" + Date.now().toString(36);
 
-    const [product] = await db
-      .insert(products)
-      .values({
-        name,
-        slug,
-        description,
-        price: String(price),
-        originalPrice: originalPrice ? String(originalPrice) : null,
-        sku,
-        brand,
-        badge: badge || null,
-        discount,
-        categoryId: categoryId || null,
-        inStock,
-      })
-      .returning();
+    const product = await db.transaction(async (tx) => {
+      const [row] = await tx
+        .insert(products)
+        .values({
+          name,
+          slug,
+          description,
+          price: String(price),
+          originalPrice: originalPrice ? String(originalPrice) : null,
+          sku,
+          brand,
+          badge: badge || null,
+          discount,
+          categoryId: categoryId || null,
+          inStock,
+          status,
+          isFeatured,
+        })
+        .returning();
 
-    // Insert images
-    if (images && images.length > 0) {
-      await db.insert(productImages).values(
-        images.map((img, i) => ({
-          productId: product.id,
-          imageUrl: img.imageUrl,
-          altText: img.altText || null,
-          displayOrder: i,
-        }))
-      );
-    }
+      if (images && images.length > 0) {
+        await tx.insert(productImages).values(
+          images.map((img, i) => ({
+            productId: row.id,
+            imageUrl: img.imageUrl,
+            altText: img.altText || null,
+            displayOrder: i,
+          }))
+        );
+      }
 
-    // Insert variants
-    if (variants && variants.length > 0) {
-      await db.insert(productVariants).values(
-        variants.map((v) => ({
-          productId: product.id,
-          size: v.size || null,
-          color: v.color || null,
-          stockQuantity: v.stockQuantity,
-          priceOverride: v.priceOverride ? String(v.priceOverride) : null,
-        }))
-      );
-    }
+      // Records opening stock in the stock history.
+      await syncVariants(tx, row.id, variants ?? [], session.user.id);
+      return row;
+    });
 
     await auditLog(session.user.id, "create", "product", {
       productId: product.id,
