@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { orders, orderItems, users } from "@/lib/db/schema";
-import { eq, ilike, desc, count, and, gte, lte, sql } from "drizzle-orm";
+import { eq, ilike, desc, count, and, or, gte, lte, sql } from "drizzle-orm";
 import {
   apiSuccess,
   apiError,
@@ -47,7 +47,21 @@ export async function GET(req: NextRequest) {
     const conditions = [];
 
     if (status) conditions.push(eq(orders.status, status));
-    if (search) conditions.push(ilike(orders.orderNumber, `%${search}%`));
+    if (search?.trim()) {
+      // Order number, email, recipient name or phone (any format).
+      const term = `%${search.trim().replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+      const digits = search.replace(/\D/g, "").replace(/^234/, "").replace(/^0/, "");
+      conditions.push(
+        or(
+          ilike(orders.orderNumber, term),
+          ilike(orders.guestEmail, term),
+          sql`concat_ws(' ', ${orders.shippingAddress}->>'firstName', ${orders.shippingAddress}->>'lastName') ilike ${term}`,
+          ...(digits.length >= 4
+            ? [sql`regexp_replace(${orders.shippingAddress}->>'phone', '[^0-9]', '', 'g') like ${`%${digits}%`}`]
+            : [])
+        )!
+      );
+    }
     if (from) conditions.push(gte(orders.createdAt, new Date(from)));
     if (to) conditions.push(lte(orders.createdAt, new Date(to)));
 
@@ -67,6 +81,9 @@ export async function GET(req: NextRequest) {
         totalAmount: orders.totalAmount,
         status: orders.status,
         paymentStatus: orders.paymentStatus,
+        paymentMethod: orders.paymentMethod,
+        shippingMethod: orders.shippingMethod,
+        shippingAddress: orders.shippingAddress,
         createdAt: orders.createdAt,
       })
       .from(orders)
@@ -87,16 +104,19 @@ export async function GET(req: NextRequest) {
 
     const userMap = new Map(userEmails.map((u) => [u.id, u]));
 
-    const data = rows.map((o) => ({
-      ...o,
-      totalAmount: Number(o.totalAmount),
-      customerEmail: o.userId
-        ? userMap.get(o.userId)?.email
-        : o.guestEmail,
-      customerName: o.userId
-        ? userMap.get(o.userId)?.name
-        : null,
-    }));
+    const data = rows.map(({ shippingAddress, ...o }) => {
+      const address = (shippingAddress ?? {}) as { firstName?: string; lastName?: string; phone?: string; state?: string };
+      const recipient = [address.firstName, address.lastName].filter(Boolean).join(" ");
+      return {
+        ...o,
+        totalAmount: Number(o.totalAmount),
+        customerEmail: (o.userId ? userMap.get(o.userId)?.email : null) ?? o.guestEmail,
+        // The person to deliver to; falls back to the account name.
+        customerName: recipient || (o.userId ? userMap.get(o.userId)?.name : null) || null,
+        customerPhone: address.phone ?? null,
+        deliveryState: address.state ?? null,
+      };
+    });
 
     const response = apiSuccess({
       orders: data,

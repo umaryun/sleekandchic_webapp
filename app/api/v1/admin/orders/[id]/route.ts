@@ -62,10 +62,19 @@ export async function GET(
       }
     }
 
+    const address = (order.shippingAddress ?? {}) as { firstName?: string; lastName?: string; phone?: string };
+    const recipient = [address.firstName, address.lastName].filter(Boolean).join(" ");
+
     const response = apiSuccess({
       ...order,
+      subtotal: order.subtotal !== null ? Number(order.subtotal) : null,
       totalAmount: Number(order.totalAmount),
-      customerName,
+      discountAmount: Number(order.discountAmount),
+      shippingFee: Number(order.shippingFee),
+      // The person to deliver to; the account name when the address has none.
+      customerName: recipient || customerName,
+      customerPhone: address.phone ?? null,
+      accountName: customerName,
       customerEmail,
       items: items.map((item) => ({
         ...item,
