@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ShoppingCart, Zap, Minus, Plus, Facebook, Twitter, Linkedin, Check } from "lucide-react";
+import { ShoppingCart, Zap, Minus, Plus, Check, MessageCircle, Link as LinkIcon } from "lucide-react";
 import ShopLayout from "@/components/ShopLayout";
 import PageBreadcrumb from "@/components/PageBreadcrumb";
 import ProductCard from "@/components/ProductCard";
@@ -27,6 +27,8 @@ export default function ProductDetailPage() {
   const [qty, setQty] = useState(1);
   const [addedToCart, setAddedToCart] = useState(false);
   const [adding, setAdding] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
+  const router = useRouter();
   const [addError, setAddError] = useState<string | null>(null);
   const { addItem } = useCart();
 
@@ -109,7 +111,7 @@ export default function ProductDetailPage() {
       ? [product.image]
       : ["/placeholder-product.svg"];
 
-  const handleAddToCart = async () => {
+  const addToBag = async () => {
     const matchingVariant = product.variants?.find(
       (v) =>
         (v.size || null) === (selectedSize || null) &&
@@ -119,12 +121,28 @@ export default function ProductDetailPage() {
     setAdding(true);
     const result = await addItem(product.id, matchingVariant?.id || null, qty);
     setAdding(false);
-    if (!result.ok) {
-      setAddError(result.error);
-      return;
-    }
+    if (!result.ok) setAddError(result.error);
+    return result.ok;
+  };
+
+  const handleAddToCart = async () => {
+    if (!(await addToBag())) return;
     setAddedToCart(true);
     setTimeout(() => setAddedToCart(false), 2000);
+  };
+
+  const handleBuyNow = async () => {
+    if (await addToBag()) router.push("/checkout");
+  };
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    } catch {
+      setAddError("Couldn't copy the link. Copy it from your browser's address bar.");
+    }
   };
 
   return (
@@ -263,7 +281,8 @@ export default function ProductDetailPage() {
                 </button>
               </div>
 
-              <button className="w-full sm:w-auto flex-1 h-11 sm:h-12 px-6 bg-[#f57224] text-white border-none rounded-[3px] cursor-pointer flex items-center justify-center gap-2 font-bold text-xs sm:text-sm">
+              <button type="button" onClick={handleBuyNow} disabled={adding || product.inStock === false}
+                className="w-full sm:w-auto flex-1 h-11 sm:h-12 px-6 bg-[#8a6452] text-white border-none rounded-[3px] cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 flex items-center justify-center gap-2 font-bold text-xs sm:text-sm">
                 <Zap size={16} /> Buy Now
               </button>
             </div>
@@ -285,17 +304,27 @@ export default function ProductDetailPage() {
                 </div>
               ))}
               {/* Share */}
-              <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "4px" }}>
-                <span style={{ fontWeight: 700, color: "#1a1a1a", fontSize: "13px" }}>Share:</span>
-                {[
-                  { Icon: Facebook, color: "#1877F2" },
-                  { Icon: Twitter, color: "#1da1f2" },
-                  { Icon: Linkedin, color: "#0077b5" },
-                ].map(({ Icon, color }, i) => (
-                  <button key={i} style={{ width: "30px", height: "30px", borderRadius: "50%", background: color, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff" }}>
-                    <Icon size={13} />
-                  </button>
-                ))}
+              <div className="flex flex-wrap items-center gap-2.5 mt-1 text-[13px]">
+                <span className="font-bold text-[#1a1a1a]">Share:</span>
+                <a
+                  href={`https://wa.me/?text=${encodeURIComponent(`${product.name}: ${formatNGN(product.price)}`)}`}
+                  // The page URL is only known in the browser, so it's added when tapped.
+                  onClick={(e) => {
+                    e.currentTarget.href = `https://wa.me/?text=${encodeURIComponent(`${product.name}: ${formatNGN(product.price)} ${window.location.href}`)}`;
+                  }}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-[#e5e5e5] px-3 py-1.5 font-semibold text-[#1a1a1a] no-underline hover:border-[#1a1a1a]"
+                >
+                  <MessageCircle size={14} /> WhatsApp
+                </a>
+                <button
+                  type="button"
+                  onClick={copyLink}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-[#e5e5e5] px-3 py-1.5 font-semibold text-[#1a1a1a] cursor-pointer hover:border-[#1a1a1a]"
+                >
+                  {linkCopied ? <Check size={14} /> : <LinkIcon size={14} />} {linkCopied ? "Link copied" : "Copy link"}
+                </button>
               </div>
             </div>
           </div>

@@ -7,6 +7,8 @@ export interface Email {
   subject: string;
   html: string;
   text: string;
+  /** Where replies go; defaults to the store's contact email. */
+  replyTo?: string;
 }
 
 export function isEmailConfigured() {
@@ -29,7 +31,7 @@ export async function sendEmail(email: Email): Promise<boolean> {
       body: JSON.stringify({
         from: env.EMAIL_FROM,
         to: [email.to],
-        reply_to: STORE.email,
+        reply_to: email.replyTo ?? STORE.email,
         subject: email.subject,
         html: email.html,
         text: email.text,

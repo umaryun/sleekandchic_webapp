@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { products, productImages, productVariants, categories } from "@/lib/db/schema";
-import { eq, ilike, and, gte, lte, sql, desc, asc, count, inArray } from "drizzle-orm";
+import { eq, ilike, and, or, gte, lte, sql, desc, asc, count, inArray } from "drizzle-orm";
 import { apiSuccess, apiError, paginationMeta } from "@/lib/api-utils";
 
 const querySchema = z.object({
@@ -39,13 +39,14 @@ export async function GET(req: NextRequest) {
         .from(categories)
         .where(eq(categories.slug, category))
         .limit(1);
-      if (cat) {
-        conditions.push(eq(products.categoryId, cat.id));
-      }
+      // An unknown category matches nothing rather than everything.
+      conditions.push(cat ? eq(products.categoryId, cat.id) : sql`false`);
     }
 
-    if (search) {
-      conditions.push(ilike(products.name, `%${search}%`));
+    if (search?.trim()) {
+      // Match name, description or category; escape LIKE wildcards in the input.
+      const term = `%${search.trim().replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+      conditions.push(or(ilike(products.name, term), ilike(products.description, term), ilike(categories.name, term))!);
     }
 
     if (minPrice !== undefined) {
@@ -75,6 +76,7 @@ export async function GET(req: NextRequest) {
     const [{ total }] = await db
       .select({ total: count() })
       .from(products)
+      .leftJoin(categories, eq(products.categoryId, categories.id))
       .where(whereClause);
 
     // Fetch products with category info via left join

@@ -111,3 +111,27 @@ describe("order emails", () => {
     expect(sent).toHaveLength(0);
   });
 });
+
+describe("contact form", () => {
+  it("emails the shop with the customer as reply-to, and drops bot submissions", async () => {
+    const { POST: contactPost } = await import("@/app/api/v1/store/contact/route");
+    const sent = mockNetwork();
+    const message = { name: "Aisha", email: "aisha@example.com", message: "Do you have the emerald abaya in size L?" };
+    const ok = await json(await contactPost(jsonRequest("/api/v1/store/contact", message)));
+    expect(ok.status).toBe(200);
+    expect(sent).toHaveLength(1);
+    expect(sent[0]).toMatchObject({ to: ["sleekandchic.it@gmail.com"], reply_to: "aisha@example.com" });
+
+    const bot = await json(await contactPost(jsonRequest("/api/v1/store/contact", { ...message, website: "spam.example" })));
+    expect(bot.status).toBe(200);
+    expect(sent).toHaveLength(1);
+  });
+
+  it("says plainly when the form can't send", async () => {
+    const { POST: contactPost } = await import("@/app/api/v1/store/contact/route");
+    env.RESEND_API_KEY = undefined;
+    const res = await json(await contactPost(jsonRequest("/api/v1/store/contact", { name: "A", email: "a@example.com", message: "Hello there" })));
+    expect(res.status).toBe(503);
+    expect(res.body.error).toMatch(/WhatsApp us on \+234 903 377 7385/);
+  });
+});

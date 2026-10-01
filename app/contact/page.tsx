@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { MapPin, Phone, Mail, MessageCircle } from "lucide-react";
 import ShopLayout from "@/components/ShopLayout";
 import PageBreadcrumb from "@/components/PageBreadcrumb";
+import ContactForm from "@/components/ContactForm";
 import { STORE, whatsappLink } from "@/lib/store";
 
 export const metadata: Metadata = {
@@ -55,6 +56,12 @@ export default function ContactPage() {
               </a>
             </div>
           ))}
+        </div>
+
+        <div className="mt-10 bg-white border border-[#ece8e5] rounded-lg p-6 sm:p-8 relative">
+          <h2 className="text-lg font-bold text-[#1a1a1a] mb-1">Send us a message</h2>
+          <p className="text-sm text-[#666] mb-5">We&apos;ll reply by email.</p>
+          <ContactForm />
         </div>
       </section>
     </ShopLayout>
