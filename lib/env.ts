@@ -55,6 +55,12 @@ function loadEnv(): Env {
 /** Validated server configuration. Read settings from here, not process.env. */
 export const env = loadEnv();
 
+/**
+ * The storefront's public address, for absolute links (sitemap, share
+ * previews). Required in production; during `next build` it may be unset.
+ */
+export const siteUrl = (env.BETTER_AUTH_URL ?? "http://localhost:3000").replace(/\/$/, "");
+
 /** Origins of the admin console; localhost:3001 is assumed only in development. */
 export const adminAppOrigins = (env.ADMIN_APP_URL ?? (isProduction ? "" : "http://localhost:3001"))
   .split(",")

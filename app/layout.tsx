@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { CartProvider } from "@/context/CartContext";
+import { siteUrl } from "@/lib/env";
 
 export const metadata: Metadata = {
+  // Makes share-preview and canonical links absolute.
+  metadataBase: new URL(siteUrl),
   title: "Sleekandchic | Abayas, Bubu, Kaftans & Modest Fashion",
   description:
     "Abayas, bubu, kaftans, gowns and modest fashion from Kaduna, delivered across Nigeria. Pay by card, transfer or on delivery.",
