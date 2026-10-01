@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import InfoPage from "@/components/InfoPage";
-import { STORE } from "@/lib/store";
+import { DELIVERY, STORE } from "@/lib/store";
 
 export const metadata: Metadata = {
   title: `Terms & conditions | ${STORE.name}`,
@@ -38,16 +38,19 @@ export default function TermsPage() {
       <section>
         <h2>Delivery</h2>
         <p>
-          We deliver across Nigeria. Delivery fees and estimated times are shown at checkout for your state; estimates
-          aren&apos;t guaranteed. Please give a phone number the courier can reach.
+          We deliver across Nigeria with {DELIVERY.courier}, usually in {DELIVERY.transitTime}, and send out deliveries on{" "}
+          {DELIVERY.dispatchDays} only. Delivery fees are shown at checkout for your state; delivery times are estimates and
+          aren&apos;t guaranteed. Please give a phone number the courier can reach. Pickup is available at our store,{" "}
+          {STORE.address}.
         </p>
       </section>
 
       <section>
         <h2>Returns</h2>
         <p>
-          Faulty, damaged or wrong items reported within {STORE.returnsWindowHours} hours of delivery are replaced or
-          refunded. See the <Link href="/returns">returns policy</Link>.
+          You can start a return within {STORE.returnsWindow} of delivery for unused items in their original packaging.
+          The conditions, and the items that can&apos;t be refunded, are in our{" "}
+          <Link href="/returns">returns &amp; refund policy</Link>.
         </p>
       </section>
 

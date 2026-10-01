@@ -7,7 +7,7 @@ const footerLinks = {
   Help: [
     { label: "Track your order", href: "/orders/tracking" },
     { label: "Delivery & FAQs", href: "/help" },
-    { label: "Returns", href: "/returns" },
+    { label: "Returns & refunds", href: "/returns" },
     { label: "Contact us", href: "/contact" },
   ],
   Information: [

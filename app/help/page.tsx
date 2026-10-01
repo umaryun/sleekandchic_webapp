@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import InfoPage from "@/components/InfoPage";
-import { STORE, whatsappLink } from "@/lib/store";
+import { DELIVERY, STORE, whatsappLink } from "@/lib/store";
 
 export const metadata: Metadata = {
   title: `Help & FAQs | ${STORE.name}`,
-  description: "Delivery fees and times, paying by card or on delivery, tracking orders and returns.",
+  description: "Delivery with GIG Logistics, store pickup, paying by card or on delivery, tracking orders and returns.",
 };
 
 export default function HelpPage() {
@@ -22,15 +22,28 @@ export default function HelpPage() {
       <section>
         <h2>How much is delivery, and how long does it take?</h2>
         <p>
-          We deliver to every state in Nigeria from {STORE.city}. The fee and the estimated delivery time depend on your
-          state, and you&apos;ll see both at checkout as soon as you choose your state, before you pay.
+          We deliver to every state in Nigeria from {STORE.city} with {DELIVERY.courier}. Delivery takes{" "}
+          {DELIVERY.transitTime} to your state of residence.
         </p>
         <ul>
-          <li>Standard delivery is the cheaper option. Express delivery is faster and costs more.</li>
+          <li>
+            <strong>We send out deliveries on {DELIVERY.dispatchDays} only.</strong>
+          </li>
+          <li>
+            You pay the delivery fee to us, based on the weight of your order, before we hand it to {DELIVERY.courier}.
+            You&apos;ll see the fee at checkout as soon as you choose your state, before you pay.
+          </li>
           <li>Standard delivery is free when your order is over the amount shown for your state at checkout.</li>
-          <li>Orders with more than three items include ₦200 handling for each extra item.</li>
-          <li>Delivery times are estimates and start once your order is confirmed.</li>
+          <li>Delivery times are estimates and start once your order is sent out.</li>
         </ul>
+      </section>
+
+      <section>
+        <h2>Can I pick up my order instead?</h2>
+        <p>
+          Yes. Pickup is available at our store: {STORE.address}. Message us on{" "}
+          <a href={whatsappLink("Hello, I'd like to pick up my order from the store")}>WhatsApp</a> to arrange it.
+        </p>
       </section>
 
       <section>
@@ -68,9 +81,10 @@ export default function HelpPage() {
       <section>
         <h2>Can I return or exchange an item?</h2>
         <p>
-          We accept returns for items that arrive faulty, damaged or wrong, reported within {STORE.returnsWindowHours}{" "}
-          hours of delivery. We don&apos;t accept returns for a change of mind. See our{" "}
-          <Link href="/returns">returns policy</Link>.
+          Yes, within {STORE.returnsWindow} of delivery, if the item is unused, unwashed and in its original packaging
+          with its tags on. Ask us first; please don&apos;t send anything back before we approve the return. Sale items
+          and custom-made pieces can&apos;t be refunded, and we exchange items only if they arrive defective or damaged.
+          See our <Link href="/returns">returns &amp; refund policy</Link>.
         </p>
       </section>
 

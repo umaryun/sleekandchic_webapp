@@ -12,6 +12,7 @@ import { formatNGN } from "@/lib/utils";
 import { MAX_PER_ITEM, variantOptions, type Selection } from "@/lib/variants";
 import { useCart } from "@/context/CartContext";
 import ShopImage from "@/components/ShopImage";
+import DeliveryInfo from "@/components/DeliveryInfo";
 
 const ACCENT = "#8a6452";
 const LOW_STOCK = 3;
@@ -331,6 +332,8 @@ export default function ProductView({ product }: { product: Product }) {
                 {addError}
               </p>
             )}
+
+            <DeliveryInfo />
 
             <div className="flex flex-col gap-2 border-t border-[#f0f0f0] pt-4">
               {[

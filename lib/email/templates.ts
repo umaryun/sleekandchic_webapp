@@ -169,7 +169,7 @@ const statusCopy: Record<string, { subject: string; heading: string; body: strin
   delivered: {
     subject: "Your order was delivered",
     heading: "Delivered",
-    body: `Your order has been delivered. If anything arrived faulty, damaged or wrong, tell us within ${STORE.returnsWindowHours} hours and we'll put it right.`,
+    body: `Your order has been delivered. If you need to return anything, you have ${STORE.returnsWindow} from delivery; see our returns & refund policy on our website. If anything arrived damaged or defective, tell us straight away.`,
   },
   cancelled: {
     subject: "Your order was cancelled",

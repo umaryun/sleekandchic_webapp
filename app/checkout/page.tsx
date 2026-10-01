@@ -23,6 +23,7 @@ import PageBreadcrumb from "@/components/PageBreadcrumb";
 import { formatNGN } from "@/lib/utils";
 import { useCart } from "@/context/CartContext";
 import { NIGERIAN_STATES } from "@/lib/nigeria";
+import { DELIVERY } from "@/lib/store";
 import { useSession } from "@/lib/auth-client";
 import ShopImage from "@/components/ShopImage";
 import { MAX_PER_ITEM } from "@/lib/variants";
@@ -628,9 +629,13 @@ function CheckoutContent() {
 
                   {/* Delivery options, priced by the server */}
                   <div className="my-7">
-                    <h3 className="text-sm sm:text-base font-bold text-[#1a1a1a] flex items-center gap-2 mb-3.5">
+                    <h3 className="text-sm sm:text-base font-bold text-[#1a1a1a] flex items-center gap-2 mb-1.5">
                       <Truck size={18} color="#1a1a1a" /> Choose Delivery Option
                     </h3>
+                    <p className="text-xs text-[#666] mb-3.5">
+                      {DELIVERY.courier} delivers in {DELIVERY.transitTime}. We send out deliveries on{" "}
+                      <strong className="text-[#1a1a1a]">{DELIVERY.dispatchDays} only</strong>.
+                    </p>
                     {!shipping.state ? (
                       <p className="text-sm text-[#777]">Choose your state to see delivery options and prices.</p>
                     ) : quoteError ? (
