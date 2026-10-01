@@ -6,6 +6,7 @@ import { ShoppingCart, Eye, Check } from "lucide-react";
 import type { Product } from "@/types";
 import { formatNGN } from "@/lib/utils";
 import { useCart } from "@/context/CartContext";
+import ShopImage from "@/components/ShopImage";
 
 interface ProductCardProps {
   product: Product;
@@ -60,11 +61,12 @@ export default function ProductCard({ product }: ProductCardProps) {
 
       <Link href={href}>
         <div className="relative pt-[100%] overflow-hidden bg-[#faf9f8]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <ShopImage
             src={product.image || "/placeholder-product.svg"}
             alt={product.name}
-            className={`absolute inset-0 w-full h-full object-cover ${product.soldOut ? "opacity-60" : ""}`}
+            fill
+            sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
+            className={`object-cover ${product.soldOut ? "opacity-60" : ""}`}
           />
         </div>
       </Link>

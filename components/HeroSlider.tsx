@@ -7,6 +7,7 @@ import { fetchHeroSlides, fetchCategories } from "@/lib/api";
 import { isSafeHref } from "@/lib/links";
 import { STORE } from "@/lib/store";
 import type { HeroSlide, Category } from "@/types";
+import ShopImage from "@/components/ShopImage";
 
 const SLIDE_MS = 6000;
 
@@ -117,7 +118,14 @@ export default function HeroSlider() {
                   active ? "opacity-100" : "pointer-events-none opacity-0"
                 }`}
               >
-                <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${s.imageUrl})` }} />
+                <ShopImage
+                  src={s.imageUrl}
+                  alt=""
+                  fill
+                  priority={i === 0}
+                  sizes="(min-width: 1280px) 1000px, (min-width: 1024px) 75vw, 100vw"
+                  className="object-cover"
+                />
                 {hasText && (
                   <div className="absolute inset-0 flex items-center bg-gradient-to-r from-black/55 via-black/25 to-transparent px-6 sm:px-14">
                     <div className="max-w-md text-white">

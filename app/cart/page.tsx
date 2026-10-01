@@ -7,6 +7,7 @@ import ShopLayout from "@/components/ShopLayout";
 import PageBreadcrumb from "@/components/PageBreadcrumb";
 import { formatNGN } from "@/lib/utils";
 import { useCart, type CartResult } from "@/context/CartContext";
+import ShopImage from "@/components/ShopImage";
 
 export default function CartPage() {
   const { items, subtotal, loading, updateQuantity, removeItem } = useCart();
@@ -65,10 +66,11 @@ export default function CartPage() {
                       className="flex flex-col md:grid md:grid-cols-[2fr_1fr_1fr_1fr_40px] gap-4 p-5 items-start md:items-center border-b border-[#f5f5f5] last:border-b-0 relative w-full"
                     >
                       <div className="flex items-center gap-3.5 w-full pr-8 md:pr-0">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
+                        <ShopImage
                           src={item.image || "/placeholder-product.svg"}
                           alt={item.productName || "Product"}
+                          width={64}
+                          height={64}
                           className="w-16 h-16 object-cover rounded border border-[#f0f0f0] shrink-0"
                         />
                         <div className="min-w-0">

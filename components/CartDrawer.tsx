@@ -4,6 +4,7 @@ import { X, ShoppingBag, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
 import { formatNGN } from "@/lib/utils";
+import ShopImage from "@/components/ShopImage";
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -85,18 +86,12 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                 borderBottom: "1px solid #f5f5f5",
               }}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <ShopImage
                 src={item.image || "/placeholder-product.svg"}
                 alt={item.productName || "Product"}
-                style={{
-                  width: "72px",
-                  height: "72px",
-                  objectFit: "cover",
-                  borderRadius: "4px",
-                  background: "#f5f5f5",
-                  flexShrink: 0,
-                }}
+                width={72}
+                height={72}
+                className="h-[72px] w-[72px] shrink-0 rounded bg-[#f5f5f5] object-cover"
               />
               <div style={{ flex: 1 }}>
                 <h4

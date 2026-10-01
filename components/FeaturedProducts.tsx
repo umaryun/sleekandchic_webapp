@@ -15,20 +15,29 @@ const tabs = [
 
 export default function FeaturedProducts() {
   const [activeTab, setActiveTab] = useState("all");
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Products for the tab they were loaded for; a different tab means loading.
+  const [loaded, setLoaded] = useState<{ tab: string; products: Product[] } | null>(null);
+  const loading = loaded?.tab !== activeTab;
+  const products = loaded?.products ?? [];
 
   useEffect(() => {
-    setLoading(true);
+    let cancelled = false;
     const tab = tabs.find((t) => t.id === activeTab);
     fetchProducts({
       limit: 8,
       badge: tab?.badge,
       sort: "newest",
     })
-      .then((data) => setProducts(data.products))
-      .catch((err) => console.error("FeaturedProducts fetch error:", err))
-      .finally(() => setLoading(false));
+      .then((data) => {
+        if (!cancelled) setLoaded({ tab: activeTab, products: data.products });
+      })
+      .catch((err) => {
+        console.error("FeaturedProducts fetch error:", err);
+        if (!cancelled) setLoaded({ tab: activeTab, products: [] });
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [activeTab]);
 
   return (

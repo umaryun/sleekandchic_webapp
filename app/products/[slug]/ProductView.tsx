@@ -11,6 +11,7 @@ import type { Product } from "@/types";
 import { formatNGN } from "@/lib/utils";
 import { MAX_PER_ITEM, variantOptions, type Selection } from "@/lib/variants";
 import { useCart } from "@/context/CartContext";
+import ShopImage from "@/components/ShopImage";
 
 const ACCENT = "#8a6452";
 const LOW_STOCK = 3;
@@ -141,8 +142,14 @@ export default function ProductView({ product }: { product: Product }) {
           {/* Gallery */}
           <div>
             <div className="relative mb-3.5 aspect-square overflow-hidden rounded-md border border-[#f0f0f0] bg-[#fafafa]">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={productImages[activeImg] || productImages[0]} alt={product.name} className="h-full w-full object-cover" />
+              <ShopImage
+                src={productImages[activeImg] || productImages[0]}
+                alt={product.name}
+                fill
+                priority
+                sizes="(min-width: 1280px) 620px, (min-width: 768px) 50vw, 100vw"
+                className="object-cover"
+              />
             </div>
             {productImages.length > 1 && (
               <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${Math.min(productImages.length, 5)}, 1fr)` }}>
@@ -156,8 +163,9 @@ export default function ProductView({ product }: { product: Product }) {
                     className="aspect-square overflow-hidden rounded border-2 p-0 transition-colors"
                     style={{ borderColor: activeImg === i ? ACCENT : "#e5e5e5" }}
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={img} alt="" className="h-full w-full object-cover" />
+                    <span className="relative block h-full w-full">
+                      <ShopImage src={img} alt="" fill sizes="120px" className="object-cover" />
+                    </span>
                   </button>
                 ))}
               </div>

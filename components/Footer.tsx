@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { STORE, whatsappLink } from "@/lib/store";
+import Image from "next/image";
 
 const footerLinks = {
   Help: [
@@ -41,8 +42,7 @@ export default function Footer() {
     <footer className="bg-[#f5f5f5] text-[#1a1a1a]">
       <div className="max-w-[1280px] mx-auto px-2.5 pt-5 pb-3 text-center">
         <Link href="/" className="inline-block no-underline">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt={STORE.name} className="w-[240px] sm:w-[320px] lg:w-[450px] h-auto mx-auto" />
+          <Image src="/logo.png" alt={STORE.name} width={450} height={227} className="w-[240px] sm:w-[320px] lg:w-[450px] h-auto mx-auto" />
         </Link>
       </div>
 

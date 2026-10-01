@@ -7,6 +7,7 @@ import { X, ChevronDown } from "lucide-react";
 import { fetchCategories } from "@/lib/api";
 import type { Category } from "@/types";
 import { useSession, signOut } from "@/lib/auth-client";
+import Image from "next/image";
 
 function getNavItems(isLoggedIn: boolean) {
   const pagesChildren = [
@@ -90,12 +91,7 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
           justifyContent: "space-between",
         }}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/logo.png"
-          alt="Sleekandchic"
-          style={{ width: "120px", height: "auto" }}
-        />
+        <Image src="/logo.png" alt="Sleekandchic" width={120} height={61} className="h-auto w-[120px]" />
         <button
           onClick={onClose}
           style={{

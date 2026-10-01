@@ -15,6 +15,14 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: ['172.20.10.3'],
+  images: {
+    formats: ["image/avif", "image/webp"],
+    // Uploaded product, category and banner photos (Supabase Storage public
+    // buckets). Keep in step with lib/images.ts.
+    remotePatterns: [
+      { protocol: "https", hostname: "**.supabase.co", pathname: "/storage/v1/object/public/**", search: "" },
+    ],
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

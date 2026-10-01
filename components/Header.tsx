@@ -7,6 +7,7 @@ import { Search, ShoppingCart, User, Menu } from "lucide-react";
 import CartDrawer from "./CartDrawer";
 import MobileMenu from "./MobileMenu";
 import { useCart } from "@/context/CartContext";
+import Image from "next/image";
 
 function SearchForm({ id, className, onDone }: { id: string; className?: string; onDone?: () => void }) {
   const router = useRouter();
@@ -69,8 +70,7 @@ export default function Header() {
           </button>
 
           <Link href="/" className="shrink-0 flex items-center">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.png" alt="Sleekandchic" className="w-[160px] md:w-[190px]" />
+            <Image src="/logo.png" alt="Sleekandchic" width={190} height={96} priority className="h-auto w-[160px] md:w-[190px]" />
           </Link>
 
           <SearchForm id="header-search" className="hidden md:flex flex-1 max-w-[680px] h-11 rounded-[5px] bg-[#F3F4F7]" />

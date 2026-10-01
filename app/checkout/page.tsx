@@ -23,6 +23,7 @@ import { formatNGN } from "@/lib/utils";
 import { useCart } from "@/context/CartContext";
 import { NIGERIAN_STATES } from "@/lib/nigeria";
 import { useSession } from "@/lib/auth-client";
+import ShopImage from "@/components/ShopImage";
 
 const STEPS = ["Shipping & Delivery", "Payment Method", "Order Placed"] as const;
 type Step = (typeof STEPS)[number];
@@ -720,10 +721,11 @@ export default function CheckoutPage() {
                   {items.map((item) => (
                     <div key={item.id} className="flex gap-3 items-center">
                       <div className="relative shrink-0">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
+                        <ShopImage
                           src={item.image || "/placeholder-product.svg"}
                           alt={item.productName || "Product"}
+                          width={50}
+                          height={50}
                           className="w-[50px] h-[50px] object-cover rounded border border-[#f0f0f0]"
                         />
                         <span className="absolute -top-1.5 -right-1.5 w-[18px] h-[18px] rounded-full bg-[#1a1a1a] text-white text-[10px] font-bold flex items-center justify-center">
