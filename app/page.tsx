@@ -21,7 +21,7 @@ export default function HomePage() {
         <HeroSlider />
 
         {/* Shop by category */}
-        <CategorySection />
+        {/* <CategorySection /> */}
 
         {/* Featured products grid */}
         <FeaturedProducts />
