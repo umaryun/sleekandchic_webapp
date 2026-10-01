@@ -1,8 +1,8 @@
 // One-off, for a database that was set up with `db:push` before migrations
-// existed: records drizzle/0000_baseline.sql as already applied, so
-// `db:migrate` starts from there instead of trying to create existing tables.
+// existed: records every migration in ./drizzle as already applied, so
+// `db:migrate` only runs migrations added after this point.
 //
-//   1. npm run db:push      (bring the live schema up to this baseline)
+//   1. npm run db:push      (bring the live schema up to this code)
 //   2. npm run db:baseline  (record it; safe to run twice)
 //   3. npm run db:migrate   (from now on, on every deploy)
 import crypto from "node:crypto";
@@ -15,11 +15,15 @@ dotenv.config({ path: ".env.local" });
 dotenv.config();
 
 async function main() {
-  const journal = JSON.parse(fs.readFileSync("drizzle/meta/_journal.json", "utf8"));
-  const baseline = journal.entries[0];
-  if (baseline?.tag !== "0000_baseline") throw new Error("drizzle/0000_baseline.sql isn't the first migration");
-  // Same hash drizzle's migrator records.
-  const hash = crypto.createHash("sha256").update(fs.readFileSync(`drizzle/${baseline.tag}.sql`).toString()).digest("hex");
+  const journal = JSON.parse(fs.readFileSync("drizzle/meta/_journal.json", "utf8")) as {
+    entries: { tag: string; when: number }[];
+  };
+  // Same hashes drizzle's migrator records.
+  const applied = journal.entries.map((entry) => ({
+    hash: crypto.createHash("sha256").update(fs.readFileSync(`drizzle/${entry.tag}.sql`).toString()).digest("hex"),
+    createdAt: entry.when,
+    tag: entry.tag,
+  }));
 
   const sql = postgres(migrationUrl(), { max: 1 });
   try {
@@ -37,8 +41,10 @@ async function main() {
       return;
     }
 
-    await sql`insert into drizzle.__drizzle_migrations (hash, created_at) values (${hash}, ${baseline.when})`;
-    console.log("Recorded the baseline as applied. Use `npm run db:migrate` from now on.");
+    for (const m of applied) {
+      await sql`insert into drizzle.__drizzle_migrations (hash, created_at) values (${m.hash}, ${m.createdAt})`;
+    }
+    console.log(`Recorded ${applied.map((m) => m.tag).join(", ")} as applied. Use \`npm run db:migrate\` from now on.`);
   } finally {
     await sql.end();
   }
