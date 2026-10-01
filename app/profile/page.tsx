@@ -110,6 +110,7 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState<Tab>("overview");
   const [profile, setProfile] = useState<UserProfileData | null>(null);
   const [ordersList, setOrdersList] = useState<Order[]>([]);
+  const [totalOrders, setTotalOrders] = useState(0);
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [loadedFor, setLoadedFor] = useState<string | null>(null);
 
@@ -141,7 +142,7 @@ export default function ProfilePage() {
     if (!userId) return;
     let cancelled = false;
     Promise.all([
-      api<{ profile: UserProfileData; orders: Order[] }>("/api/v1/store/profile"),
+      api<{ profile: UserProfileData; orders: Order[]; totalOrders?: number }>("/api/v1/store/profile"),
       api<Address[]>("/api/v1/store/addresses"),
     ])
       .then(([data, saved]) => {
@@ -149,6 +150,7 @@ export default function ProfilePage() {
         setProfile(data.profile);
         setEditForm({ name: data.profile.name || "", phone: data.profile.phone || "" });
         setOrdersList(data.orders || []);
+        setTotalOrders(data.totalOrders ?? (data.orders || []).length);
         setAddresses(saved);
       })
       .catch((err) => console.error("Profile fetch error:", err))
@@ -331,7 +333,7 @@ export default function ProfilePage() {
               {(
                 [
                   { id: "overview", label: "My Details", Icon: User },
-                  { id: "orders", label: `My Orders (${ordersList.length})`, Icon: ShoppingBag },
+                  { id: "orders", label: `My Orders (${totalOrders})`, Icon: ShoppingBag },
                   { id: "addresses", label: "Addresses", Icon: MapPin },
                   { id: "security", label: "Password", Icon: Lock },
                 ] as const
@@ -408,6 +410,9 @@ export default function ProfilePage() {
                   </div>
                 ) : (
                   <div className="space-y-4">
+                    {totalOrders > ordersList.length && (
+                      <p className="text-xs text-[#6b6b6b]">Showing your {ordersList.length} most recent orders.</p>
+                    )}
                     {ordersList.map((ord) => (
                       <div key={ord.id} className="border border-[#e9e9e9] rounded-lg p-4 sm:p-5 bg-white">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#f5f5f5]">

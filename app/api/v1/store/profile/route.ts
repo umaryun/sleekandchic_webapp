@@ -2,8 +2,10 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { users, orders, orderItems } from "@/lib/db/schema";
-import { eq, desc, inArray } from "drizzle-orm";
+import { eq, desc, inArray, count } from "drizzle-orm";
 import { apiSuccess, apiError, getSession, parseBody } from "@/lib/api-utils";
+
+const RECENT_ORDERS = 50;
 
 const updateProfileSchema = z.object({
   name: z.string().min(2).optional(),
@@ -38,12 +40,11 @@ export async function GET(req: NextRequest) {
       return apiError("User not found", 404);
     }
 
-    // Fetch user's orders
-    const userOrders = await db
-      .select()
-      .from(orders)
-      .where(eq(orders.userId, userId))
-      .orderBy(desc(orders.createdAt));
+    // The most recent orders; the count covers all of them.
+    const [userOrders, [{ totalOrders }]] = await Promise.all([
+      db.select().from(orders).where(eq(orders.userId, userId)).orderBy(desc(orders.createdAt)).limit(RECENT_ORDERS),
+      db.select({ totalOrders: count() }).from(orders).where(eq(orders.userId, userId)),
+    ]);
 
     // All items in one query, grouped by order.
     const allItems =
@@ -86,6 +87,7 @@ export async function GET(req: NextRequest) {
     return apiSuccess({
       profile: user,
       orders: ordersWithItems,
+      totalOrders,
     });
   } catch (err) {
     console.error("GET /api/v1/store/profile error:", err);
