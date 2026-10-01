@@ -10,7 +10,6 @@ export default function MobileBottomNav() {
   const navItems = [
     { href: "/", Icon: Home, label: "Home" },
     { href: "/products", Icon: Grid3x3, label: "Shop" },
-    { href: "/products?sort=newest", Icon: Tags, label: "New In" },
     { href: "/cart", Icon: ShoppingCart, label: "Cart" },
     { href: "/profile", Icon: User, label: "Account" },
   ];
