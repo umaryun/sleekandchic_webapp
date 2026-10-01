@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   ChevronRight,
   Check,
@@ -24,6 +25,8 @@ import { useCart } from "@/context/CartContext";
 import { NIGERIAN_STATES } from "@/lib/nigeria";
 import { useSession } from "@/lib/auth-client";
 import ShopImage from "@/components/ShopImage";
+import { MAX_PER_ITEM } from "@/lib/variants";
+import type { CartItem } from "@/types";
 
 const STEPS = ["Shipping & Delivery", "Payment Method", "Order Placed"] as const;
 type Step = (typeof STEPS)[number];
@@ -98,12 +101,35 @@ function guestHeaders(): HeadersInit {
   return { "Content-Type": "application/json", ...(token ? { "x-guest-token": token } : {}) };
 }
 
-/** Prices the bag on the server; every total on this page comes from here. */
-async function fetchQuote(input: { state: string; shippingMethod: ShippingMethod; discountCode: string | null }) {
+/** One item from a product page's Buy now: /checkout?buy=<productId>&variant=<id>&qty=<n>. */
+interface BuyNow {
+  productId: string;
+  variantId?: string;
+  quantity: number;
+}
+
+function readBuyNow(params: URLSearchParams): BuyNow | null {
+  const productId = params.get("buy");
+  if (!productId) return null;
+  const qty = Number.parseInt(params.get("qty") ?? "", 10);
+  return {
+    productId,
+    variantId: params.get("variant") || undefined,
+    quantity: Number.isFinite(qty) ? Math.min(Math.max(qty, 1), MAX_PER_ITEM) : 1,
+  };
+}
+
+/** Prices the bag (or the Buy now item) on the server; every total on this page comes from here. */
+async function fetchQuote(input: {
+  state: string;
+  shippingMethod: ShippingMethod;
+  discountCode: string | null;
+  buyNow: BuyNow | null;
+}) {
   const res = await fetch("/api/v1/store/checkout/quote", {
     method: "POST",
     headers: guestHeaders(),
-    body: JSON.stringify({ ...input, discountCode: input.discountCode ?? undefined }),
+    body: JSON.stringify({ ...input, discountCode: input.discountCode ?? undefined, buyNow: input.buyNow ?? undefined }),
   });
   const json = await res.json().catch(() => null);
   if (!res.ok || !json?.success) throw new Error(json?.error || "We couldn't price your order. Please try again.");
@@ -121,8 +147,79 @@ const inputStyle = {
 } as const;
 const labelStyle = { display: "block", fontSize: "12px", fontWeight: 700, color: "#444", marginBottom: "6px" } as const;
 
+interface BuyNowItems {
+  key: string;
+  items: CartItem[];
+  subtotal: number;
+  error: string | null;
+}
+
+/** Loads the Buy now item, shaped like a bag line, from the server's current catalogue. */
+async function fetchBuyNowItems(key: string): Promise<BuyNowItems> {
+  try {
+    const res = await fetch("/api/v1/store/checkout/buy-now", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: key,
+    });
+    const json = await res.json().catch(() => null);
+    if (!res.ok || !json?.success) throw new Error(json?.error || "We couldn't load this item. Please try again.");
+    return { key, items: json.data.items, subtotal: json.data.subtotal, error: null };
+  } catch (err) {
+    return { key, items: [], subtotal: 0, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+/** The Buy now item; `current` is null while loading. */
+function useBuyNowItems(buyNow: BuyNow | null) {
+  const key = buyNow ? JSON.stringify(buyNow) : null;
+  const [state, setState] = useState<BuyNowItems | null>(null);
+
+  useEffect(() => {
+    if (!key) return;
+    let cancelled = false;
+    fetchBuyNowItems(key).then((loaded) => !cancelled && setState(loaded));
+    return () => {
+      cancelled = true;
+    };
+  }, [key]);
+
+  const reload = useCallback(async () => {
+    if (key) setState(await fetchBuyNowItems(key));
+  }, [key]);
+
+  return { current: state?.key === key ? state : null, reload };
+}
+
 export default function CheckoutPage() {
-  const { items, subtotal: bagSubtotal, loading: bagLoading, refresh } = useCart();
+  return (
+    <Suspense
+      fallback={
+        <ShopLayout>
+          <PageBreadcrumb title="Checkout" crumbs={[{ label: "Cart", href: "/cart" }]} />
+          <div className="flex justify-center py-20 text-[#6b6b6b]">
+            <Loader2 className="animate-spin" size={28} />
+          </div>
+        </ShopLayout>
+      }
+    >
+      <CheckoutContent />
+    </Suspense>
+  );
+}
+
+function CheckoutContent() {
+  const params = useSearchParams();
+  const [buyNow] = useState<BuyNow | null>(() => readBuyNow(params));
+  const bag = useCart();
+  const buyNowItems = useBuyNowItems(buyNow);
+
+  // Buy now checks out one item and leaves the bag alone; otherwise it's the bag.
+  const items = buyNow ? (buyNowItems.current?.items ?? []) : bag.items;
+  const bagSubtotal = buyNow ? (buyNowItems.current?.subtotal ?? 0) : bag.subtotal;
+  const bagLoading = buyNow ? buyNowItems.current === null : bag.loading;
+  const loadError = buyNow ? (buyNowItems.current?.error ?? null) : null;
+  const refresh = buyNow ? buyNowItems.reload : bag.refresh;
 
   const [step, setStep] = useState<Step>("Shipping & Delivery");
   const [shipping, setShipping] = useState({
@@ -200,13 +297,13 @@ export default function CheckoutPage() {
     if (!quoteKey) return;
     const [state, method, code] = JSON.parse(quoteKey) as [string, ShippingMethod, string | null];
     let cancelled = false;
-    fetchQuote({ state, shippingMethod: method, discountCode: code })
+    fetchQuote({ state, shippingMethod: method, discountCode: code, buyNow })
       .then((quote) => !cancelled && setQuoteState({ key: quoteKey, quote, error: null }))
       .catch((err: Error) => !cancelled && setQuoteState({ key: quoteKey, quote: null, error: err.message }));
     return () => {
       cancelled = true;
     };
-  }, [quoteKey]);
+  }, [quoteKey, buyNow]);
 
   const quote = quoteState?.key === quoteKey ? quoteState.quote : null;
   const quoteError = quoteState?.key === quoteKey ? quoteState.error : null;
@@ -226,7 +323,7 @@ export default function CheckoutPage() {
     setCouponError("");
     setCheckingCoupon(true);
     try {
-      const checked = await fetchQuote({ state: shipping.state, shippingMethod, discountCode: code });
+      const checked = await fetchQuote({ state: shipping.state, shippingMethod, discountCode: code, buyNow });
       if (checked.discountError) setCouponError(checked.discountError);
       else setAppliedCode(checked.discountCode);
     } catch (err) {
@@ -271,6 +368,7 @@ export default function CheckoutPage() {
           shippingMethod,
           paymentMethod,
           discountCode: appliedCode ?? undefined,
+          buyNow: buyNow ?? undefined,
         }),
       });
       const json = await res.json().catch(() => null);
@@ -359,8 +457,12 @@ export default function CheckoutPage() {
         ) : items.length === 0 && !placed ? (
           <div style={{ textAlign: "center", padding: "80px 20px" }}>
             <ShoppingBag size={56} color="#ccc" style={{ margin: "0 auto 16px" }} />
-            <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#1a1a1a", marginBottom: "10px" }}>Your cart is empty</h2>
-            <p style={{ color: "#777", marginBottom: "24px" }}>You don&apos;t have any items in your cart to checkout.</p>
+            <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#1a1a1a", marginBottom: "10px" }}>
+              {buyNow ? "We couldn't find that item" : "Your cart is empty"}
+            </h2>
+            <p style={{ color: "#777", marginBottom: "24px" }}>
+              {buyNow ? loadError : <>You don&apos;t have any items in your cart to checkout.</>}
+            </p>
             <Link
               href="/products"
               style={{ padding: "12px 28px", background: "#1a1a1a", color: "#fff", borderRadius: "4px", fontWeight: 700, textDecoration: "none", fontSize: "14px" }}
@@ -428,14 +530,19 @@ export default function CheckoutPage() {
               {/* Items that can't be bought as they are */}
               {problems.length > 0 && (
                 <div role="alert" className="mb-5 rounded-md border border-[#f3d38b] bg-[#fffaeb] px-4 py-3.5 text-sm text-[#7a5200]">
-                  <p className="font-bold mb-1">Some items in your bag need attention</p>
+                  <p className="font-bold mb-1">
+                    {buyNow ? "This item can't be ordered as it is" : "Some items in your bag need attention"}
+                  </p>
                   <ul className="list-disc pl-5">
                     {problems.map((p) => (
                       <li key={p}>{p}</li>
                     ))}
                   </ul>
-                  <Link href="/cart" className="mt-2 inline-block font-semibold text-[#7a5200] underline">
-                    Update your bag
+                  <Link
+                    href={buyNow ? `/products/${items[0]?.productSlug ?? ""}` : "/cart"}
+                    className="mt-2 inline-block font-semibold text-[#7a5200] underline"
+                  >
+                    {buyNow ? "Back to the product" : "Update your bag"}
                   </Link>
                 </div>
               )}

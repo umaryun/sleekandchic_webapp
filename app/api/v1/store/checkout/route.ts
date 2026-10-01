@@ -8,6 +8,7 @@ import { koboToNaira } from "@/lib/money";
 import { isPaystackConfigured } from "@/lib/paystack";
 import { CheckoutError, expireStaleOrders, placeOrder } from "@/lib/services/orders";
 import { startCardPayment } from "@/lib/services/payments";
+import { buyNowSchema } from "@/lib/services/cart";
 import { afterResponse, isEmailConfigured } from "@/lib/email/send";
 import { notifyNewOrder } from "@/lib/email/notify";
 
@@ -29,6 +30,8 @@ const checkoutSchema = z.object({
   shippingMethod: z.enum(["standard", "express"]).default("standard"),
   paymentMethod: z.enum(["paystack", "cod"]).default("paystack"),
   discountCode: z.string().optional(),
+  /** Order just this item (the product page's Buy now) instead of the bag. */
+  buyNow: buyNowSchema.optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -62,6 +65,7 @@ export async function POST(req: NextRequest) {
       shippingMethod: data!.shippingMethod,
       paymentMethod: data!.paymentMethod,
       discountCode: data!.discountCode,
+      buyNow: data!.buyNow ?? null,
     });
 
     const summary = {

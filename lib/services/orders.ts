@@ -1,4 +1,4 @@
-import { and, eq, lt, sql } from "drizzle-orm";
+import { and, eq, isNull, lt, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
   cartItems,
@@ -10,7 +10,7 @@ import {
 } from "@/lib/db/schema";
 import { koboToDecimal, toKobo } from "@/lib/money";
 import { getDbShippingRates, getShippingQuotes, type ShippingQuote, type ShippingZone } from "@/lib/shipping";
-import { findCart, loadCartLines, type CartLine, type DbOrTx } from "@/lib/services/cart";
+import { findCart, loadBuyNowLines, loadCartLines, type BuyNowItem, type CartLine, type DbOrTx } from "@/lib/services/cart";
 import { recordOrderEvent } from "@/lib/services/order-status";
 import {
   claimDiscount,
@@ -123,38 +123,55 @@ export interface PlaceOrderInput {
   shippingMethod: ShippingMethod;
   paymentMethod: PaymentMethod;
   discountCode?: string | null;
+  /** Order just this item instead of the bag; the bag is left as it is. */
+  buyNow?: BuyNowItem | null;
 }
 
 /**
  * Creates the order in one transaction: prices come from the catalogue, stock
  * is locked and taken, and the promo code is claimed. Pay-on-delivery orders
- * clear the bag now; card orders keep it until payment succeeds.
+ * clear the bag now; card orders keep it until payment succeeds. A Buy now
+ * order isn't linked to the bag, so neither touches it.
  */
 export async function placeOrder(input: PlaceOrderInput) {
   const ratesMap = await getDbShippingRates();
   return db.transaction(async (tx) => {
-    const cart = await findCart(input.userId, input.guestToken, tx);
-    if (!cart) throw new CheckoutError("Your bag is empty");
+    const cart = input.buyNow ? null : await findCart(input.userId, input.guestToken, tx);
+    if (!input.buyNow && !cart) throw new CheckoutError("Your bag is empty");
 
-    // A new checkout from the same bag replaces an unpaid card order that is
-    // still holding stock.
-    const previous = await tx
-      .select({ id: orders.id })
-      .from(orders)
-      .where(
-        and(
-          eq(orders.cartId, cart.id),
-          eq(orders.paymentMethod, "paystack"),
-          eq(orders.paymentStatus, "unpaid"),
-          eq(orders.status, "pending")
-        )
-      );
+    // A new checkout replaces an unpaid card order that is still holding
+    // stock: from the same bag, or for Buy now, the same customer's last
+    // Buy now. (If that older order is paid after all, payment reinstates it.)
+    const sameCheckout = cart
+      ? eq(orders.cartId, cart.id)
+      : input.userId
+        ? and(isNull(orders.cartId), eq(orders.userId, input.userId))
+        : input.guestEmail
+          ? and(isNull(orders.cartId), isNull(orders.userId), eq(orders.guestEmail, input.guestEmail))
+          : null;
+    const previous = sameCheckout
+      ? await tx
+          .select({ id: orders.id })
+          .from(orders)
+          .where(
+            and(
+              sameCheckout,
+              eq(orders.paymentMethod, "paystack"),
+              eq(orders.paymentStatus, "unpaid"),
+              eq(orders.status, "pending")
+            )
+          )
+      : [];
     for (const p of previous) {
       await cancelOrder(tx, p.id, "order_cancelled", { onlyIfUnpaid: true, note: "Replaced by a newer checkout" });
     }
 
-    const lines = await loadCartLines(cart.id, tx, { lockVariants: true });
-    if (lines.length === 0) throw new CheckoutError("Your bag is empty");
+    const lines = cart
+      ? await loadCartLines(cart.id, tx, { lockVariants: true })
+      : await loadBuyNowLines(input.buyNow!, tx, { lockVariants: true });
+    if (lines.length === 0) {
+      throw new CheckoutError(cart ? "Your bag is empty" : "This item is no longer available", cart ? 400 : 404);
+    }
 
     const quote = await quoteLines(
       lines,
@@ -187,7 +204,7 @@ export async function placeOrder(input: PlaceOrderInput) {
         discountCode: quote.discount?.code ?? null,
         status: "pending",
         paymentStatus: "unpaid",
-        cartId: cart.id,
+        cartId: cart?.id ?? null,
         expiresAt:
           input.paymentMethod === "paystack" ? new Date(Date.now() + CARD_PAYMENT_WINDOW_MS) : null,
       })
@@ -231,7 +248,7 @@ export async function placeOrder(input: PlaceOrderInput) {
       message: input.paymentMethod === "cod" ? "Pay on delivery" : "Waiting for card payment",
     });
 
-    if (input.paymentMethod === "cod") {
+    if (input.paymentMethod === "cod" && cart) {
       await tx.delete(cartItems).where(eq(cartItems.cartId, cart.id));
     }
 

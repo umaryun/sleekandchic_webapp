@@ -104,8 +104,15 @@ export default function ProductView({ product }: { product: Product }) {
     setTimeout(() => setAddedToCart(false), 2000);
   };
 
-  const handleBuyNow = async () => {
-    if (await addToBag()) router.push("/checkout");
+  // Checks out just this item; the bag is left as it is.
+  const handleBuyNow = () => {
+    if (blocker) {
+      setAddError(blocker);
+      return;
+    }
+    const params = new URLSearchParams({ buy: product.id, qty: String(quantity) });
+    if (variant) params.set("variant", variant.id);
+    router.push(`/checkout?${params}`);
   };
 
   const copyLink = async () => {

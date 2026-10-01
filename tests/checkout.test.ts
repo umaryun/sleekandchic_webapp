@@ -18,6 +18,7 @@ import { POST as quotePost } from "@/app/api/v1/store/checkout/quote/route";
 import { POST as checkoutPost } from "@/app/api/v1/store/checkout/route";
 import { GET as verifyGet } from "@/app/api/v1/store/checkout/verify/route";
 import { POST as payPost } from "@/app/api/v1/store/checkout/pay/route";
+import { POST as buyNowPost } from "@/app/api/v1/store/checkout/buy-now/route";
 import { POST as webhookPost } from "@/app/api/v1/store/webhooks/payment/route";
 import { cancelOrder, expireStaleOrders } from "@/lib/services/orders";
 
@@ -341,6 +342,109 @@ describe("card payment", () => {
     const all = await db.select().from(orders);
     expect(all.map((o) => o.status).sort()).toEqual(["cancelled", "pending"]);
     expect(await stockOf(variantId)).toBe(3);
+  });
+});
+
+// ── Buy now: one item, straight to checkout, bag untouched ──
+
+describe("buy now", () => {
+  async function buyNow(buy: Record<string, unknown>, overrides: Record<string, unknown> = {}, headers: Record<string, string> = {}) {
+    return json(
+      await checkoutPost(
+        jsonRequest(
+          "/api/v1/store/checkout",
+          { guestEmail: "aisha@example.com", shippingAddress: ADDRESS, shippingMethod: "standard", paymentMethod: "cod", buyNow: buy, ...overrides },
+          headers
+        )
+      )
+    );
+  }
+
+  it("shows and prices just that item, without a bag", async () => {
+    const { product, variants } = await createProduct({ price: 10000, variants: [{ stock: 5, size: "L", color: "Navy" }] });
+    const buy = { productId: product.id, variantId: variants[0].id, quantity: 2 };
+
+    const shown = await json(await buyNowPost(jsonRequest("/api/v1/store/checkout/buy-now", buy)));
+    expect(shown.status).toBe(200);
+    expect(shown.body.data.subtotal).toBe(20000);
+    expect(shown.body.data.items).toHaveLength(1);
+    expect(shown.body.data.items[0]).toMatchObject({ productId: product.id, size: "L", color: "Navy", quantity: 2, total: 20000 });
+
+    const quote = await json(await quotePost(jsonRequest("/api/v1/store/checkout/quote", { state: "Kaduna", buyNow: buy })));
+    expect(quote.status).toBe(200);
+    expect(quote.body.data).toMatchObject({ subtotal: 20000, shippingFee: 1500, totalAmount: 21500 });
+    expect(await db.select().from(cartItems)).toHaveLength(0);
+  });
+
+  it("orders only that item and leaves the bag as it was", async () => {
+    const inBag = await createProduct({ price: 5000, variants: [{ stock: 5 }] });
+    const added = await addToBag(inBag.product.id, inBag.variants[0].id);
+    const token = added.body.data.guestToken;
+    const { product, variants } = await createProduct({ price: 20000, variants: [{ stock: 3 }] });
+
+    const res = await buyNow({ productId: product.id, variantId: variants[0].id, quantity: 1 }, {}, { "x-guest-token": token });
+    expect(res.status).toBe(200);
+    expect(res.body.data).toMatchObject({ subtotal: 20000, totalAmount: 20000 + 1500 });
+
+    const [order] = await db.select().from(orders);
+    expect(order.cartId).toBeNull();
+    expect(await stockOf(variants[0].id)).toBe(2);
+    expect(await stockOf(inBag.variants[0].id)).toBe(5);
+    const bag = await db.select().from(cartItems);
+    expect(bag).toHaveLength(1);
+    expect(bag[0].productId).toBe(inBag.product.id);
+  });
+
+  it("still needs a size, and stock, like the bag does", async () => {
+    const { product, variants } = await createProduct({ price: 20000, variants: [{ stock: 1 }] });
+    const noSize = await buyNow({ productId: product.id, quantity: 1 });
+    expect(noSize.status).toBe(409);
+    expect(noSize.body.error).toMatch(/Choose a size/);
+    const tooMany = await buyNow({ productId: product.id, variantId: variants[0].id, quantity: 2 });
+    expect(tooMany.status).toBe(409);
+    expect(tooMany.body.error).toMatch(/Only 1 left/);
+    expect(await db.select().from(orders)).toHaveLength(0);
+  });
+
+  it("doesn't empty the bag when its card payment succeeds", async () => {
+    const inBag = await createProduct({ price: 5000, variants: [{ stock: 5 }] });
+    const added = await addToBag(inBag.product.id, inBag.variants[0].id);
+    const { product, variants } = await createProduct({ price: 15000, variants: [{ stock: 5 }] });
+    vi.stubGlobal("fetch", paystackFetch({ initialize: okInit }));
+
+    const res = await buyNow(
+      { productId: product.id, variantId: variants[0].id, quantity: 1 },
+      { paymentMethod: "paystack" },
+      { "x-guest-token": added.body.data.guestToken }
+    );
+    expect(res.status).toBe(200);
+    const [order] = await db.select().from(orders);
+    await webhook({ event: "charge.success", data: { id: 77, reference: "REF", amount: 1650000, currency: "NGN", metadata: { orderId: order.id } } });
+    const [paid] = await db.select().from(orders);
+    expect(paid.paymentStatus).toBe("paid");
+    expect(await db.select().from(cartItems)).toHaveLength(1);
+  });
+
+  it("replaces the same shopper's unpaid Buy now so a retry isn't sold out", async () => {
+    const { product, variants } = await createProduct({ price: 15000, variants: [{ stock: 1 }] });
+    const buy = { productId: product.id, variantId: variants[0].id, quantity: 1 };
+    vi.stubGlobal("fetch", paystackFetch({ initialize: okInit }));
+
+    expect((await buyNow(buy, { paymentMethod: "paystack" })).status).toBe(200);
+    expect(await stockOf(variants[0].id)).toBe(0);
+    // Closed Paystack and tapped Buy now again.
+    expect((await buyNow(buy, { paymentMethod: "paystack" })).status).toBe(200);
+    const all = await db.select().from(orders);
+    expect(all.map((o) => o.status).sort()).toEqual(["cancelled", "pending"]);
+    expect(await stockOf(variants[0].id)).toBe(0);
+  });
+
+  it("says when the product is gone", async () => {
+    const buy = { productId: crypto.randomUUID(), quantity: 1 };
+    const shown = await json(await buyNowPost(jsonRequest("/api/v1/store/checkout/buy-now", buy)));
+    expect(shown.status).toBe(404);
+    const res = await buyNow(buy);
+    expect(res.status).toBe(404);
   });
 });
 
