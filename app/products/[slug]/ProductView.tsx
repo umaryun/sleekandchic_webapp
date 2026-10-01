@@ -312,7 +312,9 @@ export default function ProductView({ product }: { product: Product }) {
                 type="button"
                 onClick={handleBuyNow}
                 disabled={adding || !!blocker}
-                className="flex h-11 w-full flex-1 items-center justify-center gap-2 rounded-[3px] bg-[#8a6452] px-6 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-60 sm:h-12 sm:w-auto sm:text-sm"
+                // flex-1 only in the row layout: in the stacked phone layout it
+                // overrides h-11 and squashes the button to its text height.
+                className="flex h-11 w-full shrink-0 items-center justify-center gap-2 rounded-[3px] bg-[#8a6452] px-6 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-60 sm:h-12 sm:w-auto sm:flex-1 sm:text-sm"
               >
                 <Zap size={16} /> Buy now
               </button>
