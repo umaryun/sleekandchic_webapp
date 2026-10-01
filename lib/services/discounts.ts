@@ -1,4 +1,5 @@
 import { and, eq, sql } from "drizzle-orm";
+import { z } from "zod";
 import { db } from "@/lib/db";
 import { discounts } from "@/lib/db/schema";
 import { toKobo } from "@/lib/money";
@@ -82,4 +83,52 @@ export async function releaseDiscount(tx: DbOrTx, code: string) {
     .update(discounts)
     .set({ usedCount: sql`GREATEST(${discounts.usedCount} - 1, 0)` })
     .where(eq(discounts.code, normalizeCode(code)));
+}
+
+// ──────────────────────────────────────────────
+// Managing codes (admin)
+// ──────────────────────────────────────────────
+
+const optionalDate = z.string().datetime({ offset: true }).nullable().optional();
+
+/** Fields staff can set on a promo code. */
+export const discountFieldsSchema = z.object({
+  code: z
+    .string()
+    .transform(normalizeCode)
+    .pipe(z.string().regex(/^[A-Z0-9_-]{3,30}$/, "Codes are 3–30 letters, numbers, - or _")),
+  discountType: z.enum(["percentage", "fixed_amount"]),
+  value: z.number().positive("Enter an amount above zero"),
+  minOrderAmount: z.number().positive().nullable().optional(),
+  maxUses: z.number().int().positive().nullable().optional(),
+  startsAt: optionalDate,
+  expiresAt: optionalDate,
+  isActive: z.boolean().optional(),
+});
+
+/** Why a code's settings don't make sense together, or null. */
+export function discountRuleError(
+  d: Pick<DiscountRecord, "discountType" | "maxUses" | "usedCount"> & {
+    value: number;
+    startsAt: Date | null;
+    expiresAt: Date | null;
+  }
+): string | null {
+  if (d.discountType === "percentage" && d.value > 100) return "A percentage discount can't be more than 100%.";
+  if (d.startsAt && d.expiresAt && d.expiresAt <= d.startsAt) return "The end date must be after the start date.";
+  if (d.maxUses !== null && d.maxUses < d.usedCount) {
+    return `It has already been used ${d.usedCount} times, so the limit can't be lower than that.`;
+  }
+  return null;
+}
+
+export type DiscountState = "active" | "paused" | "scheduled" | "expired" | "used_up";
+
+/** What a shopper would experience with this code right now. */
+export function discountState(d: DiscountRecord, now = new Date()): DiscountState {
+  if (!d.isActive) return "paused";
+  if (d.expiresAt && d.expiresAt < now) return "expired";
+  if (d.maxUses !== null && d.usedCount >= d.maxUses) return "used_up";
+  if (d.startsAt && d.startsAt > now) return "scheduled";
+  return "active";
 }
