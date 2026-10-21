@@ -17,7 +17,7 @@ interface VerifiedOrder {
   firstName: string | null;
   deliveryCity: string | null;
   deliveryState: string | null;
-  shippingMethod: "standard" | "express" | null;
+  shippingMethod: "standard" | "express" | "pickup" | null;
   subtotal: number | null;
   discountAmount: number;
   shippingFee: number;

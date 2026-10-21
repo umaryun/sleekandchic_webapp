@@ -7,15 +7,20 @@ import { Package, Truck, CheckCircle, Search, CreditCard, XCircle, Loader2, MapP
 import ShopLayout from "@/components/ShopLayout";
 import PageBreadcrumb from "@/components/PageBreadcrumb";
 import { formatNGN } from "@/lib/utils";
-import { DELIVERY } from "@/lib/store";
+import { DELIVERY, STORE } from "@/lib/store";
+
+const methodName = (method: NonNullable<TrackedOrder["shippingMethod"]>) =>
+  method === "pickup" ? "Pickup from our shop" : DELIVERY.methods[method].name;
 
 interface TrackedOrder {
   orderNumber: string;
   status: "pending" | "paid" | "processing" | "shipped" | "delivered" | "cancelled";
   paymentStatus: "unpaid" | "paid" | "refunded";
-  paymentMethod: "paystack" | "cod" | null;
-  shippingMethod: "standard" | "express" | null;
+  paymentMethod: "paystack" | "cod" | "transfer" | "cash" | "pos" | null;
+  shippingMethod: "standard" | "express" | "pickup" | null;
   deliveryPayment: "online" | "on_arrival";
+  /** GIG waybill, or the driver and park for public transport. */
+  trackingNumber: string | null;
   subtotal: number | null;
   totalAmount: number;
   discountAmount: number;
@@ -52,8 +57,8 @@ function progress(order: TrackedOrder) {
 
 function headline(order: TrackedOrder) {
   if (order.status === "cancelled") return "This order was cancelled";
-  if (order.status === "delivered") return "Delivered";
-  if (order.status === "shipped") return "On its way to you";
+  if (order.status === "delivered") return order.shippingMethod === "pickup" ? "Collected" : "Delivered";
+  if (order.status === "shipped") return order.shippingMethod === "pickup" ? "Ready for you to collect" : "On its way to you";
   if (order.status === "paid" || order.status === "processing") return "We're preparing your order";
   if (order.paymentMethod === "paystack" && order.paymentStatus !== "paid") return "Waiting for your payment";
   return "Order received. We'll call you to confirm delivery.";
@@ -175,7 +180,7 @@ function TrackingContent() {
             </div>
             <div className="text-sm text-[#555]">
               Placed {dateFmt(order.createdAt)}
-              {order.shippingMethod && ` · ${order.shippingMethod === "express" ? "Express" : "Standard"} delivery`}
+              {order.shippingMethod && ` · ${methodName(order.shippingMethod)}`}
             </div>
           </div>
 
@@ -258,11 +263,31 @@ function TrackingContent() {
                 </p>
                 {order.shippingMethod && (
                   <p className="mt-1.5">
-                    <strong className="text-[#1a1a1a]">{DELIVERY.methods[order.shippingMethod].name}</strong>
-                    {order.shippingMethod === "standard"
-                      ? `: collect it at the motor park in ${order.deliveryState ?? "your state"}.`
-                      : ": delivered to your door."}
+                    <strong className="text-[#1a1a1a]">{methodName(order.shippingMethod)}</strong>
+                    {order.shippingMethod === "pickup"
+                      ? `: collect it from our shop, ${STORE.address}.`
+                      : order.shippingMethod === "standard"
+                        ? `: collect it at the motor park in ${order.deliveryState ?? "your state"}.`
+                        : ": delivered to your door."}
                   </p>
+                )}
+                {order.trackingNumber && (
+                  <div className="mt-3 rounded-md bg-[#f6f3f0] px-3 py-2.5">
+                    <p className="text-xs text-[#6b6b6b]">{order.shippingMethod === "express" ? "GIG waybill number" : "Delivery details"}</p>
+                    <p className="mt-0.5 flex flex-wrap items-center gap-2 text-sm font-bold text-[#1a1a1a]">
+                      {order.trackingNumber}
+                      <button
+                        type="button"
+                        onClick={() => navigator.clipboard?.writeText(order.trackingNumber!)}
+                        className="text-xs font-semibold text-[#8a6452] hover:underline"
+                      >
+                        Copy
+                      </button>
+                    </p>
+                    {order.shippingMethod === "express" && (
+                      <p className="mt-1 text-xs">Track it with GIG Logistics using this number.</p>
+                    )}
+                  </div>
                 )}
               </div>
               <div className="bg-white border border-[#f0f0f0] rounded-lg p-6 text-[13px] text-[#555]">
@@ -280,7 +305,7 @@ function TrackingContent() {
                       ? "Refunded"
                       : order.paymentMethod === "cod"
                         ? `${formatNGN(order.totalAmount)} due on delivery (cash or POS)`
-                        : "Not paid yet"}
+                        : `${formatNGN(order.totalAmount)} not paid yet`}
                 </p>
               </div>
               <Link
