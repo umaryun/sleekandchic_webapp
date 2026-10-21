@@ -60,13 +60,17 @@ export const discountTypeEnum = pgEnum("discount_type", [
   "fixed_amount",
 ]);
 
-export const paymentMethodEnum = pgEnum("payment_method", ["paystack", "cod"]);
+// paystack = paid online at checkout; cod = older pay-on-delivery orders.
+// transfer, cash and pos are sales staff record by hand (WhatsApp, walk-in).
+export const paymentMethodEnum = pgEnum("payment_method", ["paystack", "cod", "transfer", "cash", "pos"]);
 
 // standard = public transport to the motor park in the customer's state;
-// express = GIG Logistics, door to door.
+// express = GIG Logistics, door to door; pickup = collected from the shop
+// (sales recorded by staff only).
 export const shippingMethodEnum = pgEnum("shipping_method", [
   "standard",
   "express",
+  "pickup",
 ]);
 
 // Items are always paid online. The delivery fee is too, unless the customer
@@ -318,6 +322,8 @@ export const cartItems = pgTable(
 // Orders
 // ──────────────────────────────────────────────
 
+export type OrderSource = "website" | "whatsapp" | "instagram" | "in_store" | "phone" | "other";
+
 // Order numbers are SC-10001, SC-10002, … : short enough to read over the phone.
 export const orderNumberSeq = pgSequence("order_number_seq", { startWith: 10001 });
 
@@ -360,6 +366,10 @@ export const orders = pgTable(
     // The cart the order came from; cleared once the order is paid.
     cartId: uuid("cart_id").references(() => carts.id, { onDelete: "set null" }),
     discountCode: varchar("discount_code", { length: 50 }),
+    // Where the sale came from: the website, or a sale staff recorded by hand.
+    source: varchar("source", { length: 20 }).$type<OrderSource>().notNull().default("website"),
+    // GIG waybill, or the driver and park for public transport. Shown to the customer.
+    trackingNumber: varchar("tracking_number", { length: 120 }),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
@@ -487,6 +497,7 @@ export type OrderEventType =
   | "status_changed"
   | "payment_status_changed"
   | "cancelled"
+  | "tracking_updated"
   | "note";
 
 export const orderEvents = pgTable(
@@ -516,7 +527,11 @@ export type StockMovementReason =
   | "order_cancelled"
   | "order_expired"
   | "late_payment"
-  | "adjustment";
+  | "adjustment"
+  // Changes staff make on the inventory screen.
+  | "restock"
+  | "returned"
+  | "damaged";
 
 export const stockMovements = pgTable(
   "stock_movements",
@@ -560,6 +575,38 @@ export const paymentEvents = pgTable(
   },
   (table) => [uniqueIndex("payment_events_provider_event_idx").on(table.provider, table.eventId)]
 );
+
+// ──────────────────────────────────────────────
+// Messages from the shop's contact form
+// ──────────────────────────────────────────────
+
+export const contactMessages = pgTable(
+  "contact_messages",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    name: varchar("name", { length: 100 }).notNull(),
+    email: varchar("email", { length: 255 }).notNull(),
+    phone: varchar("phone", { length: 30 }),
+    orderNumber: varchar("order_number", { length: 40 }),
+    message: text("message").notNull(),
+    // new → read → archived (staff can move it back to read).
+    status: varchar("status", { length: 20 }).$type<"new" | "read" | "archived">().notNull().default("new"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [index("contact_messages_status_idx").on(table.status, table.createdAt)]
+);
+
+// ──────────────────────────────────────────────
+// Store settings the owner changes in the admin (lib/services/settings.ts)
+// ──────────────────────────────────────────────
+
+export const storeSettings = pgTable("store_settings", {
+  key: varchar("key", { length: 50 }).primaryKey(),
+  value: jsonb("value").notNull(),
+  updatedBy: text("updated_by").references(() => users.id, { onDelete: "set null" }),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
 
 // ──────────────────────────────────────────────
 // Relations (for Drizzle relational queries)
