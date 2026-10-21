@@ -1,11 +1,11 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
+import { db } from "@/lib/db";
+import { contactMessages } from "@/lib/db/schema";
 import { apiSuccess, apiError, parseBody } from "@/lib/api-utils";
 import { rateLimit } from "@/lib/rate-limit";
-import { env } from "@/lib/env";
-import { STORE } from "@/lib/store";
-import { isEmailConfigured, sendEmail } from "@/lib/email/send";
-import { escapeHtml } from "@/lib/email/templates";
+import { afterResponse } from "@/lib/email/send";
+import { notifyContactMessage } from "@/lib/email/notify";
 
 const contactSchema = z.object({
   name: z.string().trim().min(1, "Enter your name").max(100),
@@ -17,7 +17,10 @@ const contactSchema = z.object({
   website: z.string().optional(),
 });
 
-/** POST /api/v1/store/contact — emails a customer's message to the shop. */
+/**
+ * POST /api/v1/store/contact — saves a customer's message for the admin's
+ * Messages page and emails it to the shop (when email is set up).
+ */
 export async function POST(req: NextRequest) {
   try {
     const limited = await rateLimit(req, "contact");
@@ -27,24 +30,15 @@ export async function POST(req: NextRequest) {
     if (error) return error;
     if (data!.website) return apiSuccess({ sent: true }); // spam: accept silently
 
-    if (!isEmailConfigured()) {
-      return apiError(`Our message form isn't available right now. Please WhatsApp us on ${STORE.phoneDisplay} or email ${STORE.email}.`, 503);
-    }
-
     const { name, email, phone, orderNumber, message } = data!;
-    const details = [`From: ${name} <${email}>`, phone && `Phone: ${phone}`, orderNumber && `Order: ${orderNumber}`]
-      .filter(Boolean)
-      .join("\n");
-    const sent = await sendEmail({
-      to: env.OWNER_NOTIFICATION_EMAIL || STORE.email,
-      replyTo: email,
-      subject: `Website message from ${name}${orderNumber ? ` (order ${orderNumber})` : ""}`,
-      text: `${details}\n\n${message}`,
-      html: `<pre style="font-family:Arial,sans-serif;white-space:pre-wrap">${escapeHtml(`${details}\n\n${message}`)}</pre>`,
+    await db.insert(contactMessages).values({
+      name,
+      email,
+      phone: phone || null,
+      orderNumber: orderNumber || null,
+      message,
     });
-    if (!sent) {
-      return apiError(`Your message didn't send. Please WhatsApp us on ${STORE.phoneDisplay} instead.`, 502);
-    }
+    afterResponse(() => notifyContactMessage({ name, email, phone, orderNumber, message }));
     return apiSuccess({ sent: true });
   } catch (err) {
     console.error("POST /api/v1/store/contact error:", err);

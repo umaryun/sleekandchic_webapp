@@ -22,9 +22,15 @@ const schema = z.object({
   PAYSTACK_SECRET_KEY: optional,
   SUPABASE_URL: optional,
   SUPABASE_SERVICE_ROLE_KEY: optional,
-  // Email (Resend). Without both, emails are logged instead of sent.
+  // Email, by SMTP (e.g. the shop's Gmail with an app password) or Resend.
+  // Without either, emails are logged instead of sent.
+  SMTP_HOST: optional,
+  SMTP_PORT: z.preprocess((v) => (v === "" || v === undefined ? undefined : Number(v)), z.number().int().positive().optional()),
+  SMTP_USER: optional,
+  SMTP_PASS: optional,
   RESEND_API_KEY: optional,
-  // A sender on a domain verified in Resend, e.g. "Sleekandchic <orders@sleekandchic.com>".
+  // The sender. Required for Resend (on a domain verified there); with SMTP it
+  // defaults to "Sleekandchic <SMTP_USER>".
   EMAIL_FROM: optional,
   // Who receives new-order alerts; defaults to the store's contact email.
   OWNER_NOTIFICATION_EMAIL: optional,
