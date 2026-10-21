@@ -1,0 +1,14 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "arial",
+        "createdAt": "2026-10-21T11:38:27.400Z",
+        "reason": "Claude: lib/email/templates.ts builds HTML emails; email clients don't load web fonts, so Arial/Helvetica is the standard email-safe stack"
+      }
+    ]
+  }
+}
