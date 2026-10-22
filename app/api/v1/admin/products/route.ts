@@ -4,9 +4,10 @@ import { db } from "@/lib/db";
 import {
   products,
   productImages,
+  productVariants,
   categories,
 } from "@/lib/db/schema";
-import { and, eq, ilike, count, asc, desc, ne, sql } from "drizzle-orm";
+import { and, eq, ilike, isNull, count, asc, desc, ne, or, sql } from "drizzle-orm";
 import {
   apiSuccess,
   apiError,
@@ -18,9 +19,11 @@ import {
   paginationMeta,
 } from "@/lib/api-utils";
 import { duplicateCombos, syncVariants, variantColourSchema } from "@/lib/services/catalog";
+import { firstImages } from "@/lib/services/cart";
+import { getSettings } from "@/lib/services/settings";
 
 // ──────────────────────────────────────────────
-// GET — List products (with search, pagination)
+// GET — List products (search, filters, sorting, pagination)
 // ──────────────────────────────────────────────
 
 const querySchema = z.object({
@@ -29,27 +32,60 @@ const querySchema = z.object({
   search: z.string().optional(),
   // Archived products are listed only when asked for.
   status: z.enum(["draft", "active", "archived"]).optional(),
+  // A top-level category includes its subcategories; "none" is uncategorised.
+  categoryId: z.union([z.string().uuid(), z.literal("none")]).optional(),
+  // "untracked": no sizes, so stock isn't counted.
+  stock: z.enum(["in", "low", "out", "untracked"]).optional(),
+  featured: z.enum(["true", "false"]).optional(),
+  sort: z.enum(["newest", "oldest", "name", "price_asc", "price_desc", "stock_asc", "updated"]).default("newest"),
 });
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await requireAdmin(req);
+    await requireAdmin(req);
 
-    const { searchParams } = new URL(req.url);
-    const params = Object.fromEntries(searchParams.entries());
-    const parsed = querySchema.safeParse(params);
-
+    const parsed = querySchema.safeParse(Object.fromEntries(new URL(req.url).searchParams.entries()));
     if (!parsed.success) {
-      return apiError("Invalid query parameters", 422);
+      return withCors(apiError("Invalid query parameters", 422), req);
     }
 
-    const { page, limit, search, status } = parsed.data;
+    const { page, limit, search, status, categoryId, stock, featured, sort } = parsed.data;
     const offset = (page - 1) * limit;
+    const { inventory } = await getSettings();
 
+    // Stock across a product's sizes on sale; null when it has none.
+    const totalStock = sql<number | null>`(select sum(${productVariants.stockQuantity})::int from ${productVariants} where ${productVariants.productId} = ${products.id} and ${productVariants.isActive})`;
+    const lowestStock = sql<number | null>`(select min(${productVariants.stockQuantity})::int from ${productVariants} where ${productVariants.productId} = ${products.id} and ${productVariants.isActive})`;
+    const variantCount = sql<number>`(select count(*)::int from ${productVariants} where ${productVariants.productId} = ${products.id} and ${productVariants.isActive})`;
+
+    const term = search?.trim() ? `%${search.trim().replace(/[\\%_]/g, (c) => `\\${c}`)}%` : null;
     const whereClause = and(
-      search ? ilike(products.name, `%${search}%`) : undefined,
-      status ? eq(products.status, status) : ne(products.status, "archived")
+      term ? or(ilike(products.name, term), ilike(products.sku, term), ilike(products.brand, term)) : undefined,
+      status ? eq(products.status, status) : ne(products.status, "archived"),
+      categoryId === "none"
+        ? isNull(products.categoryId)
+        : categoryId
+          ? or(
+              eq(products.categoryId, categoryId),
+              sql`${products.categoryId} in (select id from ${categories} where ${categories.parentId} = ${categoryId})`
+            )
+          : undefined,
+      featured ? eq(products.isFeatured, featured === "true") : undefined,
+      stock === "untracked" ? sql`${variantCount} = 0` : undefined,
+      stock === "out" ? sql`${variantCount} > 0 and coalesce(${totalStock}, 0) <= 0` : undefined,
+      stock === "low" ? sql`${variantCount} > 0 and ${lowestStock} <= ${inventory.lowStockThreshold} and coalesce(${totalStock}, 0) > 0` : undefined,
+      stock === "in" ? sql`(${variantCount} = 0 or ${lowestStock} > ${inventory.lowStockThreshold})` : undefined
     );
+
+    const orderBy = {
+      newest: [desc(products.createdAt)],
+      oldest: [asc(products.createdAt)],
+      updated: [desc(products.updatedAt)],
+      name: [asc(products.name)],
+      price_asc: [asc(products.price), asc(products.name)],
+      price_desc: [desc(products.price), asc(products.name)],
+      stock_asc: [sql`${totalStock} asc nulls last`, asc(products.name)],
+    }[sort];
 
     const [{ total }] = await db
       .select({ total: count() })
@@ -57,43 +93,36 @@ export async function GET(req: NextRequest) {
       .where(whereClause);
 
     const rows = await db
-      .select()
+      .select({
+        product: products,
+        categoryName: categories.name,
+        totalStock,
+        lowestStock,
+        variantCount,
+      })
       .from(products)
+      .leftJoin(categories, eq(products.categoryId, categories.id))
       .where(whereClause)
-      .orderBy(desc(products.createdAt))
+      .orderBy(...orderBy)
       .limit(limit)
       .offset(offset);
 
-    // Get first image per product
-    const productIds = rows.map((r) => r.id);
-    const images =
-      productIds.length > 0
-        ? await db
-            .select({
-              productId: productImages.productId,
-              imageUrl: productImages.imageUrl,
-            })
-            .from(productImages)
-            .where(sql`${productImages.productId} IN ${productIds}`)
-            .orderBy(asc(productImages.displayOrder))
-        : [];
+    const images = await firstImages(rows.map((r) => r.product.id));
 
-    const imageMap = new Map<string, string>();
-    for (const img of images) {
-      if (!imageMap.has(img.productId)) {
-        imageMap.set(img.productId, img.imageUrl);
-      }
-    }
-
-    const data = rows.map((p) => ({
+    const data = rows.map(({ product: p, categoryName, totalStock, lowestStock, variantCount }) => ({
       ...p,
       price: Number(p.price),
       originalPrice: p.originalPrice ? Number(p.originalPrice) : null,
-      image: imageMap.get(p.id) || null,
+      image: images.get(p.id) ?? null,
+      categoryName: categoryName ?? null,
+      variantCount,
+      totalStock: variantCount > 0 ? (totalStock ?? 0) : null,
+      lowestStock: variantCount > 0 ? lowestStock : null,
     }));
 
     const response = apiSuccess({
       products: data,
+      lowStockThreshold: inventory.lowStockThreshold,
       pagination: paginationMeta(total, page, limit),
     });
 

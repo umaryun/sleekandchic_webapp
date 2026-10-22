@@ -7,6 +7,7 @@ const querySchema = z.object({
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
   search: z.string().max(100).optional(),
+  sort: z.enum(["recent", "spent", "orders", "name"]).default("recent"),
 });
 
 export async function GET(req: NextRequest) {
@@ -15,9 +16,9 @@ export async function GET(req: NextRequest) {
 
     const parsed = querySchema.safeParse(Object.fromEntries(new URL(req.url).searchParams.entries()));
     if (!parsed.success) return apiError("Invalid query parameters", 422);
-    const { page, limit, search } = parsed.data;
+    const { page, limit, search, sort } = parsed.data;
 
-    const { customers, total } = await listCustomers({ page, limit, search });
+    const { customers, total } = await listCustomers({ page, limit, search, sort });
     return withCors(apiSuccess({ customers, pagination: paginationMeta(total, page, limit) }), req);
   } catch (err) {
     if (err instanceof Response) return err;

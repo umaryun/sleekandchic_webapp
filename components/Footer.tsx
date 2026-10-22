@@ -7,7 +7,7 @@ const footerLinks = {
   Help: [
     { label: "Track your order", href: "/orders/tracking" },
     { label: "Delivery & FAQs", href: "/help" },
-    { label: "Returns", href: "/returns" },
+    { label: "Returns & refunds", href: "/returns" },
     { label: "Contact us", href: "/contact" },
   ],
   Information: [
@@ -42,7 +42,7 @@ export default function Footer() {
     <footer className="bg-[#f5f5f5] text-[#1a1a1a]">
       <div className="max-w-[1280px] mx-auto px-2.5 pt-5 pb-3 text-center">
         <Link href="/" className="inline-block no-underline">
-          <Image src="/logo.png" alt={STORE.name} width={450} height={227} className="w-[240px] sm:w-[320px] lg:w-[450px] h-auto mx-auto" />
+          <Image src="/sleekandchic-logo.png" alt={STORE.name} width={339} height={83} className="w-[220px] sm:w-[280px] lg:w-[320px] h-auto mx-auto" />
         </Link>
       </div>
 

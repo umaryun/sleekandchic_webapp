@@ -1,10 +1,11 @@
 import Header from "@/components/Header";
 import Navigation from "@/components/Navigation";
 import HeroSlider from "@/components/HeroSlider";
-import CategorySection from "@/components/CategorySection";
 import FeaturedProducts from "@/components/FeaturedProducts";
 import Footer from "@/components/Footer";
 import MobileBottomNav from "@/components/MobileBottomNav";
+import TrustStrip from "@/components/TrustStrip";
+import WhatsAppButton from "@/components/WhatsAppButton";
 
 export default function HomePage() {
   return (
@@ -20,6 +21,9 @@ export default function HomePage() {
         {/* Hero slider */}
         <HeroSlider />
 
+        {/* Delivery, payment, returns, WhatsApp */}
+        <TrustStrip />
+
         {/* Shop by category */}
         {/* <CategorySection /> */}
 
@@ -32,6 +36,7 @@ export default function HomePage() {
 
       {/* Mobile bottom navigation */}
       <MobileBottomNav />
+      <WhatsAppButton />
     </>
   );
 }

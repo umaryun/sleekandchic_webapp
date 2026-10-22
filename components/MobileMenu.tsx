@@ -70,7 +70,7 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
           justifyContent: "space-between",
         }}
       >
-        <Image src="/logo.png" alt="Sleekandchic" width={120} height={61} className="h-auto w-[120px]" />
+        <Image src="/sleekandchic-logo.png" alt="Sleekandchic" width={339} height={83} className="h-auto w-[150px]" />
         <button
           onClick={onClose}
           style={{

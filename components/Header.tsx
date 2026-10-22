@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Search, ShoppingCart, User, Menu } from "lucide-react";
+import AnnouncementBar from "./AnnouncementBar";
 import CartDrawer from "./CartDrawer";
 import MobileMenu from "./MobileMenu";
 import { useCart } from "@/context/CartContext";
@@ -55,10 +56,21 @@ export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const cartLabel = cartCount === 0 ? "Open bag" : `Open bag, ${cartCount} ${cartCount === 1 ? "item" : "items"}`;
+  // A hairline under the bar once the page has scrolled under it.
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   return (
     <>
-      <header className="sticky top-0 z-50 bg-white my-2.5">
+      <AnnouncementBar />
+      <header
+        className={`sticky top-0 z-50 bg-white py-2.5 transition-shadow ${scrolled ? "shadow-[0_1px_0_#eee,0_4px_14px_rgba(0,0,0,0.05)]" : ""}`}
+      >
         <div className="max-w-[1280px] mx-auto px-4 flex items-center justify-between gap-5 h-[72px]">
           <button
             type="button"
@@ -70,7 +82,7 @@ export default function Header() {
           </button>
 
           <Link href="/" className="shrink-0 flex items-center">
-            <Image src="/logo.png" alt="Sleekandchic" width={190} height={96} priority className="h-auto w-[160px] md:w-[190px]" />
+            <Image src="/sleekandchic-logo.png" alt="Sleekandchic" width={339} height={83} priority className="h-auto w-[150px] md:w-[200px]" />
           </Link>
 
           <SearchForm id="header-search" className="hidden md:flex flex-1 max-w-[680px] h-11 rounded-[5px] bg-[#F3F4F7]" />

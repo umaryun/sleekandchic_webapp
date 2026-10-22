@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import InfoPage from "@/components/InfoPage";
-import { STORE, whatsappLink } from "@/lib/store";
+import { DELIVERY, STORE, whatsappLink } from "@/lib/store";
 
 export const metadata: Metadata = {
   title: `Help & FAQs | ${STORE.name}`,
-  description: "Delivery fees and times, paying by card or on delivery, tracking orders and returns.",
+  description: "Delivery by public transport or GIG Logistics, store pickup, paying online, tracking orders and returns.",
 };
 
 export default function HelpPage() {
@@ -20,29 +20,47 @@ export default function HelpPage() {
       }
     >
       <section>
-        <h2>How much is delivery, and how long does it take?</h2>
-        <p>
-          We deliver to every state in Nigeria from {STORE.city}. The fee and the estimated delivery time depend on your
-          state, and you&apos;ll see both at checkout as soon as you choose your state, before you pay.
-        </p>
+        <h2>How do you deliver, and how long does it take?</h2>
+        <p>We deliver to every state in Nigeria from {STORE.city}, in one of two ways. You choose at checkout.</p>
         <ul>
-          <li>Standard delivery is the cheaper option. Express delivery is faster and costs more.</li>
-          <li>Standard delivery is free when your order is over the amount shown for your state at checkout.</li>
-          <li>Orders with more than three items include ₦200 handling for each extra item.</li>
-          <li>Delivery times are estimates and start once your order is confirmed.</li>
+          <li>
+            <strong>{DELIVERY.methods.standard.name}</strong> takes your order from {STORE.city} to the motor park in your
+            state, where you collect it. It isn&apos;t door to door. You can pay the delivery fee online with your order, or
+            at the park when you collect.
+          </li>
+          <li>
+            <strong>{DELIVERY.methods.express.name}</strong> delivers to your door, usually in {DELIVERY.transitTime}. Its
+            delivery fee is paid online with your order.
+          </li>
+          <li>
+            <strong>We send out deliveries on {DELIVERY.dispatchDays} only.</strong>
+          </li>
+          <li>You&apos;ll see the delivery fees at checkout as soon as you choose your state, before you pay.</li>
+          <li>Delivery times are estimates and start once your order is sent out.</li>
         </ul>
+      </section>
+
+      <section>
+        <h2>Can I pick up my order instead?</h2>
+        <p>
+          Yes. Pickup is available at our store: {STORE.address}. Message us on{" "}
+          <a href={whatsappLink("Hello, I'd like to pick up my order from the store")}>WhatsApp</a> to arrange it.
+        </p>
       </section>
 
       <section>
         <h2>How can I pay?</h2>
         <ul>
           <li>
-            <strong>Card, bank transfer or USSD</strong> through Paystack. You pay on Paystack&apos;s secure page and
-            come back to us for your confirmation. We hold your items for 60 minutes while you pay.
+            Online by <strong>card, bank transfer or USSD</strong> through Paystack. You pay on Paystack&apos;s secure page
+            and come back to us for your confirmation. We hold your items for 60 minutes while you pay.
           </li>
           <li>
-            <strong>Pay on delivery</strong> with cash or POS when your order arrives. We&apos;ll call the number you
-            give at checkout to confirm delivery.
+            Your items are always paid for before we ship them; we don&apos;t take payment for items on delivery.
+          </li>
+          <li>
+            With {DELIVERY.methods.standard.name.toLowerCase()}, you can choose to pay just the delivery fee at the park
+            when you collect your order.
           </li>
         </ul>
       </section>
@@ -68,9 +86,10 @@ export default function HelpPage() {
       <section>
         <h2>Can I return or exchange an item?</h2>
         <p>
-          We accept returns for items that arrive faulty, damaged or wrong, reported within {STORE.returnsWindowHours}{" "}
-          hours of delivery. We don&apos;t accept returns for a change of mind. See our{" "}
-          <Link href="/returns">returns policy</Link>.
+          Yes, within {STORE.returnsWindow} of delivery, if the item is unused, unwashed and in its original packaging
+          with its tags on. Ask us first; please don&apos;t send anything back before we approve the return. Sale items
+          and custom-made pieces can&apos;t be refunded, and we exchange items only if they arrive defective or damaged.
+          See our <Link href="/returns">returns &amp; refund policy</Link>.
         </p>
       </section>
 

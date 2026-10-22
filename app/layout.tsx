@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: "Sleekandchic | Abayas, Bubu, Kaftans & Modest Fashion",
   description:
-    "Abayas, bubu, kaftans, gowns and modest fashion from Kaduna, delivered across Nigeria. Pay by card, transfer or on delivery.",
+    "Abayas, bubu, kaftans, gowns and modest fashion from Kaduna, delivered across Nigeria. Pay securely online by card or transfer.",
   openGraph: {
     title: "Sleekandchic | Modest Fashion",
     description: "Abayas, bubu, kaftans and gowns from Kaduna, delivered across Nigeria.",

@@ -85,7 +85,7 @@ function LoginForm() {
                 borderRadius: "50%",
                 background: "rgba(255,255,255,0.05)",
                 backgroundColor: "#fff",
-                backgroundImage: "url(/logo.png)",
+                backgroundImage: "url(/sleekandchic-logo.png)",
                 backgroundRepeat: "no-repeat",
                 backgroundPosition: "center",
                 backgroundSize: "80%",

@@ -36,6 +36,20 @@
       "when": 1790843225815,
       "tag": "0004_product_featured",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790881465434,
+      "tag": "0005_delivery_payment",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792564785974,
+      "tag": "0006_admin_upgrade",
+      "breakpoints": true
     }
   ]
 }

@@ -3,11 +3,11 @@ import { db } from "@/lib/db";
 import { orders } from "@/lib/db/schema";
 import { env } from "@/lib/env";
 import { initializeTransaction, paymentReference } from "@/lib/paystack";
-import { orderAmountKobo } from "@/lib/services/orders";
+import { orderAmountKobo, type Order } from "@/lib/services/orders";
 
 /** Opens a Paystack transaction for an order and records its reference. */
 export async function startCardPayment(
-  order: { id: string; orderNumber: string; totalAmount: string },
+  order: Pick<Order, "id" | "orderNumber" | "totalAmount" | "shippingFee" | "deliveryPayment">,
   email: string
 ) {
   const payment = await initializeTransaction({

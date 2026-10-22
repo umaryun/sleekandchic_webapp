@@ -1,4 +1,4 @@
-import { orderEvents, type OrderEventType } from "@/lib/db/schema";
+import { orderEvents, type orders, type OrderEventType } from "@/lib/db/schema";
 import type { DbOrTx } from "@/lib/services/cart";
 
 export type OrderStatus = "pending" | "paid" | "processing" | "shipped" | "delivered" | "cancelled";
@@ -25,7 +25,7 @@ export const STATUS_LABELS: Record<OrderStatus, string> = {
 
 interface OrderState {
   status: OrderStatus;
-  paymentMethod: "paystack" | "cod" | null;
+  paymentMethod: (typeof orders.$inferSelect)["paymentMethod"];
   paymentStatus: "unpaid" | "paid" | "refunded";
 }
 

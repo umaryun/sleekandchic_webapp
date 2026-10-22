@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { orders, orderItems, orderEvents, users } from "@/lib/db/schema";
-import { asc, eq, or } from "drizzle-orm";
+import { orders, orderItems, orderEvents, products, users } from "@/lib/db/schema";
+import { asc, eq, inArray, or } from "drizzle-orm";
 import { apiSuccess, apiError, requireAdmin, withCors } from "@/lib/api-utils";
 import { allowedNextStatuses } from "@/lib/services/order-status";
+import { firstImages } from "@/lib/services/cart";
+import { customerKey } from "@/lib/services/customers";
 
 // ──────────────────────────────────────────────
 // GET — Order details with line items
@@ -80,6 +82,14 @@ export async function GET(
 
     const address = (order.shippingAddress ?? {}) as { firstName?: string; lastName?: string; phone?: string };
     const recipient = [address.firstName, address.lastName].filter(Boolean).join(" ");
+    const productIds = [...new Set(items.flatMap((i) => (i.productId ? [i.productId] : [])))];
+    const [images, slugs] = await Promise.all([
+      firstImages(productIds),
+      productIds.length > 0
+        ? db.select({ id: products.id, slug: products.slug }).from(products).where(inArray(products.id, productIds))
+        : [],
+    ]);
+    const slugById = new Map(slugs.map((p) => [p.id, p.slug]));
 
     const response = apiSuccess({
       ...order,
@@ -92,10 +102,13 @@ export async function GET(
       customerPhone: address.phone ?? null,
       accountName: customerName,
       customerEmail,
+      customerId: customerKey({ userId: order.userId, email: customerEmail, phone: address.phone }),
       allowedStatuses: allowedNextStatuses(order),
       timeline,
       items: items.map((item) => ({
         ...item,
+        image: item.productId ? (images.get(item.productId) ?? null) : null,
+        productSlug: item.productId ? (slugById.get(item.productId) ?? null) : null,
         productName: item.name,
         unitPrice: Number(item.price),
         totalPrice: Number(item.price) * item.quantity,

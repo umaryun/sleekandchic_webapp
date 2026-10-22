@@ -48,7 +48,7 @@ interface Order {
   shippingFee: number;
   status: "pending" | "paid" | "processing" | "shipped" | "delivered" | "cancelled";
   paymentStatus: "unpaid" | "paid" | "refunded";
-  paymentMethod: "paystack" | "cod" | null;
+  paymentMethod: "paystack" | "cod" | "transfer" | "cash" | "pos" | null;
   createdAt: string;
   items: OrderItem[];
 }

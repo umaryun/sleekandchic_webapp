@@ -22,6 +22,7 @@ beforeEach(async () => {
       paymentStatus: "paid",
       paymentMethod: "paystack",
       shippingMethod: "standard",
+      trackingNumber: "Peace Mass Transit, driver 0803 111 2222",
       shippingAddress: ADDRESS, // phone +2348030000000
     })
     .returning();
@@ -32,7 +33,12 @@ describe("order tracking", () => {
   it("finds an order by email, ignoring case", async () => {
     const res = await track({ order_number: "sc-track-0001", contact: "aisha@example.COM" });
     expect(res.status).toBe(200);
-    expect(res.body.data).toMatchObject({ orderNumber: "SC-TRACK-0001", status: "shipped", deliveryCity: "Kaduna" });
+    expect(res.body.data).toMatchObject({
+      orderNumber: "SC-TRACK-0001",
+      status: "shipped",
+      deliveryCity: "Kaduna",
+      trackingNumber: "Peace Mass Transit, driver 0803 111 2222",
+    });
     expect(res.body.data.items[0]).toMatchObject({ name: "Emerald Abaya", size: "M" });
     // Only city and state are returned, never the street or phone.
     expect(JSON.stringify(res.body.data)).not.toContain("Ahmadu Bello");

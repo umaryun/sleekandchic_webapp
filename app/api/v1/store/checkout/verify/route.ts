@@ -70,6 +70,9 @@ export async function GET(req: NextRequest) {
       discountAmount: koboToNaira(toKobo(current.discountAmount)),
       shippingFee: koboToNaira(toKobo(current.shippingFee)),
       totalAmount: koboToNaira(toKobo(current.totalAmount)),
+      // Charged online; the rest (public-transport delivery) is paid at the park.
+      payNow: koboToNaira(orderAmountKobo(current)),
+      payOnArrival: koboToNaira(toKobo(current.totalAmount) - orderAmountKobo(current)),
       items: items.map((i) => ({
         name: i.name,
         quantity: i.quantity,

@@ -1,12 +1,12 @@
 import { and, asc, count, desc, eq, gte, lt, lte, ne, sql, sum } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { orders, products, productVariants } from "@/lib/db/schema";
+import { contactMessages, orderItems, orders, products, productVariants } from "@/lib/db/schema";
+import { getSettings } from "@/lib/services/settings";
 
 // The shop runs on Lagos time (WAT, UTC+1 all year, no daylight saving).
 // Timestamps are stored in UTC, so a Lagos day starts at 23:00 UTC.
 const LAGOS_OFFSET_MS = 60 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
-export const LOW_STOCK_THRESHOLD = 5;
 
 /** Midnight in Lagos at the start of the day containing `at`. */
 export function lagosDayStart(at: Date): Date {
@@ -48,6 +48,8 @@ function change(current: number, previous: number): number | null {
 }
 
 export async function getOverview(now = new Date()) {
+  const { inventory } = await getSettings();
+  const lowStockThreshold = inventory.lowStockThreshold;
   const today = lagosDayStart(now);
   const windowStart = new Date(today.getTime() - 29 * DAY_MS); // 30 days including today
   const previousStart = new Date(windowStart.getTime() - 30 * DAY_MS);
@@ -67,8 +69,10 @@ export async function getOverview(now = new Date()) {
       toConfirm: sql<number>`count(*) filter (where ${orders.status} = 'pending' and ${orders.paymentMethod} is distinct from 'paystack')::int`,
       toShip: sql<number>`count(*) filter (where ${orders.status} in ('processing', 'paid'))::int`,
       inTransit: sql<number>`count(*) filter (where ${orders.status} = 'shipped')::int`,
-      cashOrders: sql<number>`count(*) filter (where ${orders.paymentMethod} = 'cod' and ${orders.paymentStatus} = 'unpaid' and ${orders.status} <> 'cancelled')::int`,
-      cashAmount: sql<string>`coalesce(sum(${orders.totalAmount}) filter (where ${orders.paymentMethod} = 'cod' and ${orders.paymentStatus} = 'unpaid' and ${orders.status} <> 'cancelled'), 0)`,
+      // Money still to come in on orders the shop is handling: older pay-on-delivery
+      // orders and sales staff recorded before they were paid.
+      cashOrders: sql<number>`count(*) filter (where ${orders.paymentMethod} is distinct from 'paystack' and ${orders.paymentStatus} = 'unpaid' and ${orders.status} <> 'cancelled')::int`,
+      cashAmount: sql<string>`coalesce(sum(${orders.totalAmount}) filter (where ${orders.paymentMethod} is distinct from 'paystack' and ${orders.paymentStatus} = 'unpaid' and ${orders.status} <> 'cancelled'), 0)`,
     })
     .from(orders);
 
@@ -104,7 +108,7 @@ export async function getOverview(now = new Date()) {
       and(
         eq(products.status, "active"),
         eq(productVariants.isActive, true),
-        lte(productVariants.stockQuantity, LOW_STOCK_THRESHOLD)
+        lte(productVariants.stockQuantity, lowStockThreshold)
       )
     )
     .orderBy(asc(productVariants.stockQuantity), asc(products.name))
@@ -118,11 +122,31 @@ export async function getOverview(now = new Date()) {
       status: orders.status,
       paymentStatus: orders.paymentStatus,
       paymentMethod: orders.paymentMethod,
+      source: orders.source,
+      customerName: sql<string | null>`nullif(trim(concat_ws(' ', ${orders.shippingAddress}->>'firstName', ${orders.shippingAddress}->>'lastName')), '')`,
       createdAt: orders.createdAt,
     })
     .from(orders)
     .orderBy(desc(orders.createdAt))
-    .limit(10);
+    .limit(8);
+
+  // Best sellers over the same 30 days, by money taken.
+  const lineRevenue = sql<string>`sum(${orderItems.price} * ${orderItems.quantity})`;
+  const topProducts = await db
+    .select({
+      productId: orderItems.productId,
+      name: sql<string>`max(${orderItems.name})`,
+      units: sql<number>`sum(${orderItems.quantity})::int`,
+      revenue: lineRevenue,
+    })
+    .from(orderItems)
+    .innerJoin(orders, eq(orderItems.orderId, orders.id))
+    .where(and(isPaid, gte(paidMoment, windowStart.toISOString())))
+    .groupBy(orderItems.productId)
+    .orderBy(desc(lineRevenue))
+    .limit(5);
+
+  const [messages] = await db.select({ unread: count() }).from(contactMessages).where(eq(contactMessages.status, "new"));
 
   return {
     timezone: "Africa/Lagos",
@@ -145,7 +169,11 @@ export async function getOverview(now = new Date()) {
       inTransit: needs.inTransit,
     },
     cashToCollect: { amount: Number(needs.cashAmount), orders: needs.cashOrders },
-    products: { total: activeProducts.n, lowStock, lowStockThreshold: LOW_STOCK_THRESHOLD },
+    averageOrder: last30.orders ? Math.round(last30.amount / last30.orders) : 0,
+    paidOrders30Days: last30.orders,
+    unreadMessages: messages.unread,
+    topProducts: topProducts.map((p) => ({ ...p, revenue: Number(p.revenue ?? 0) })),
+    products: { total: activeProducts.n, lowStock, lowStockThreshold },
     dailyRevenue,
     recentOrders: recentOrders.map((o) => ({ ...o, totalAmount: Number(o.totalAmount) })),
   };

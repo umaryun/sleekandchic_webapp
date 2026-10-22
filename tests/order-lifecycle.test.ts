@@ -6,14 +6,13 @@ import { orderEvents, orders, products, users } from "@/lib/db/schema";
 import { resetTestDb } from "./support/test-db";
 import { ADDRESS, createProduct, json, jsonRequest, seedKadunaRate, signUpCustomer, stockOf } from "./support/fixtures";
 import { POST as cartPost, GET as cartGet } from "@/app/api/v1/store/cart/route";
-import { POST as checkoutPost } from "@/app/api/v1/store/checkout/route";
 import { PUT as updateOrder } from "@/app/api/v1/admin/orders/route";
 import * as orderDetailRoute from "@/app/api/v1/admin/orders/[id]/route";
 import { DELETE as archiveProduct, PUT as updateProduct } from "@/app/api/v1/admin/products/[id]/route";
 import { GET as adminProducts } from "@/app/api/v1/admin/products/route";
 import { GET as storeProducts } from "@/app/api/v1/store/products/route";
 import { GET as storeProduct } from "@/app/api/v1/store/products/[slug]/route";
-import { markOrderPaid } from "@/lib/services/orders";
+import { markOrderPaid, placeOrder as placeOrderService } from "@/lib/services/orders";
 
 let owner: Awaited<ReturnType<typeof signUpCustomer>>;
 
@@ -35,13 +34,16 @@ async function placeOrder(paymentMethod: "cod" | "paystack" = "cod") {
       .returning();
     return { order, variantId: variants[0].id, product };
   }
-  await checkoutPost(
-    jsonRequest(
-      "/api/v1/store/checkout",
-      { guestEmail: "aisha@example.com", shippingAddress: ADDRESS, shippingMethod: "standard", paymentMethod: "cod" },
-      { "x-guest-token": added.body.data.guestToken }
-    )
-  );
+  // Checkout no longer offers pay on delivery, but orders placed that way
+  // before still exist and follow the same rules.
+  await placeOrderService({
+    userId: null,
+    guestToken: added.body.data.guestToken,
+    guestEmail: "aisha@example.com",
+    shippingAddress: ADDRESS,
+    shippingMethod: "standard",
+    paymentMethod: "cod",
+  });
   const [order] = await db.select().from(orders);
   return { order, variantId: variants[0].id, product };
 }

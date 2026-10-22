@@ -1,4 +1,5 @@
 import { and, eq, inArray, asc } from "drizzle-orm";
+import { z } from "zod";
 import { db } from "@/lib/db";
 import { carts, cartItems, products, productImages, productVariants } from "@/lib/db/schema";
 import { koboToNaira, toKobo } from "@/lib/money";
@@ -37,6 +38,34 @@ export async function findCart(userId: string | null, guestToken: string | null,
   return null;
 }
 
+/** One item bought straight from its product page, without the bag. */
+export const buyNowSchema = z.object({
+  productId: z.string().uuid(),
+  variantId: z.string().uuid().optional(),
+  quantity: z.number().int().min(1).max(MAX_LINE_QUANTITY),
+});
+export type BuyNowItem = z.infer<typeof buyNowSchema>;
+
+const productColumns = {
+  productName: products.name,
+  productSlug: products.slug,
+  productPrice: products.price,
+  productInStock: products.inStock,
+  productStatus: products.status,
+};
+
+interface LineSource {
+  itemId: string;
+  productId: string;
+  variantId: string | null;
+  quantity: number;
+  productName: string;
+  productSlug: string;
+  productPrice: string;
+  productInStock: boolean;
+  productStatus: string;
+}
+
 /**
  * Loads a cart's lines priced from the catalogue. With `lockVariants`, the
  * variant rows are locked (SELECT … FOR UPDATE) so stock can be taken safely
@@ -45,7 +74,7 @@ export async function findCart(userId: string | null, guestToken: string | null,
 export async function loadCartLines(
   cartId: string,
   tx: DbOrTx = db,
-  { lockVariants = false }: { lockVariants?: boolean } = {}
+  opts: { lockVariants?: boolean } = {}
 ): Promise<CartLine[]> {
   const items = await tx
     .select({
@@ -53,17 +82,42 @@ export async function loadCartLines(
       productId: cartItems.productId,
       variantId: cartItems.variantId,
       quantity: cartItems.quantity,
-      productName: products.name,
-      productSlug: products.slug,
-      productPrice: products.price,
-      productInStock: products.inStock,
-      productStatus: products.status,
+      ...productColumns,
     })
     .from(cartItems)
     .innerJoin(products, eq(cartItems.productId, products.id))
     .where(eq(cartItems.cartId, cartId))
     .orderBy(asc(cartItems.id));
+  return priceLines(items, tx, opts);
+}
 
+/**
+ * The single line for a Buy now, priced and checked exactly like a bag line.
+ * Empty if the product doesn't exist.
+ */
+export async function loadBuyNowLines(
+  item: BuyNowItem,
+  tx: DbOrTx = db,
+  opts: { lockVariants?: boolean } = {}
+): Promise<CartLine[]> {
+  const [product] = await tx
+    .select({ productId: products.id, ...productColumns })
+    .from(products)
+    .where(eq(products.id, item.productId))
+    .limit(1);
+  if (!product) return [];
+  return priceLines(
+    [{ ...product, itemId: "buy-now", variantId: item.variantId ?? null, quantity: item.quantity }],
+    tx,
+    opts
+  );
+}
+
+async function priceLines(
+  items: LineSource[],
+  tx: DbOrTx,
+  { lockVariants = false }: { lockVariants?: boolean }
+): Promise<CartLine[]> {
   if (items.length === 0) return [];
 
   const productIds = [...new Set(items.map((i) => i.productId))];
@@ -138,7 +192,11 @@ export async function firstImages(productIds: string[], tx: DbOrTx = db) {
 
 /** The cart as the storefront shows it, priced from the current catalogue. */
 export async function cartPayload(cartId: string, guestToken: string | null) {
-  const lines = await loadCartLines(cartId);
+  return { ...(await linesPayload(await loadCartLines(cartId))), guestToken };
+}
+
+/** Lines as the storefront shows them (the bag, or a Buy now at checkout). */
+export async function linesPayload(lines: CartLine[]) {
   const images = await firstImages([...new Set(lines.map((l) => l.productId))]);
   const items = lines.map((line) => ({
     id: line.itemId,
@@ -157,7 +215,7 @@ export async function cartPayload(cartId: string, guestToken: string | null) {
     problem: line.problem,
   }));
   const subtotal = koboToNaira(lines.reduce((sum, l) => sum + l.unitPriceKobo * l.quantity, 0));
-  return { items, subtotal, guestToken };
+  return { items, subtotal };
 }
 
 /**
